@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/interpreter","crates/parser"]
+members = ["crates/interpreter", "crates/parser", "crates/python"]
 
 [workspace.lints.clippy]
 unwrap_used = "deny"

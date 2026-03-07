@@ -1,0 +1,16 @@
+[package]
+name = "fhirpathrs-python"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "fhirpathrs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.28", features = ["extension-module"] }
+parser = { path = "../parser" }
+interpreter = { path = "../interpreter" }
+
+[lints]
+workspace = true
