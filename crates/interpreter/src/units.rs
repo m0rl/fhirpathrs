@@ -544,6 +544,7 @@ pub fn quantity_div(left: &Value, right: &Value) -> Option<f64> {
 }
 
 #[cfg(test)]
+#[allow(clippy::panic, clippy::expect_used)]
 mod tests {
     use super::*;
 

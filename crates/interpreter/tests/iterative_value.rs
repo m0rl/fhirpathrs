@@ -256,7 +256,7 @@ fn test_equivalent_mixed_types_not_swapped() {
 fn test_equivalent_all_types_reordered() {
     let null = Value::Null;
     let bool_val = Value::Boolean(false);
-    let num = Value::Number(3.14);
+    let num = Value::Number(3.125);
     let string = Value::String("test".to_string());
     let quantity = Value::Quantity(10.0, "mg".to_string(), None);
 
