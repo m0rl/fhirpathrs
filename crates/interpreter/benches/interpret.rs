@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::cast_precision_loss)]
 use interpreter::{InterpreterContext, Value, interpret};
 use parser::parse;
 use std::collections::HashMap;
