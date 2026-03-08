@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup component add clippy
+      - run: cargo clippy --all-targets -- -D warnings
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test
+
+  bench:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo bench
+
+  python-test:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv venv
+      - run: uv pip install maturin pytest pydantic
+      - run: uv run maturin develop --manifest-path crates/python/Cargo.toml
+      - run: uv run pytest crates/python/tests/ -v
+
+  python-bench:
+    name: Python Benchmarks (fhirpathrs vs fhirpathpy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv venv
+      - run: uv pip install maturin pytest pytest-benchmark pydantic fhirpathpy
+      - run: uv run maturin develop --manifest-path crates/python/Cargo.toml
+      - name: Benchmark fhirpathrs
+        run: uv run pytest crates/python/tests/bench_evaluate.py --benchmark-save=rs --benchmark-disable-gc -q
+      - name: Benchmark fhirpathpy
+        run: uv run pytest crates/python/tests/bench_fhirpathpy.py --benchmark-save=py --benchmark-disable-gc -q
+      - name: Compare results
+        run: uv run pytest-benchmark compare 0001_rs 0002_py --sort=name --columns=mean,stddev
