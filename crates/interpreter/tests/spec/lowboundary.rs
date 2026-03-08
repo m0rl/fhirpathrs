@@ -275,7 +275,6 @@ fn lowboundarydatetimemillisecond1() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:00:00.000+14:00").expect("datetime")]);
 }
 
-#[ignore] // not implemented: LowBoundary
 #[test]
 fn lowboundarydatetimemillisecond2() {
     let data = Value::object(HashMap::new());
@@ -297,7 +296,6 @@ fn lowboundarydatetimemillisecond3() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01").expect("datetime")]);
 }
 
-#[ignore] // not implemented: LowBoundary
 #[test]
 fn lowboundarytimemillisecond() {
     let data = Value::object(HashMap::new());

@@ -1,6 +1,5 @@
 use super::*;
 
-#[ignore] // period invariant edge case
 #[test]
 fn testperiodinvariantold() {
     let data = fixtures::PATIENT_EXAMPLE_PERIOD.with(Value::clone);

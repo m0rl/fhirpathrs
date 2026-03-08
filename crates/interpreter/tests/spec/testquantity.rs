@@ -22,7 +22,6 @@ fn testquantity2() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity3() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

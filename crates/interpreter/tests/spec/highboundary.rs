@@ -231,7 +231,6 @@ fn highboundarydatetimemillisecond1() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:00:59.999-12:00").expect("datetime")]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydatetimemillisecond2() {
     let data = Value::object(HashMap::new());
@@ -253,7 +252,6 @@ fn highboundarydatetimemillisecond3() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:00:59.999-12:00").expect("datetime")]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarytimemillisecond() {
     let data = Value::object(HashMap::new());

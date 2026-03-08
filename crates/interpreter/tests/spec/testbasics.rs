@@ -61,7 +61,6 @@ fn testsimplebacktick1() {
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
-#[ignore] // mode=strict not supported
 #[test]
 fn testsimplefail() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -89,7 +88,6 @@ fn testsimplewithcontext() {
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
-#[ignore] // mode=strict not supported
 #[test]
 fn testsimplewithwrongcontext() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

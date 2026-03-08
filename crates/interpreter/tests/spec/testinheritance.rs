@@ -1,6 +1,5 @@
 use super::*;
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathisfunction1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -11,7 +10,6 @@ fn testfhirpathisfunction1() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathisfunction2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -33,7 +31,6 @@ fn testfhirpathisfunction3() {
     assert_eq!(actual, vec![Value::Boolean(false)]);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathisfunction4() {
     let data = fixtures::QUESTIONNAIRE_EXAMPLE.with(Value::clone);
@@ -55,7 +52,6 @@ fn testfhirpathisfunction5() {
     assert_eq!(actual, vec![Value::Boolean(false)]);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathisfunction6() {
     let data = fixtures::VALUESET_EXAMPLE_EXPANSION.with(Value::clone);
@@ -121,7 +117,6 @@ fn testfhirpathasfunction11() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathasfunction12() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -143,7 +138,6 @@ fn testfhirpathasfunction13() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathasfunction14() {
     let data = fixtures::VALUESET_EXAMPLE_EXPANSION.with(Value::clone);
@@ -176,7 +170,6 @@ fn testfhirpathasfunction16() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathasfunction17() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -198,7 +191,6 @@ fn testfhirpathasfunction18() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // not implemented: testInheritance
 #[test]
 fn testfhirpathasfunction19() {
     let data = fixtures::VALUESET_EXAMPLE_EXPANSION.with(Value::clone);

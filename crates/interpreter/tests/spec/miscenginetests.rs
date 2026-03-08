@@ -10,7 +10,6 @@ fn testcontainedid() {
     assert_eq!(actual, vec![Value::String("1".to_string())]);
 }
 
-#[ignore] // mode=element not supported
 #[test]
 fn testmultipleresolve() {
     let data = Value::object(HashMap::new());

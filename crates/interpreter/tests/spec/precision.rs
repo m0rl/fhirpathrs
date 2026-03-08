@@ -1,6 +1,6 @@
 use super::*;
 
-#[ignore] // not implemented: Precision
+#[ignore] // decimal precision tracking not implemented
 #[test]
 fn precisiondecimal() {
     let data = Value::object(HashMap::new());
@@ -11,7 +11,6 @@ fn precisiondecimal() {
     assert_eq!(actual, vec![Value::Number(5.0)]);
 }
 
-#[ignore] // not implemented: Precision
 #[test]
 fn precisionyear() {
     let data = Value::object(HashMap::new());
@@ -22,7 +21,6 @@ fn precisionyear() {
     assert_eq!(actual, vec![Value::Number(4.0)]);
 }
 
-#[ignore] // not implemented: Precision
 #[test]
 fn precisiondatetimemilliseconds() {
     let data = Value::object(HashMap::new());
@@ -33,7 +31,6 @@ fn precisiondatetimemilliseconds() {
     assert_eq!(actual, vec![Value::Number(17.0)]);
 }
 
-#[ignore] // not implemented: Precision
 #[test]
 fn precisiontimeminutes() {
     let data = Value::object(HashMap::new());
@@ -44,7 +41,6 @@ fn precisiontimeminutes() {
     assert_eq!(actual, vec![Value::Number(4.0)]);
 }
 
-#[ignore] // not implemented: Precision
 #[test]
 fn precisiontimemilliseconds() {
     let data = Value::object(HashMap::new());
@@ -55,7 +51,6 @@ fn precisiontimemilliseconds() {
     assert_eq!(actual, vec![Value::Number(9.0)]);
 }
 
-#[ignore] // not implemented: Precision
 #[test]
 fn precisionempty() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

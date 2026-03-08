@@ -122,7 +122,6 @@ fn testtype10() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // FHIR primitive type provenance not tracked
 #[test]
 fn testtype11() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -144,7 +143,6 @@ fn testtype12() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // FHIR primitive type provenance not tracked
 #[test]
 fn testtype13() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -276,7 +274,6 @@ fn testtypea2() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // FHIR type hierarchy uuid/uri not implemented
 #[test]
 fn testtypea3() {
     let data = fixtures::PARAMETERS_EXAMPLE_TYPES.with(Value::clone);
@@ -287,7 +284,6 @@ fn testtypea3() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // FHIR type hierarchy uuid/uri not implemented
 #[test]
 fn testtypea4() {
     let data = fixtures::PARAMETERS_EXAMPLE_TYPES.with(Value::clone);

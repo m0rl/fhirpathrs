@@ -11,7 +11,6 @@ fn testpolymorphisma() {
     assert_eq!(actual, vec![Value::String("lbs".to_string())]);
 }
 
-#[ignore] // mode=strict not supported
 #[test]
 fn testpolymorphismb() {
     let data = fixtures::OBSERVATION_EXAMPLE.with(Value::clone);
@@ -85,7 +84,6 @@ fn testpolymorphismasafunction() {
     assert_eq!(actual, vec![Value::String("lbs".to_string())]);
 }
 
-#[ignore] // mode=strict not supported
 #[test]
 fn testpolymorphismasb() {
     let data = fixtures::OBSERVATION_EXAMPLE.with(Value::clone);

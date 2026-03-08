@@ -50,7 +50,6 @@ fn testiif5() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // mode=strict not supported
 #[test]
 fn testiif6() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
