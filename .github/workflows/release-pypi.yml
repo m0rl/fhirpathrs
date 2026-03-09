@@ -37,8 +37,6 @@ jobs:
             target: x86_64
           - os: macos-latest
             target: aarch64
-          - os: windows-latest
-            target: x64
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1
