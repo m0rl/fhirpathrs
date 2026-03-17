@@ -10,7 +10,6 @@ fn testreplacematches1() {
     assert_eq!(actual, vec![Value::String("1X56".to_string())]);
 }
 
-#[ignore] // replaceMatches with empty pattern edge case
 #[test]
 fn testreplacematches2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

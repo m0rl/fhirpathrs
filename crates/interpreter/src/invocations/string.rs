@@ -167,6 +167,9 @@ pub fn replace_matches(
     } else {
         None
     };
+    if pattern.is_empty() {
+        return Ok((Value::String(s), context));
+    }
     let regex = get_cached_regex(&pattern, flags)?;
     Ok((
         Value::String(regex.replace_all(&s, &substitution).into_owned()),
