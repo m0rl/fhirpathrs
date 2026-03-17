@@ -204,11 +204,14 @@ pub fn superset_of(base: &Value, args: &[Value], context: InterpreterContext) ->
 }
 
 pub fn not(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let result = match base.to_bool() {
-        Some(b) => Value::Boolean(!b),
-        None => Value::collection(vec![]),
-    };
-    Ok((result, context))
+    match base.to_vec().as_slice() {
+        [] => Ok((Value::collection(vec![]), context)),
+        [Value::Boolean(b)] => Ok((Value::Boolean(!*b), context)),
+        [_] => Ok((Value::Boolean(false), context)),
+        _ => Err(InterpreterError::InvalidOperation(
+            "not() requires a collection with at most one item".to_string(),
+        )),
+    }
 }
 
 pub fn has_value(base: &Value, context: InterpreterContext) -> InterpreterResult {

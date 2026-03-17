@@ -787,7 +787,6 @@ fn testliteralnotfalse() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not() on integer not specified
 #[test]
 fn testintegerbooleannottrue() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -808,7 +807,6 @@ fn testintegerbooleannotfalse() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not() on collection not specified
 #[test]
 fn testnotinvalid() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
