@@ -11,11 +11,8 @@ thread_local! {
 }
 
 fn get_cached_regex(pattern: &str, flags: Option<String>) -> Result<Regex, InterpreterError> {
-    let pattern_with_flags = if let Some(flags) = flags {
-        format!("(?{flags}){pattern}")
-    } else {
-        pattern.to_string()
-    };
+    let flags = flags.unwrap_or_else(|| "s".to_string());
+    let pattern_with_flags = format!("(?{flags}){pattern}");
     REGEX_CACHE.with(|cache| {
         let mut cache = cache.borrow_mut();
         if let Some(regex) = cache.get(&pattern_with_flags) {

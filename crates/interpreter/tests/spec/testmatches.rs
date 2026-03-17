@@ -50,7 +50,6 @@ fn testmatchesempty3() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // single-line mode flag not implemented
 #[test]
 fn testmatchessinglelinemode1() {
     let data = Value::object(HashMap::new());
