@@ -40,7 +40,6 @@ fn testin4() {
     assert_eq!(actual, vec![Value::Boolean(false)]);
 }
 
-#[ignore] // in operator with multi-item collection LHS
 #[test]
 fn testin5() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

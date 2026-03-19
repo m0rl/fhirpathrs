@@ -492,6 +492,13 @@ pub(crate) fn interpret_membership(
             if left.is_null_or_empty() {
                 return Ok((Value::collection(vec![]), context));
             }
+            if let Value::Collection(items) = left {
+                if items.len() > 1 {
+                    return Err(InterpreterError::InvalidOperation(
+                        "in operator requires a singleton on the left side".to_string(),
+                    ));
+                }
+            }
             match right {
                 Value::Collection(items) => items.iter().any(|item| left.equals(item)),
                 _ => left.equals(right),
@@ -500,6 +507,13 @@ pub(crate) fn interpret_membership(
         MembershipOp::Contains => {
             if right.is_null_or_empty() {
                 return Ok((Value::collection(vec![]), context));
+            }
+            if let Value::Collection(items) = right {
+                if items.len() > 1 {
+                    return Err(InterpreterError::InvalidOperation(
+                        "contains operator requires a singleton on the right side".to_string(),
+                    ));
+                }
             }
             match left {
                 Value::Collection(items) => items.iter().any(|item| item.equals(right)),
