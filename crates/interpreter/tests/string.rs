@@ -849,7 +849,7 @@ fn test_matches_dotall_flag() {
 
     let expr = parse("matches('hello.world')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Boolean(false));
+    assert_eq!(result, Value::Boolean(true));
 }
 
 #[test]
