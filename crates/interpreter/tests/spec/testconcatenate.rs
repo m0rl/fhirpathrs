@@ -30,7 +30,6 @@ fn testconcatenate3() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // collection-to-string concatenation edge case
 #[test]
 fn testconcatenate4() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

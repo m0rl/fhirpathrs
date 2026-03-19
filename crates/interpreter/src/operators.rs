@@ -318,6 +318,13 @@ pub(crate) fn interpret_additive(
             ));
         }
         AdditiveOp::Ampersand => {
+            if matches!(left, Value::Collection(items) if items.len() > 1)
+                || matches!(right, Value::Collection(items) if items.len() > 1)
+            {
+                return Err(InterpreterError::InvalidOperation(
+                    "& operator requires singleton or empty operands".to_string(),
+                ));
+            }
             let left_str = if left.is_null_or_empty() {
                 String::new()
             } else {
