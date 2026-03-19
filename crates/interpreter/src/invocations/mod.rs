@@ -60,9 +60,7 @@ pub(crate) fn interpret_member_access(
                             queue.push_back(v);
                         }
                     }
-                    _ => {
-                        results.push(Value::Null);
-                    }
+                    _ => {}
                 }
             }
             Value::collection(results)
