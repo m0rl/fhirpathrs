@@ -37,40 +37,40 @@ fn test_type_expressions() {
 }
 
 #[test]
-fn test_type_binds_looser_than_union() {
+fn test_type_binds_tighter_than_union() {
     assert_eq!(
         parse("A | B is C"),
-        Ok(Expression::Type(
-            Box::new(Expression::Union(
-                Box::new(Expression::Term(Term::Invocation(Invocation::Member(
-                    "A".to_string()
-                )))),
+        Ok(Expression::Union(
+            Box::new(Expression::Term(Term::Invocation(Invocation::Member(
+                "A".to_string()
+            )))),
+            Box::new(Expression::Type(
                 Box::new(Expression::Term(Term::Invocation(Invocation::Member(
                     "B".to_string()
                 )))),
+                TypeOp::Is,
+                TypeSpecifier::QualifiedIdentifier(vec!["C".to_string()])
             )),
-            TypeOp::Is,
-            TypeSpecifier::QualifiedIdentifier(vec!["C".to_string()])
         ))
     );
 }
 
 #[test]
-fn test_type_binds_looser_than_equality() {
+fn test_type_binds_tighter_than_equality() {
     assert_eq!(
         parse("A = B is C"),
-        Ok(Expression::Type(
-            Box::new(Expression::Equality(
-                Box::new(Expression::Term(Term::Invocation(Invocation::Member(
-                    "A".to_string()
-                )))),
-                EqualityOp::Equal,
+        Ok(Expression::Equality(
+            Box::new(Expression::Term(Term::Invocation(Invocation::Member(
+                "A".to_string()
+            )))),
+            EqualityOp::Equal,
+            Box::new(Expression::Type(
                 Box::new(Expression::Term(Term::Invocation(Invocation::Member(
                     "B".to_string()
                 )))),
+                TypeOp::Is,
+                TypeSpecifier::QualifiedIdentifier(vec!["C".to_string()])
             )),
-            TypeOp::Is,
-            TypeSpecifier::QualifiedIdentifier(vec!["C".to_string()])
         ))
     );
 }

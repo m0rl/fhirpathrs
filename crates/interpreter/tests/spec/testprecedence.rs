@@ -18,7 +18,6 @@ fn testprecedence2() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // is operator precedence edge case
 #[test]
 fn testprecedence3() {
     let data = Value::object(HashMap::new());
@@ -27,7 +26,6 @@ fn testprecedence3() {
     assert!(interpret(&expr, ctx).is_err());
 }
 
-#[ignore] // is operator precedence edge case
 #[test]
 fn testprecedence4() {
     let data = Value::object(HashMap::new());
