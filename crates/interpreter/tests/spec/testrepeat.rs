@@ -20,7 +20,6 @@ fn testrepeat2() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // descendants() with complex Questionnaire fixture
 #[test]
 fn testrepeat3() {
     let data = fixtures::QUESTIONNAIRE_EXAMPLE.with(Value::clone);
@@ -31,7 +30,6 @@ fn testrepeat3() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // children() with complex Questionnaire fixture
 #[test]
 fn testrepeat4() {
     let data = fixtures::QUESTIONNAIRE_EXAMPLE.with(Value::clone);

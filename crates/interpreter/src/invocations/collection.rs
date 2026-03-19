@@ -257,7 +257,12 @@ fn collect_children(value: &Value) -> Vec<Value> {
                 keys.sort();
                 for k in keys {
                     if let Some(child) = obj.get(k) {
-                        results.push(child.clone());
+                        match child {
+                            Value::Collection(items) => {
+                                results.extend(items.iter().cloned());
+                            }
+                            _ => results.push(child.clone()),
+                        }
                     }
                 }
             }
@@ -284,10 +289,8 @@ pub fn descendants(base: &Value, context: InterpreterContext) -> InterpreterResu
     while !to_process.is_empty() {
         let mut next_level: Vec<Value> = Vec::new();
         for item in to_process {
-            if !result.iter().any(|existing| existing.equals(&item)) {
-                next_level.extend(collect_children(&item));
-                result.push(item);
-            }
+            next_level.extend(collect_children(&item));
+            result.push(item);
         }
         to_process = next_level;
     }
