@@ -13,7 +13,9 @@ pub fn all_true(base: &Value, context: InterpreterContext) -> InterpreterResult 
         match item {
             Value::Boolean(false) => return Ok((Value::Boolean(false), context)),
             Value::Boolean(true) => {}
-            _ => return Ok((Value::Null, context)),
+            _ => return Err(InterpreterError::InvalidOperation(
+                "allTrue() requires a collection of boolean values".to_string(),
+            )),
         }
     }
     Ok((Value::Boolean(true), context))
@@ -22,8 +24,12 @@ pub fn all_true(base: &Value, context: InterpreterContext) -> InterpreterResult 
 pub fn any_true(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let items = base.to_vec();
     for item in items {
-        if let Value::Boolean(true) = item {
-            return Ok((Value::Boolean(true), context));
+        match item {
+            Value::Boolean(true) => return Ok((Value::Boolean(true), context)),
+            Value::Boolean(false) => {}
+            _ => return Err(InterpreterError::InvalidOperation(
+                "anyTrue() requires a collection of boolean values".to_string(),
+            )),
         }
     }
     Ok((Value::Boolean(false), context))
@@ -38,7 +44,9 @@ pub fn all_false(base: &Value, context: InterpreterContext) -> InterpreterResult
         match item {
             Value::Boolean(true) => return Ok((Value::Boolean(false), context)),
             Value::Boolean(false) => {}
-            _ => return Ok((Value::Null, context)),
+            _ => return Err(InterpreterError::InvalidOperation(
+                "allFalse() requires a collection of boolean values".to_string(),
+            )),
         }
     }
     Ok((Value::Boolean(true), context))
@@ -47,8 +55,12 @@ pub fn all_false(base: &Value, context: InterpreterContext) -> InterpreterResult
 pub fn any_false(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let items = base.to_vec();
     for item in items {
-        if let Value::Boolean(false) = item {
-            return Ok((Value::Boolean(true), context));
+        match item {
+            Value::Boolean(false) => return Ok((Value::Boolean(true), context)),
+            Value::Boolean(true) => {}
+            _ => return Err(InterpreterError::InvalidOperation(
+                "anyFalse() requires a collection of boolean values".to_string(),
+            )),
         }
     }
     Ok((Value::Boolean(false), context))

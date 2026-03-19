@@ -10,7 +10,6 @@ fn from_zulip_1() {
     assert_eq!(actual, vec![Value::Boolean(false)]);
 }
 
-#[ignore] // allTrue with mixed boolean/string types
 #[test]
 fn from_zulip_2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
