@@ -37,7 +37,7 @@ pub fn index_of(base: &Value, args: &[Value], context: InterpreterContext) -> In
     let char_index = s
         .find(&substring)
         .map_or(-1.0, |byte_idx| s[..byte_idx].chars().count() as f64);
-    Ok((Value::Number(char_index), context))
+    Ok((Value::Number(char_index, 0), context))
 }
 
 pub fn substring(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
@@ -178,7 +178,7 @@ pub fn length(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let s = base.to_str()?;
     #[allow(clippy::cast_precision_loss)]
     let len = s.chars().count() as f64;
-    Ok((Value::Number(len), context))
+    Ok((Value::Number(len, 0), context))
 }
 
 pub fn to_chars(base: &Value, context: InterpreterContext) -> InterpreterResult {
@@ -250,7 +250,7 @@ pub fn last_index_of(
     let char_index = s
         .rfind(&substring)
         .map_or(-1.0, |byte_idx| s[..byte_idx].chars().count() as f64);
-    Ok((Value::Number(char_index), context))
+    Ok((Value::Number(char_index, 0), context))
 }
 
 pub fn matches_full(

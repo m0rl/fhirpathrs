@@ -399,11 +399,11 @@ fn from_base(base_value: f64, unit: &str) -> Option<f64> {
 
 pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
     let (v1, u1, t1) = match left {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return QuantityResult::Incompatible,
     };
     let (v2, u2, t2) = match right {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return QuantityResult::Incompatible,
     };
 
@@ -412,7 +412,8 @@ pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
     }
 
     if u1 == u2 {
-        return QuantityResult::Ok(Value::Quantity(v1 + v2, u1.to_string(), *t1));
+        let result = v1 + v2;
+        return QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1));
     }
 
     let (base1, cat1) = match normalize(v1, u1) {
@@ -430,8 +431,8 @@ pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
 
     let result_base = base1 + base2;
     match from_base(result_base, u1) {
-        Some(result_value) => {
-            QuantityResult::Ok(Value::Quantity(result_value, u1.to_string(), *t1))
+        Some(result) => {
+            QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1))
         }
         None => QuantityResult::Incompatible,
     }
@@ -439,11 +440,11 @@ pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
 
 pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
     let (v1, u1, t1) = match left {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return QuantityResult::Incompatible,
     };
     let (v2, u2, t2) = match right {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return QuantityResult::Incompatible,
     };
 
@@ -452,7 +453,8 @@ pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
     }
 
     if u1 == u2 {
-        return QuantityResult::Ok(Value::Quantity(v1 - v2, u1.to_string(), *t1));
+        let result = v1 - v2;
+        return QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1));
     }
 
     let (base1, cat1) = match normalize(v1, u1) {
@@ -470,8 +472,8 @@ pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
 
     let result_base = base1 - base2;
     match from_base(result_base, u1) {
-        Some(result_value) => {
-            QuantityResult::Ok(Value::Quantity(result_value, u1.to_string(), *t1))
+        Some(result) => {
+            QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1))
         }
         None => QuantityResult::Incompatible,
     }
@@ -479,11 +481,11 @@ pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
 
 pub fn quantity_cmp(left: &Value, right: &Value) -> Option<Ordering> {
     let (v1, u1, t1) = match left {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return None,
     };
     let (v2, u2, t2) = match right {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return None,
     };
 
@@ -517,11 +519,11 @@ pub fn quantity_cmp_units(unit_a: &str, unit_b: &str) -> bool {
 
 pub fn quantity_div(left: &Value, right: &Value) -> Option<f64> {
     let (v1, u1, t1) = match left {
-        Value::Quantity(v, u, t) => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
         _ => return None,
     };
     let (v2, u2, t2) = match right {
-        Value::Quantity(v, u, t) if *v != 0.0 => (*v, u.as_str(), t),
+        Value::Quantity(v, _, u, t) if *v != 0.0 => (*v, u.as_str(), t),
         _ => return None,
     };
 
@@ -550,10 +552,10 @@ mod tests {
 
     #[test]
     fn test_same_unit_add() {
-        let left = Value::Quantity(1.0, "kg".to_string(), None);
-        let right = Value::Quantity(2.0, "kg".to_string(), None);
+        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
+        let right = Value::Quantity(2.0, 0, "kg".to_string(), None);
         match quantity_add(&left, &right) {
-            QuantityResult::Ok(Value::Quantity(value, ref unit, _)) => {
+            QuantityResult::Ok(Value::Quantity(value, _, ref unit, _)) => {
                 assert!((value - 3.0).abs() < f64::EPSILON);
                 assert_eq!(unit, "kg");
             }
@@ -563,10 +565,10 @@ mod tests {
 
     #[test]
     fn test_compatible_unit_add() {
-        let left = Value::Quantity(1.0, "kg".to_string(), None);
-        let right = Value::Quantity(500.0, "g".to_string(), None);
+        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
+        let right = Value::Quantity(500.0, 0, "g".to_string(), None);
         match quantity_add(&left, &right) {
-            QuantityResult::Ok(Value::Quantity(value, ref unit, _)) => {
+            QuantityResult::Ok(Value::Quantity(value, _, ref unit, _)) => {
                 assert!((value - 1.5).abs() < f64::EPSILON);
                 assert_eq!(unit, "kg");
             }
@@ -576,8 +578,8 @@ mod tests {
 
     #[test]
     fn test_incompatible_units() {
-        let left = Value::Quantity(1.0, "kg".to_string(), None);
-        let right = Value::Quantity(1.0, "mL".to_string(), None);
+        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
+        let right = Value::Quantity(1.0, 0, "mL".to_string(), None);
         match quantity_add(&left, &right) {
             QuantityResult::Incompatible => {}
             QuantityResult::Ok(_) => panic!("Expected Incompatible"),
@@ -586,9 +588,9 @@ mod tests {
 
     #[test]
     fn test_quantity_cmp_compatible() {
-        let kg1 = Value::Quantity(1.0, "kg".to_string(), None);
-        let g500 = Value::Quantity(500.0, "g".to_string(), None);
-        let g1000 = Value::Quantity(1000.0, "g".to_string(), None);
+        let kg1 = Value::Quantity(1.0, 0, "kg".to_string(), None);
+        let g500 = Value::Quantity(500.0, 0, "g".to_string(), None);
+        let g1000 = Value::Quantity(1000.0, 0, "g".to_string(), None);
         assert_eq!(quantity_cmp(&kg1, &g500), Some(Ordering::Greater));
         assert_eq!(quantity_cmp(&g500, &kg1), Some(Ordering::Less));
         assert_eq!(quantity_cmp(&g1000, &kg1), Some(Ordering::Equal));
@@ -596,22 +598,22 @@ mod tests {
 
     #[test]
     fn test_quantity_cmp_incompatible() {
-        let kg = Value::Quantity(1.0, "kg".to_string(), None);
-        let ml = Value::Quantity(1.0, "mL".to_string(), None);
+        let kg = Value::Quantity(1.0, 0, "kg".to_string(), None);
+        let ml = Value::Quantity(1.0, 0, "mL".to_string(), None);
         assert_eq!(quantity_cmp(&kg, &ml), None);
     }
 
     #[test]
     fn test_quantity_div_same_unit() {
-        let left = Value::Quantity(6.0, "kg".to_string(), None);
-        let right = Value::Quantity(2.0, "kg".to_string(), None);
+        let left = Value::Quantity(6.0, 0, "kg".to_string(), None);
+        let right = Value::Quantity(2.0, 0, "kg".to_string(), None);
         assert!((quantity_div(&left, &right).expect("should work") - 3.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_quantity_div_compatible() {
-        let left = Value::Quantity(1.0, "kg".to_string(), None);
-        let right = Value::Quantity(500.0, "g".to_string(), None);
+        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
+        let right = Value::Quantity(500.0, 0, "g".to_string(), None);
         assert!((quantity_div(&left, &right).expect("should work") - 2.0).abs() < f64::EPSILON);
     }
 }

@@ -22,7 +22,7 @@ pub fn count(base: &Value, context: InterpreterContext) -> InterpreterResult {
         Value::Collection(v) => v.len() as f64,
         Value::Null => 0.0,
         _ => 1.0,
-    });
+    }, 0);
     Ok((value, context))
 }
 

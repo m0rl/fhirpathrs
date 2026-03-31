@@ -12,11 +12,11 @@ use std::collections::HashMap;
 #[test]
 fn test_where_with_this_context() {
     let mut obj1 = HashMap::new();
-    obj1.insert("value".to_string(), Value::Number(10.0));
+    obj1.insert("value".to_string(), Value::Number(10.0, 0));
     let mut obj2 = HashMap::new();
-    obj2.insert("value".to_string(), Value::Number(5.0));
+    obj2.insert("value".to_string(), Value::Number(5.0, 0));
     let mut obj3 = HashMap::new();
-    obj3.insert("value".to_string(), Value::Number(15.0));
+    obj3.insert("value".to_string(), Value::Number(15.0, 0));
 
     let data = Value::collection(vec![
         Value::object(obj1),
@@ -43,9 +43,9 @@ fn test_where_with_this_context() {
 #[test]
 fn test_select_with_this_context() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -54,9 +54,9 @@ fn test_select_with_this_context() {
 
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0], Value::Number(2.0), "First should be 2.0");
-        assert_eq!(items[1], Value::Number(4.0), "Second should be 4.0");
-        assert_eq!(items[2], Value::Number(6.0), "Third should be 6.0");
+        assert_eq!(items[0], Value::Number(2.0, 0), "First should be 2.0");
+        assert_eq!(items[1], Value::Number(4.0, 0), "Second should be 4.0");
+        assert_eq!(items[2], Value::Number(6.0, 0), "Third should be 6.0");
     } else {
         panic!("Expected collection");
     }
@@ -98,9 +98,9 @@ fn test_select_with_index_context() {
 
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0], Value::Number(0.0));
-        assert_eq!(items[1], Value::Number(1.0));
-        assert_eq!(items[2], Value::Number(2.0));
+        assert_eq!(items[0], Value::Number(0.0, 0));
+        assert_eq!(items[1], Value::Number(1.0, 0));
+        assert_eq!(items[2], Value::Number(2.0, 0));
     } else {
         panic!("Expected collection");
     }
@@ -132,9 +132,9 @@ fn test_where_with_total_context() {
 #[test]
 fn test_select_with_total_context() {
     let data = Value::collection(vec![
-        Value::Number(10.0),
-        Value::Number(20.0),
-        Value::Number(30.0),
+        Value::Number(10.0, 0),
+        Value::Number(20.0, 0),
+        Value::Number(30.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -143,9 +143,9 @@ fn test_select_with_total_context() {
 
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0], Value::Number(3.0));
-        assert_eq!(items[1], Value::Number(3.0));
-        assert_eq!(items[2], Value::Number(3.0));
+        assert_eq!(items[0], Value::Number(3.0, 0));
+        assert_eq!(items[1], Value::Number(3.0, 0));
+        assert_eq!(items[2], Value::Number(3.0, 0));
     } else {
         panic!("Expected collection");
     }
@@ -154,9 +154,9 @@ fn test_select_with_total_context() {
 #[test]
 fn test_all_with_total_context() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -168,9 +168,9 @@ fn test_all_with_total_context() {
 #[test]
 fn test_exists_with_total_context() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -181,11 +181,11 @@ fn test_exists_with_total_context() {
 
 #[test]
 fn test_collection_single() {
-    let context = InterpreterContext::new(Value::collection(vec![Value::Number(42.0)]));
+    let context = InterpreterContext::new(Value::collection(vec![Value::Number(42.0, 0)]));
 
     let expr = parse("single()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(42.0, 0));
 
     let context = InterpreterContext::new(Value::collection(vec![]));
     let expr = parse("single()").expect("parse failed");
@@ -193,8 +193,8 @@ fn test_collection_single() {
     assert_eq!(result, Value::Null);
 
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
     ]));
     let expr = parse("single()").expect("parse failed");
     let result = interpret(&expr, context.clone());
@@ -204,9 +204,9 @@ fn test_collection_single() {
 #[test]
 fn test_collection_tail() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -214,13 +214,13 @@ fn test_collection_tail() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert_eq!(items[0], Value::Number(2.0));
-        assert_eq!(items[1], Value::Number(3.0));
+        assert_eq!(items[0], Value::Number(2.0, 0));
+        assert_eq!(items[1], Value::Number(3.0, 0));
     } else {
         panic!("Expected collection");
     }
 
-    let context = InterpreterContext::new(Value::collection(vec![Value::Number(1.0)]));
+    let context = InterpreterContext::new(Value::collection(vec![Value::Number(1.0, 0)]));
     let expr = parse("tail()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
@@ -233,11 +233,11 @@ fn test_collection_tail() {
 #[test]
 fn test_collection_take() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
-        Value::Number(4.0),
-        Value::Number(5.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
+        Value::Number(4.0, 0),
+        Value::Number(5.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -245,9 +245,9 @@ fn test_collection_take() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0], Value::Number(1.0));
-        assert_eq!(items[1], Value::Number(2.0));
-        assert_eq!(items[2], Value::Number(3.0));
+        assert_eq!(items[0], Value::Number(1.0, 0));
+        assert_eq!(items[1], Value::Number(2.0, 0));
+        assert_eq!(items[2], Value::Number(3.0, 0));
     } else {
         panic!("Expected collection");
     }
@@ -264,11 +264,11 @@ fn test_collection_take() {
 #[test]
 fn test_collection_skip() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
-        Value::Number(4.0),
-        Value::Number(5.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
+        Value::Number(4.0, 0),
+        Value::Number(5.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -276,9 +276,9 @@ fn test_collection_skip() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0], Value::Number(3.0));
-        assert_eq!(items[1], Value::Number(4.0));
-        assert_eq!(items[2], Value::Number(5.0));
+        assert_eq!(items[0], Value::Number(3.0, 0));
+        assert_eq!(items[1], Value::Number(4.0, 0));
+        assert_eq!(items[2], Value::Number(5.0, 0));
     } else {
         panic!("Expected collection");
     }
@@ -295,11 +295,11 @@ fn test_collection_skip() {
 #[test]
 fn test_collection_distinct() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(1.0),
-        Value::Number(3.0),
-        Value::Number(2.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(1.0, 0),
+        Value::Number(3.0, 0),
+        Value::Number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -307,9 +307,9 @@ fn test_collection_distinct() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert!(items.contains(&Value::Number(1.0)));
-        assert!(items.contains(&Value::Number(2.0)));
-        assert!(items.contains(&Value::Number(3.0)));
+        assert!(items.contains(&Value::Number(1.0, 0)));
+        assert!(items.contains(&Value::Number(2.0, 0)));
+        assert!(items.contains(&Value::Number(3.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -318,9 +318,9 @@ fn test_collection_distinct() {
 #[test]
 fn test_collection_is_distinct() {
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]));
 
     let expr = parse("isDistinct()").expect("parse failed");
@@ -328,9 +328,9 @@ fn test_collection_is_distinct() {
     assert_eq!(result, Value::Boolean(true));
 
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(1.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(1.0, 0),
     ]));
 
     let expr = parse("isDistinct()").expect("parse failed");
@@ -341,9 +341,9 @@ fn test_collection_is_distinct() {
 #[test]
 fn test_collection_intersect() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -351,8 +351,8 @@ fn test_collection_intersect() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&Value::Number(2.0)));
-        assert!(items.contains(&Value::Number(3.0)));
+        assert!(items.contains(&Value::Number(2.0, 0)));
+        assert!(items.contains(&Value::Number(3.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -361,10 +361,10 @@ fn test_collection_intersect() {
 #[test]
 fn test_collection_exclude() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
-        Value::Number(4.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
+        Value::Number(4.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -372,8 +372,8 @@ fn test_collection_exclude() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&Value::Number(1.0)));
-        assert!(items.contains(&Value::Number(3.0)));
+        assert!(items.contains(&Value::Number(1.0, 0)));
+        assert!(items.contains(&Value::Number(3.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -473,7 +473,7 @@ fn test_collection_any_false() {
 
 #[test]
 fn test_collection_subset_of() {
-    let data = Value::collection(vec![Value::Number(1.0), Value::Number(2.0)]);
+    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
     let context = InterpreterContext::new(data);
 
     let expr = parse("subsetOf(1 | 2 | 3)").expect("parse failed");
@@ -488,9 +488,9 @@ fn test_collection_subset_of() {
 #[test]
 fn test_collection_superset_of() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -506,9 +506,9 @@ fn test_collection_superset_of() {
 #[test]
 fn test_collection_all_with_criteria() {
     let data = Value::collection(vec![
-        Value::Number(2.0),
-        Value::Number(4.0),
-        Value::Number(6.0),
+        Value::Number(2.0, 0),
+        Value::Number(4.0, 0),
+        Value::Number(6.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -529,9 +529,9 @@ fn test_collection_all_with_criteria() {
 #[test]
 fn test_collection_exists_with_criteria() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(5.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(5.0, 0),
+        Value::Number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -585,7 +585,7 @@ fn test_collection_repeat() {
 fn test_of_type_filters_by_string() {
     let data = Value::collection(vec![
         Value::String("hello".to_string()),
-        Value::Number(42.0),
+        Value::Number(42.0, 0),
         Value::String("world".to_string()),
         Value::Boolean(true),
     ]);
@@ -605,9 +605,9 @@ fn test_of_type_filters_by_string() {
 #[test]
 fn test_of_type_filters_by_integer() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.5),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.5, 1),
+        Value::Number(3.0, 0),
         Value::String("four".to_string()),
     ]);
     let context = InterpreterContext::new(data);
@@ -616,8 +616,8 @@ fn test_of_type_filters_by_integer() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2, "Should only include whole numbers");
-        assert_eq!(items[0], Value::Number(1.0));
-        assert_eq!(items[1], Value::Number(3.0));
+        assert_eq!(items[0], Value::Number(1.0, 0));
+        assert_eq!(items[1], Value::Number(3.0, 0));
     } else {
         panic!("Expected collection");
     }
@@ -626,8 +626,8 @@ fn test_of_type_filters_by_integer() {
 #[test]
 fn test_of_type_filters_by_decimal() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.5),
+        Value::Number(1.0, 0),
+        Value::Number(2.5, 1),
         Value::String("three".to_string()),
     ]);
     let context = InterpreterContext::new(data);
@@ -636,8 +636,8 @@ fn test_of_type_filters_by_decimal() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2, "All numbers are Decimal");
-        assert_eq!(items[0], Value::Number(1.0));
-        assert_eq!(items[1], Value::Number(2.5));
+        assert_eq!(items[0], Value::Number(1.0, 0));
+        assert_eq!(items[1], Value::Number(2.5, 1));
     } else {
         panic!("Expected collection");
     }
@@ -647,7 +647,7 @@ fn test_of_type_filters_by_decimal() {
 fn test_of_type_filters_by_boolean() {
     let data = Value::collection(vec![
         Value::Boolean(true),
-        Value::Number(1.0),
+        Value::Number(1.0, 0),
         Value::Boolean(false),
         Value::String("true".to_string()),
     ]);
@@ -668,7 +668,7 @@ fn test_of_type_filters_by_boolean() {
 fn test_of_type_with_qualified_name() {
     let data = Value::collection(vec![
         Value::String("hello".to_string()),
-        Value::Number(42.0),
+        Value::Number(42.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -684,7 +684,7 @@ fn test_of_type_with_qualified_name() {
 
 #[test]
 fn test_of_type_returns_empty_when_no_match() {
-    let data = Value::collection(vec![Value::Number(1.0), Value::Number(2.0)]);
+    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
     let context = InterpreterContext::new(data);
 
     let expr = parse("ofType(String)").expect("parse failed");
@@ -778,7 +778,7 @@ fn test_of_type_mixed_primitives_and_resources() {
     let data = Value::collection(vec![
         Value::String("hello".to_string()),
         patient.clone(),
-        Value::Number(42.0),
+        Value::Number(42.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -804,30 +804,30 @@ fn test_of_type_mixed_primitives_and_resources() {
 #[test]
 fn test_aggregate_sum() {
     let data = Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
-        Value::Number(4.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
+        Value::Number(4.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
     let expr = parse("aggregate($total + $this, 0)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0));
+    assert_eq!(result, Value::Number(10.0, 0));
 }
 
 #[test]
 fn test_aggregate_product() {
     let data = Value::collection(vec![
-        Value::Number(2.0),
-        Value::Number(3.0),
-        Value::Number(4.0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
+        Value::Number(4.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
     let expr = parse("aggregate($total * $this, 1)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(24.0));
+    assert_eq!(result, Value::Number(24.0, 0));
 }
 
 #[test]
@@ -846,13 +846,13 @@ fn test_aggregate_string_concat() {
 
 #[test]
 fn test_aggregate_without_init() {
-    let data = Value::collection(vec![Value::Number(1.0), Value::Number(2.0)]);
+    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
     let context = InterpreterContext::new(data);
 
     let expr =
         parse("aggregate(iif($total.empty(), $this, $total + $this))").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(3.0, 0));
 }
 
 #[test]
@@ -862,32 +862,32 @@ fn test_aggregate_on_empty_collection() {
 
     let expr = parse("aggregate($total + $this, 0)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(0.0, 0));
 }
 
 #[test]
 fn test_aggregate_on_singleton() {
-    let data = Value::Number(42.0);
+    let data = Value::Number(42.0, 0);
     let context = InterpreterContext::new(data);
 
     let expr = parse("aggregate($total + $this, 0)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(42.0, 0));
 }
 
 #[test]
 fn test_aggregate_max() {
     let data = Value::collection(vec![
-        Value::Number(5.0),
-        Value::Number(2.0),
-        Value::Number(8.0),
-        Value::Number(1.0),
+        Value::Number(5.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(8.0, 0),
+        Value::Number(1.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
     let expr = parse("aggregate(iif($total < $this, $this, $total), 0)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(8.0));
+    assert_eq!(result, Value::Number(8.0, 0));
 }
 
 #[test]
@@ -901,7 +901,7 @@ fn test_aggregate_count() {
 
     let expr = parse("aggregate($total + 1, 0)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(3.0, 0));
 }
 
 #[test]
@@ -938,7 +938,7 @@ fn test_not_chained() {
 
 #[test]
 fn test_has_value_primitive() {
-    let context = InterpreterContext::new(Value::Number(42.0));
+    let context = InterpreterContext::new(Value::Number(42.0, 0));
     let expr = parse("hasValue()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(result, Value::Boolean(true));
@@ -971,8 +971,8 @@ fn test_has_value_empty_collection() {
 #[test]
 fn test_has_value_multi_item_collection() {
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
     ]));
     let expr = parse("hasValue()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
@@ -981,15 +981,15 @@ fn test_has_value_multi_item_collection() {
 
 #[test]
 fn test_union_function_dedup() {
-    let data = Value::collection(vec![Value::Number(1.0), Value::Number(2.0)]);
+    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
     let context = InterpreterContext::new(data);
     let expr = parse("union(2 | 3)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0], Value::Number(1.0));
-        assert_eq!(items[1], Value::Number(2.0));
-        assert_eq!(items[2], Value::Number(3.0));
+        assert_eq!(items[0], Value::Number(1.0, 0));
+        assert_eq!(items[1], Value::Number(2.0, 0));
+        assert_eq!(items[2], Value::Number(3.0, 0));
     } else {
         panic!("Expected collection");
     }
@@ -1010,16 +1010,16 @@ fn test_union_function_empty() {
 #[test]
 fn test_children_of_object() {
     let obj = Value::object(HashMap::from([
-        ("a".to_string(), Value::Number(1.0)),
-        ("b".to_string(), Value::Number(2.0)),
+        ("a".to_string(), Value::Number(1.0, 0)),
+        ("b".to_string(), Value::Number(2.0, 0)),
     ]));
     let context = InterpreterContext::new(obj);
     let expr = parse("children()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&Value::Number(1.0)));
-        assert!(items.contains(&Value::Number(2.0)));
+        assert!(items.contains(&Value::Number(1.0, 0)));
+        assert!(items.contains(&Value::Number(2.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -1027,7 +1027,7 @@ fn test_children_of_object() {
 
 #[test]
 fn test_children_of_primitive() {
-    let context = InterpreterContext::new(Value::Number(42.0));
+    let context = InterpreterContext::new(Value::Number(42.0, 0));
     let expr = parse("children()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(result, Value::collection(vec![]));
@@ -1038,16 +1038,16 @@ fn test_children_nested_returns_only_direct() {
     let obj = Value::object(HashMap::from([
         (
             "a".to_string(),
-            Value::object(HashMap::from([("x".to_string(), Value::Number(10.0))])),
+            Value::object(HashMap::from([("x".to_string(), Value::Number(10.0, 0))])),
         ),
-        ("b".to_string(), Value::Number(2.0)),
+        ("b".to_string(), Value::Number(2.0, 0)),
     ]));
     let context = InterpreterContext::new(obj);
     let expr = parse("children()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&Value::Number(2.0)));
+        assert!(items.contains(&Value::Number(2.0, 0)));
         assert!(items.iter().any(|v| matches!(v, Value::Object(_))));
     } else {
         panic!("Expected collection");
@@ -1057,16 +1057,16 @@ fn test_children_nested_returns_only_direct() {
 #[test]
 fn test_descendants_flat_object() {
     let obj = Value::object(HashMap::from([
-        ("a".to_string(), Value::Number(1.0)),
-        ("b".to_string(), Value::Number(2.0)),
+        ("a".to_string(), Value::Number(1.0, 0)),
+        ("b".to_string(), Value::Number(2.0, 0)),
     ]));
     let context = InterpreterContext::new(obj);
     let expr = parse("descendants()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&Value::Number(1.0)));
-        assert!(items.contains(&Value::Number(2.0)));
+        assert!(items.contains(&Value::Number(1.0, 0)));
+        assert!(items.contains(&Value::Number(2.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -1075,12 +1075,12 @@ fn test_descendants_flat_object() {
 #[test]
 fn test_descendants_nested_object() {
     let inner = Value::object(HashMap::from([
-        ("x".to_string(), Value::Number(10.0)),
-        ("y".to_string(), Value::Number(20.0)),
+        ("x".to_string(), Value::Number(10.0, 0)),
+        ("y".to_string(), Value::Number(20.0, 0)),
     ]));
     let obj = Value::object(HashMap::from([
         ("a".to_string(), inner.clone()),
-        ("b".to_string(), Value::Number(3.0)),
+        ("b".to_string(), Value::Number(3.0, 0)),
     ]));
     let context = InterpreterContext::new(obj);
     let expr = parse("descendants()").expect("parse failed");
@@ -1088,9 +1088,9 @@ fn test_descendants_nested_object() {
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 4);
         assert!(items.contains(&inner));
-        assert!(items.contains(&Value::Number(3.0)));
-        assert!(items.contains(&Value::Number(10.0)));
-        assert!(items.contains(&Value::Number(20.0)));
+        assert!(items.contains(&Value::Number(3.0, 0)));
+        assert!(items.contains(&Value::Number(10.0, 0)));
+        assert!(items.contains(&Value::Number(20.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -1098,7 +1098,7 @@ fn test_descendants_nested_object() {
 
 #[test]
 fn test_descendants_primitive() {
-    let context = InterpreterContext::new(Value::Number(42.0));
+    let context = InterpreterContext::new(Value::Number(42.0, 0));
     let expr = parse("descendants()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(result, Value::collection(vec![]));
@@ -1106,7 +1106,7 @@ fn test_descendants_primitive() {
 
 #[test]
 fn test_descendants_deeply_nested() {
-    let level3 = Value::object(HashMap::from([("three".to_string(), Value::Number(99.0))]));
+    let level3 = Value::object(HashMap::from([("three".to_string(), Value::Number(99.0, 0))]));
     let level2 = Value::object(HashMap::from([("two".to_string(), level3.clone())]));
     let level1 = Value::object(HashMap::from([("one".to_string(), level2.clone())]));
     let context = InterpreterContext::new(level1);
@@ -1116,7 +1116,7 @@ fn test_descendants_deeply_nested() {
         assert_eq!(items.len(), 3);
         assert!(items.contains(&level2));
         assert!(items.contains(&level3));
-        assert!(items.contains(&Value::Number(99.0)));
+        assert!(items.contains(&Value::Number(99.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -1125,9 +1125,9 @@ fn test_descendants_deeply_nested() {
 #[test]
 fn test_sort_numbers() {
     let data = Value::collection(vec![
-        Value::Number(3.0),
-        Value::Number(1.0),
-        Value::Number(2.0),
+        Value::Number(3.0, 0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
     let expr = parse("sort()").expect("parse failed");
@@ -1135,9 +1135,9 @@ fn test_sort_numbers() {
     assert_eq!(
         result,
         Value::collection(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0)
+            Value::Number(1.0, 0),
+            Value::Number(2.0, 0),
+            Value::Number(3.0, 0)
         ])
     );
 }
@@ -1175,15 +1175,15 @@ fn test_sort_with_criteria() {
     let data = Value::collection(vec![
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Charlie".to_string())),
-            ("age".to_string(), Value::Number(30.0)),
+            ("age".to_string(), Value::Number(30.0, 0)),
         ])),
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Alice".to_string())),
-            ("age".to_string(), Value::Number(25.0)),
+            ("age".to_string(), Value::Number(25.0, 0)),
         ])),
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Bob".to_string())),
-            ("age".to_string(), Value::Number(35.0)),
+            ("age".to_string(), Value::Number(35.0, 0)),
         ])),
     ]);
     let context = InterpreterContext::new(data);
@@ -1208,11 +1208,11 @@ fn test_sort_with_criteria() {
 
 #[test]
 fn test_coalesce_returns_first_nonempty() {
-    let data = Value::collection(vec![Value::Null, Value::Number(1.0), Value::Number(2.0)]);
+    let data = Value::collection(vec![Value::Null, Value::Number(1.0, 0), Value::Number(2.0, 0)]);
     let context = InterpreterContext::new(data);
     let expr = parse("coalesce()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0));
+    assert_eq!(result, Value::Number(1.0, 0));
 }
 
 #[test]
@@ -1229,7 +1229,7 @@ fn test_coalesce_with_default() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("coalesce(42)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(42.0, 0));
 }
 
 #[test]
@@ -1247,16 +1247,16 @@ fn test_coalesce_skips_empty_collections() {
 #[test]
 fn test_repeat_all_allows_duplicates() {
     let obj = Value::object(HashMap::from([
-        ("value".to_string(), Value::Number(1.0)),
+        ("value".to_string(), Value::Number(1.0, 0)),
         (
             "item".to_string(),
             Value::collection(vec![
                 Value::object(HashMap::from([
-                    ("value".to_string(), Value::Number(2.0)),
+                    ("value".to_string(), Value::Number(2.0, 0)),
                     ("item".to_string(), Value::collection(vec![])),
                 ])),
                 Value::object(HashMap::from([
-                    ("value".to_string(), Value::Number(2.0)),
+                    ("value".to_string(), Value::Number(2.0, 0)),
                     ("item".to_string(), Value::collection(vec![])),
                 ])),
             ]),
@@ -1292,9 +1292,9 @@ fn test_repeat_all_empty() {
 #[test]
 fn test_sort_asc_numbers() {
     let data = Value::collection(vec![
-        Value::Number(3.0),
-        Value::Number(1.0),
-        Value::Number(2.0),
+        Value::Number(3.0, 0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
     let expr = parse("sort(asc)").expect("parse failed");
@@ -1302,9 +1302,9 @@ fn test_sort_asc_numbers() {
     assert_eq!(
         result,
         Value::collection(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0)
+            Value::Number(1.0, 0),
+            Value::Number(2.0, 0),
+            Value::Number(3.0, 0)
         ])
     );
 }
@@ -1312,9 +1312,9 @@ fn test_sort_asc_numbers() {
 #[test]
 fn test_sort_desc_numbers() {
     let data = Value::collection(vec![
-        Value::Number(3.0),
-        Value::Number(1.0),
-        Value::Number(2.0),
+        Value::Number(3.0, 0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
     let expr = parse("sort(desc)").expect("parse failed");
@@ -1322,9 +1322,9 @@ fn test_sort_desc_numbers() {
     assert_eq!(
         result,
         Value::collection(vec![
-            Value::Number(3.0),
-            Value::Number(2.0),
-            Value::Number(1.0)
+            Value::Number(3.0, 0),
+            Value::Number(2.0, 0),
+            Value::Number(1.0, 0)
         ])
     );
 }
@@ -1354,15 +1354,15 @@ fn test_sort_with_criteria_desc() {
     let data = Value::collection(vec![
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Alice".to_string())),
-            ("age".to_string(), Value::Number(25.0)),
+            ("age".to_string(), Value::Number(25.0, 0)),
         ])),
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Charlie".to_string())),
-            ("age".to_string(), Value::Number(30.0)),
+            ("age".to_string(), Value::Number(30.0, 0)),
         ])),
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Bob".to_string())),
-            ("age".to_string(), Value::Number(35.0)),
+            ("age".to_string(), Value::Number(35.0, 0)),
         ])),
     ]);
     let context = InterpreterContext::new(data);
@@ -1390,15 +1390,15 @@ fn test_sort_with_criteria_asc() {
     let data = Value::collection(vec![
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Charlie".to_string())),
-            ("age".to_string(), Value::Number(30.0)),
+            ("age".to_string(), Value::Number(30.0, 0)),
         ])),
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Alice".to_string())),
-            ("age".to_string(), Value::Number(25.0)),
+            ("age".to_string(), Value::Number(25.0, 0)),
         ])),
         Value::object(HashMap::from([
             ("name".to_string(), Value::String("Bob".to_string())),
-            ("age".to_string(), Value::Number(35.0)),
+            ("age".to_string(), Value::Number(35.0, 0)),
         ])),
     ]);
     let context = InterpreterContext::new(data);
@@ -1424,9 +1424,9 @@ fn test_sort_with_criteria_asc() {
 #[test]
 fn test_sort_with_this_desc() {
     let data = Value::collection(vec![
-        Value::Number(3.0),
-        Value::Number(1.0),
-        Value::Number(2.0),
+        Value::Number(3.0, 0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
     let expr = parse("sort($this, desc)").expect("parse failed");
@@ -1434,9 +1434,9 @@ fn test_sort_with_this_desc() {
     assert_eq!(
         result,
         Value::collection(vec![
-            Value::Number(3.0),
-            Value::Number(2.0),
-            Value::Number(1.0)
+            Value::Number(3.0, 0),
+            Value::Number(2.0, 0),
+            Value::Number(1.0, 0)
         ])
     );
 }
@@ -1446,11 +1446,11 @@ fn test_repeat_all_flat_values() {
     let data = Value::collection(vec![
         Value::object(HashMap::from([(
             "item".to_string(),
-            Value::collection(vec![Value::Number(1.0)]),
+            Value::collection(vec![Value::Number(1.0, 0)]),
         )])),
         Value::object(HashMap::from([(
             "item".to_string(),
-            Value::collection(vec![Value::Number(1.0)]),
+            Value::collection(vec![Value::Number(1.0, 0)]),
         )])),
     ]);
     let context = InterpreterContext::new(data);

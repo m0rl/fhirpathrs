@@ -28,18 +28,18 @@ fn test_deep_nested_select_no_stack_overflow() {
     }
 
     let parsed = parse(&expr).expect("should parse deeply nested select");
-    let data = Value::Number(1.0);
+    let data = Value::Number(1.0, 0);
     let context = InterpreterContext::new(data);
 
     let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
-    assert_eq!(result, Value::collection(vec![Value::Number(1.0)]));
+    assert_eq!(result, Value::collection(vec![Value::Number(1.0, 0)]));
 }
 
 #[test]
 fn test_deep_nested_member_access_no_stack_overflow() {
     let depth = 500;
 
-    let mut inner_data = Value::Number(42.0);
+    let mut inner_data = Value::Number(42.0, 0);
     for i in (0..depth).rev() {
         let key = format!("f{i}");
         let mut obj = HashMap::new();
@@ -54,7 +54,7 @@ fn test_deep_nested_member_access_no_stack_overflow() {
     let context = InterpreterContext::new(inner_data);
 
     let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(42.0, 0));
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn test_deep_nested_iif_no_stack_overflow() {
     let context = InterpreterContext::new(data);
 
     let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(42.0, 0));
 }
 
 #[test]
@@ -102,7 +102,7 @@ fn test_deep_nested_mixed_functions_no_stack_overflow() {
     }
 
     let parsed = parse(&expr).expect("should parse deeply nested mixed functions");
-    let data = Value::Number(1.0);
+    let data = Value::Number(1.0, 0);
     let context = InterpreterContext::new(data);
 
     let _result = interpret(&parsed, context).expect("should evaluate without stack overflow");

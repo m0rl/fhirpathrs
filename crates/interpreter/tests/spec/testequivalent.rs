@@ -100,7 +100,6 @@ fn testequivalent10() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // decimal equivalence precision not implemented
 #[test]
 fn testequivalent11() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

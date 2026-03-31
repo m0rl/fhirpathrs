@@ -136,7 +136,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                             {
                                 val = ctx
                                     .index_context
-                                    .map_or(Value::Null, |i| Value::Number(i as f64));
+                                    .map_or(Value::Null, |i| Value::Number(i as f64, 0));
                             }
                         }
                         Invocation::Total => {
@@ -733,7 +733,7 @@ fn interpret_term(term: &Term, context: InterpreterContext) -> InterpreterResult
                 Literal::Null => Value::Null,
                 Literal::Boolean(b) => Value::Boolean(*b),
                 Literal::String(s) => Value::String(s.clone()),
-                Literal::Number(n) => Value::Number(*n),
+                Literal::Number(n, p) => Value::Number(*n, *p),
                 Literal::Date(d) => Value::from_date_str(d).ok_or_else(|| {
                     InterpreterError::InvalidOperation(format!("Invalid date: {}", d))
                 })?,
@@ -743,7 +743,7 @@ fn interpret_term(term: &Term, context: InterpreterContext) -> InterpreterResult
                 Literal::Time(t) => Value::from_time_str(t).ok_or_else(|| {
                     InterpreterError::InvalidOperation(format!("Invalid time: {}", t))
                 })?,
-                Literal::Quantity(q) => Value::Quantity(q.value, q.unit.clone(), None),
+                Literal::Quantity(q) => Value::Quantity(q.value, q.precision, q.unit.clone(), None),
             };
             Ok((value, context))
         }

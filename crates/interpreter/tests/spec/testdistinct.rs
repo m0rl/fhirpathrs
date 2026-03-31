@@ -38,9 +38,9 @@ fn testdistinct4() {
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
     let expected = vec![
-        Value::Number(1.0),
-        Value::Number(2.0),
-        Value::Number(3.0),
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+        Value::Number(3.0, 0),
     ];
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
@@ -52,7 +52,7 @@ fn testdistinct5() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(10.0)]);
+    assert_eq!(actual, vec![Value::Number(10.0, 0)]);
 }
 
 #[test]
@@ -62,5 +62,5 @@ fn testdistinct6() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(2.0)]);
+    assert_eq!(actual, vec![Value::Number(2.0, 0)]);
 }

@@ -8,7 +8,7 @@ fn txtest01() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0)]);
+    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
 }
 
 #[ignore] // not implemented: TerminologyTests

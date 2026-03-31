@@ -379,7 +379,7 @@ fn test_duration_date_years() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2020.duration(@2024)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(4.0, "year".to_string(), None));
+    assert_eq!(result, Value::Quantity(4.0, 0, "year".to_string(), None));
 }
 
 #[test]
@@ -387,7 +387,7 @@ fn test_duration_date_months() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-01.duration(@2024-06)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(5.0, "month".to_string(), None));
+    assert_eq!(result, Value::Quantity(5.0, 0, "month".to_string(), None));
 }
 
 #[test]
@@ -395,7 +395,7 @@ fn test_duration_date_days() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-01-01.duration(@2024-01-31)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(30.0, "day".to_string(), None));
+    assert_eq!(result, Value::Quantity(30.0, 0, "day".to_string(), None));
 }
 
 #[test]
@@ -404,7 +404,7 @@ fn test_duration_datetime_seconds() {
     let expr =
         parse("(@2024-01-01T00:00:00).duration(@2024-01-01T06:00:00)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(21600.0, "second".to_string(), None));
+    assert_eq!(result, Value::Quantity(21600.0, 0, "second".to_string(), None));
 }
 
 #[test]
@@ -412,7 +412,7 @@ fn test_duration_negative() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-06.duration(@2024-01)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(-5.0, "month".to_string(), None));
+    assert_eq!(result, Value::Quantity(-5.0, 0, "month".to_string(), None));
 }
 
 #[test]
@@ -420,7 +420,7 @@ fn test_duration_time() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T10:00:00).duration(@T14:30:00)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(16200.0, "second".to_string(), None));
+    assert_eq!(result, Value::Quantity(16200.0, 0, "second".to_string(), None));
 }
 
 #[test]
@@ -436,7 +436,7 @@ fn test_difference_date_days() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-01-01.difference(@2024-02-01)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(31.0, "day".to_string(), None));
+    assert_eq!(result, Value::Quantity(31.0, 0, "day".to_string(), None));
 }
 
 #[test]
@@ -445,7 +445,7 @@ fn test_difference_datetime_seconds() {
     let expr =
         parse("(@2024-01-01T00:00:00).difference(@2024-01-01T00:01:30)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(90.0, "second".to_string(), None));
+    assert_eq!(result, Value::Quantity(90.0, 0, "second".to_string(), None));
 }
 
 #[test]
@@ -453,7 +453,7 @@ fn test_difference_date_years_physical() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2020.difference(@2024)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(4.0, "year".to_string(), None));
+    assert_eq!(result, Value::Quantity(4.0, 0, "year".to_string(), None));
 }
 
 #[test]

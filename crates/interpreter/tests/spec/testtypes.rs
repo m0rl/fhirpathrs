@@ -641,7 +641,7 @@ fn teststringintegerliteraltoquantity() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Quantity(1.0_f64, "1".to_string(), None)]);
+    assert_eq!(actual, vec![Value::Quantity(1.0_f64, 0, "1".to_string(), None)]);
 }
 
 #[test]

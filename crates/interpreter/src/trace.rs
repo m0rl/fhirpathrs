@@ -56,7 +56,7 @@ mod tests {
 
         handler.on_trace(&TraceEvent {
             name: "test".to_string(),
-            value: Value::Number(42.0),
+            value: Value::Number(42.0, 0),
         });
 
         let events = handler.events();

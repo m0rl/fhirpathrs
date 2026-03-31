@@ -15,15 +15,15 @@ fn test_string_indexof() {
 
     let expr = parse("'abcdefg'.indexOf('cd')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(2.0, 0));
 
     let expr = parse("'abcdefg'.indexOf('x')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-1.0));
+    assert_eq!(result, Value::Number(-1.0, 0));
 
     let expr = parse("'abcdefg'.indexOf('')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(0.0, 0));
 }
 
 #[test]
@@ -172,11 +172,11 @@ fn test_string_length() {
 
     let expr = parse("'abc'.length()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(3.0, 0));
 
     let expr = parse("''.length()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(0.0, 0));
 }
 
 #[test]
@@ -293,15 +293,15 @@ fn test_string_last_index_of() {
 
     let expr = parse("'abcabc'.lastIndexOf('abc')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(3.0, 0));
 
     let expr = parse("'abcabc'.lastIndexOf('x')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-1.0));
+    assert_eq!(result, Value::Number(-1.0, 0));
 
     let expr = parse("'abc'.lastIndexOf('abc')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(0.0, 0));
 }
 
 #[test]
@@ -858,11 +858,11 @@ fn test_indexof_unicode_multibyte() {
 
     let expr = parse("indexOf('é')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(3.0, 0));
 
     let expr = parse("indexOf('f')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(2.0, 0));
 }
 
 #[test]
@@ -871,11 +871,11 @@ fn test_lastindexof_unicode_multibyte() {
 
     let expr = parse("lastIndexOf('é')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(8.0));
+    assert_eq!(result, Value::Number(8.0, 0));
 
     let expr = parse("lastIndexOf('caf')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(5.0));
+    assert_eq!(result, Value::Number(5.0, 0));
 }
 
 #[test]
@@ -884,7 +884,7 @@ fn test_indexof_substring_consistency_unicode() {
 
     let expr = parse("indexOf('b')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(2.0, 0));
 
     let expr = parse("substring(2, 1)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");

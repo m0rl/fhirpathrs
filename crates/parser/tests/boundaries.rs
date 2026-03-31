@@ -202,9 +202,9 @@ fn test_keyword_in_with_spaces() {
     assert_eq!(
         parse("1 in 2"),
         Ok(Expression::Membership(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
             MembershipOp::In,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
         ))
     );
 }
@@ -214,9 +214,9 @@ fn test_keyword_contains_with_spaces() {
     assert_eq!(
         parse("1 contains 2"),
         Ok(Expression::Membership(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
             MembershipOp::Contains,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
         ))
     );
 }
@@ -226,9 +226,9 @@ fn test_keyword_div_with_spaces() {
     assert_eq!(
         parse("3 div 4"),
         Ok(Expression::Multiplicative(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0)))),
             MultiplicativeOp::Div,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
         ))
     );
 }
@@ -238,9 +238,9 @@ fn test_keyword_mod_with_spaces() {
     assert_eq!(
         parse("3 mod 4"),
         Ok(Expression::Multiplicative(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0)))),
             MultiplicativeOp::Mod,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
         ))
     );
 }
@@ -279,12 +279,12 @@ fn test_keyword_in_expression_with_add() {
         parse("1 + 2 in 3"),
         Ok(Expression::Membership(
             Box::new(Expression::Additive(
-                Box::new(Expression::Term(Term::Literal(Literal::Number(1.0)))),
+                Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
                 AdditiveOp::Plus,
-                Box::new(Expression::Term(Term::Literal(Literal::Number(2.0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
             )),
             MembershipOp::In,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
         ))
     );
 }

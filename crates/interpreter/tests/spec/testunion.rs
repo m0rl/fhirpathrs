@@ -87,7 +87,7 @@ fn testunion9() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(8.0)]);
+    assert_eq!(actual, vec![Value::Number(8.0, 0)]);
 }
 
 #[test]
@@ -97,7 +97,7 @@ fn testunion10() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(8.0)]);
+    assert_eq!(actual, vec![Value::Number(8.0, 0)]);
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn testunion11() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(8.0)]);
+    assert_eq!(actual, vec![Value::Number(8.0, 0)]);
 }
 
 #[test]

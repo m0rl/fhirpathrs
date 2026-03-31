@@ -121,7 +121,7 @@ fn test_to_integer() {
 
     let expr = parse("'123'.toInteger()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(123.0));
+    assert_eq!(result, Value::Number(123.0, 0));
 
     let expr = parse("'12.5'.toInteger()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -129,15 +129,15 @@ fn test_to_integer() {
 
     let expr = parse("12.7.toInteger()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(12.0));
+    assert_eq!(result, Value::Number(12.0, 0));
 
     let expr = parse("true.toInteger()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0));
+    assert_eq!(result, Value::Number(1.0, 0));
 
     let expr = parse("false.toInteger()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(0.0, 0));
 }
 
 #[test]
@@ -146,7 +146,7 @@ fn test_to_decimal() {
 
     let expr = parse("'3.14'.toDecimal()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.14));
+    assert_eq!(result, Value::Number(3.14, 2));
 
     let expr = parse("'abc'.toDecimal()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -420,11 +420,11 @@ fn test_to_quantity_from_number() {
 
     let expr = parse("42.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(42.0, "1".to_string(), None));
+    assert_eq!(result, Value::Quantity(42.0, 0, "1".to_string(), None));
 
     let expr = parse("10.toQuantity('kg')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(10.0, "kg".to_string(), None));
+    assert_eq!(result, Value::Quantity(10.0, 0, "kg".to_string(), None));
 }
 
 #[test]
@@ -433,15 +433,15 @@ fn test_to_quantity_from_string() {
 
     let expr = parse("'10 \\'kg\\''.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(10.0, "kg".to_string(), None));
+    assert_eq!(result, Value::Quantity(10.0, 0, "kg".to_string(), None));
 
     let expr = parse("'5.5 mg'.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(5.5, "mg".to_string(), None));
+    assert_eq!(result, Value::Quantity(5.5, 1, "mg".to_string(), None));
 
     let expr = parse("'100'.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(100.0, "1".to_string(), None));
+    assert_eq!(result, Value::Quantity(100.0, 0, "1".to_string(), None));
 
     let expr = parse("'invalid'.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -454,7 +454,7 @@ fn test_to_quantity_preserves_existing() {
 
     let expr = parse("10 'cm'.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(10.0, "cm".to_string(), None));
+    assert_eq!(result, Value::Quantity(10.0, 0, "cm".to_string(), None));
 }
 
 #[test]
@@ -463,7 +463,7 @@ fn test_to_long_from_integer() {
 
     let expr = parse("42.toLong()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(42.0, 0));
 }
 
 #[test]
@@ -472,7 +472,7 @@ fn test_to_long_from_string() {
 
     let expr = parse("'12345678901234'.toLong()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(12345678901234.0));
+    assert_eq!(result, Value::Number(12345678901234.0, 0));
 
     let expr = parse("'not_a_number'.toLong()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -485,11 +485,11 @@ fn test_to_long_from_boolean() {
 
     let expr = parse("true.toLong()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0));
+    assert_eq!(result, Value::Number(1.0, 0));
 
     let expr = parse("false.toLong()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(0.0, 0));
 }
 
 #[test]

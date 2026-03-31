@@ -165,15 +165,15 @@ pub fn calendar_duration_date(d1: NaiveDate, precision: DatePrecision, d2: Naive
     match precision {
         DatePrecision::Year => {
             let years = d2.year() - d1.year();
-            Value::Quantity(years as f64, "year".to_string(), None)
+            Value::Quantity(years as f64, 0, "year".to_string(), None)
         }
         DatePrecision::Month => {
             let months = (d2.year() - d1.year()) * 12 + (d2.month() as i32 - d1.month() as i32);
-            Value::Quantity(months as f64, "month".to_string(), None)
+            Value::Quantity(months as f64, 0, "month".to_string(), None)
         }
         DatePrecision::Day => {
             let days = (d2 - d1).num_days();
-            Value::Quantity(days as f64, "day".to_string(), None)
+            Value::Quantity(days as f64, 0, "day".to_string(), None)
         }
     }
 }
@@ -187,32 +187,32 @@ pub fn calendar_duration_datetime(
     match precision {
         DateTimePrecision::Year => {
             let years = dt2.date().year() - dt1.date().year();
-            Value::Quantity(years as f64, "year".to_string(), None)
+            Value::Quantity(years as f64, 0, "year".to_string(), None)
         }
         DateTimePrecision::Month => {
             let months = (dt2.date().year() - dt1.date().year()) * 12
                 + (dt2.date().month() as i32 - dt1.date().month() as i32);
-            Value::Quantity(months as f64, "month".to_string(), None)
+            Value::Quantity(months as f64, 0, "month".to_string(), None)
         }
         DateTimePrecision::Day => {
             let days = (dt2.date() - dt1.date()).num_days();
-            Value::Quantity(days as f64, "day".to_string(), None)
+            Value::Quantity(days as f64, 0, "day".to_string(), None)
         }
         DateTimePrecision::Hour => {
             let hours = (dt2 - dt1).num_hours();
-            Value::Quantity(hours as f64, "hour".to_string(), None)
+            Value::Quantity(hours as f64, 0, "hour".to_string(), None)
         }
         DateTimePrecision::Minute => {
             let minutes = (dt2 - dt1).num_minutes();
-            Value::Quantity(minutes as f64, "minute".to_string(), None)
+            Value::Quantity(minutes as f64, 0, "minute".to_string(), None)
         }
         DateTimePrecision::Second => {
             let seconds = (dt2 - dt1).num_seconds();
-            Value::Quantity(seconds as f64, "second".to_string(), None)
+            Value::Quantity(seconds as f64, 0, "second".to_string(), None)
         }
         DateTimePrecision::Millisecond => {
             let millis = (dt2 - dt1).num_milliseconds();
-            Value::Quantity(millis as f64, "millisecond".to_string(), None)
+            Value::Quantity(millis as f64, 0, "millisecond".to_string(), None)
         }
     }
 }
@@ -221,15 +221,16 @@ pub fn calendar_duration_datetime(
 pub fn calendar_duration_time(t1: NaiveTime, precision: TimePrecision, t2: NaiveTime) -> Value {
     let diff = t2 - t1;
     match precision {
-        TimePrecision::Hour => Value::Quantity(diff.num_hours() as f64, "hour".to_string(), None),
+        TimePrecision::Hour => Value::Quantity(diff.num_hours() as f64, 0, "hour".to_string(), None),
         TimePrecision::Minute => {
-            Value::Quantity(diff.num_minutes() as f64, "minute".to_string(), None)
+            Value::Quantity(diff.num_minutes() as f64, 0, "minute".to_string(), None)
         }
         TimePrecision::Second => {
-            Value::Quantity(diff.num_seconds() as f64, "second".to_string(), None)
+            Value::Quantity(diff.num_seconds() as f64, 0, "second".to_string(), None)
         }
         TimePrecision::Millisecond => Value::Quantity(
             diff.num_milliseconds() as f64,
+            0,
             "millisecond".to_string(),
             None,
         ),
@@ -242,16 +243,16 @@ pub fn physical_difference_date(d1: NaiveDate, precision: DatePrecision, d2: Nai
         DatePrecision::Year => {
             let days = (d2 - d1).num_days();
             let years = days as f64 / 365.25;
-            Value::Quantity(years.trunc(), "year".to_string(), None)
+            Value::Quantity(years.trunc(), 0, "year".to_string(), None)
         }
         DatePrecision::Month => {
             let days = (d2 - d1).num_days();
             let months = days as f64 / 30.4375;
-            Value::Quantity(months.trunc(), "month".to_string(), None)
+            Value::Quantity(months.trunc(), 0, "month".to_string(), None)
         }
         DatePrecision::Day => {
             let days = (d2 - d1).num_days();
-            Value::Quantity(days as f64, "day".to_string(), None)
+            Value::Quantity(days as f64, 0, "day".to_string(), None)
         }
     }
 }
@@ -266,32 +267,32 @@ pub fn physical_difference_datetime(
         DateTimePrecision::Year => {
             let days = (dt2.date() - dt1.date()).num_days();
             let years = days as f64 / 365.25;
-            Value::Quantity(years.trunc(), "year".to_string(), None)
+            Value::Quantity(years.trunc(), 0, "year".to_string(), None)
         }
         DateTimePrecision::Month => {
             let days = (dt2.date() - dt1.date()).num_days();
             let months = days as f64 / 30.4375;
-            Value::Quantity(months.trunc(), "month".to_string(), None)
+            Value::Quantity(months.trunc(), 0, "month".to_string(), None)
         }
         DateTimePrecision::Day => {
             let days = (dt2.date() - dt1.date()).num_days();
-            Value::Quantity(days as f64, "day".to_string(), None)
+            Value::Quantity(days as f64, 0, "day".to_string(), None)
         }
         DateTimePrecision::Hour => {
             let hours = (dt2 - dt1).num_hours();
-            Value::Quantity(hours as f64, "hour".to_string(), None)
+            Value::Quantity(hours as f64, 0, "hour".to_string(), None)
         }
         DateTimePrecision::Minute => {
             let minutes = (dt2 - dt1).num_minutes();
-            Value::Quantity(minutes as f64, "minute".to_string(), None)
+            Value::Quantity(minutes as f64, 0, "minute".to_string(), None)
         }
         DateTimePrecision::Second => {
             let seconds = (dt2 - dt1).num_seconds();
-            Value::Quantity(seconds as f64, "second".to_string(), None)
+            Value::Quantity(seconds as f64, 0, "second".to_string(), None)
         }
         DateTimePrecision::Millisecond => {
             let millis = (dt2 - dt1).num_milliseconds();
-            Value::Quantity(millis as f64, "millisecond".to_string(), None)
+            Value::Quantity(millis as f64, 0, "millisecond".to_string(), None)
         }
     }
 }

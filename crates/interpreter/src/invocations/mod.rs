@@ -65,8 +65,8 @@ pub(crate) fn interpret_member_access(
             }
             Value::collection(results)
         }
-        Value::Quantity(n, ..) if member == "value" => Value::Number(*n),
-        Value::Quantity(_, code, _) if member == "code" => Value::String(code.clone()),
+        Value::Quantity(n, p, ..) if member == "value" => Value::Number(*n, *p),
+        Value::Quantity(_, _, code, _) if member == "code" => Value::String(code.clone()),
         _ => Value::Null,
     };
     Ok((value, context))

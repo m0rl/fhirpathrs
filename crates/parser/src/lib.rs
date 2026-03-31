@@ -41,7 +41,7 @@ pub enum Literal {
     Null,
     Boolean(bool),
     String(String),
-    Number(f64),
+    Number(f64, u8),
     Date(String),
     DateTime(String),
     Time(String),
@@ -65,6 +65,7 @@ pub enum Invocation {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Quantity {
     pub value: f64,
+    pub precision: u8,
     pub unit: String,
 }
 
@@ -205,10 +206,16 @@ fn string_literal(input: &str) -> IResult<&str, String> {
     ))(input)
 }
 
-fn number(input: &str) -> IResult<&str, f64> {
+fn number(input: &str) -> IResult<&str, (f64, u8)> {
     ws(map_res(
         recognize(tuple((digit1, opt(tuple((char('.'), digit1)))))),
-        |s: &str| s.parse::<f64>(),
+        |s: &str| {
+            s.parse::<f64>().map(|n| {
+                #[allow(clippy::cast_possible_truncation)]
+                let precision = s.find('.').map_or(0, |dot| (s.len() - dot - 1) as u8);
+                (n, precision)
+            })
+        },
     ))(input)
 }
 
@@ -296,9 +303,12 @@ fn unit(input: &str) -> IResult<&str, String> {
 }
 
 fn quantity(input: &str) -> IResult<&str, Quantity> {
-    map(tuple((number, unit)), |(value, unit)| Quantity {
-        value,
-        unit,
+    map(tuple((number, unit)), |((value, precision), unit)| {
+        Quantity {
+            value,
+            precision,
+            unit,
+        }
     })(input)
 }
 
@@ -313,7 +323,7 @@ fn literal(input: &str) -> IResult<&str, Literal> {
         map(datetime, Literal::DateTime),
         map(date, Literal::Date),
         map(time, Literal::Time),
-        map(number, Literal::Number),
+        map(number, |(n, p)| Literal::Number(n, p)),
         map(string_literal, Literal::String),
     ))(input)
 }

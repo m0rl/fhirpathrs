@@ -41,7 +41,7 @@ pub fn value_type(base: &Value, context: InterpreterContext) -> InterpreterResul
     let mut results = Vec::new();
     for item in &items {
         let (namespace, name) = match item {
-            Value::Quantity(_, _, Some(qt)) => ("FHIR", qt.as_str().to_string()),
+            Value::Quantity(_, _, _, Some(qt)) => ("FHIR", qt.as_str().to_string()),
             Value::Object(obj) => match obj.get("resourceType") {
                 Some(Value::String(rt)) => ("FHIR", rt.clone()),
                 _ => continue,
@@ -65,30 +65,28 @@ pub fn value_type(base: &Value, context: InterpreterContext) -> InterpreterResul
 pub fn precision(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
         Value::Date(_, p) => match p {
-            DatePrecision::Year => Value::Number(4.0),
-            DatePrecision::Month => Value::Number(6.0),
-            DatePrecision::Day => Value::Number(8.0),
+            DatePrecision::Year => Value::Number(4.0, 0),
+            DatePrecision::Month => Value::Number(6.0, 0),
+            DatePrecision::Day => Value::Number(8.0, 0),
         },
         Value::DateTime(_, p, _) => match p {
-            DateTimePrecision::Year => Value::Number(4.0),
-            DateTimePrecision::Month => Value::Number(6.0),
-            DateTimePrecision::Day => Value::Number(8.0),
-            DateTimePrecision::Hour => Value::Number(10.0),
-            DateTimePrecision::Minute => Value::Number(12.0),
-            DateTimePrecision::Second => Value::Number(14.0),
-            DateTimePrecision::Millisecond => Value::Number(17.0),
+            DateTimePrecision::Year => Value::Number(4.0, 0),
+            DateTimePrecision::Month => Value::Number(6.0, 0),
+            DateTimePrecision::Day => Value::Number(8.0, 0),
+            DateTimePrecision::Hour => Value::Number(10.0, 0),
+            DateTimePrecision::Minute => Value::Number(12.0, 0),
+            DateTimePrecision::Second => Value::Number(14.0, 0),
+            DateTimePrecision::Millisecond => Value::Number(17.0, 0),
         },
         Value::Time(_, p) => match p {
-            TimePrecision::Hour => Value::Number(2.0),
-            TimePrecision::Minute => Value::Number(4.0),
-            TimePrecision::Second => Value::Number(6.0),
-            TimePrecision::Millisecond => Value::Number(9.0),
+            TimePrecision::Hour => Value::Number(2.0, 0),
+            TimePrecision::Minute => Value::Number(4.0, 0),
+            TimePrecision::Second => Value::Number(6.0, 0),
+            TimePrecision::Millisecond => Value::Number(9.0, 0),
         },
-        Value::Number(n) => {
-            let s = format!("{}", n);
-            let decimals = s.find('.').map_or(0, |i| s.len() - i - 1);
-            #[allow(clippy::cast_precision_loss)]
-            Value::Number(decimals as f64)
+        Value::Number(_, p) => {
+            #[allow(clippy::cast_lossless)]
+            Value::Number(*p as f64, 0)
         }
         _ => Value::collection(vec![]),
     };
@@ -161,7 +159,7 @@ pub fn low_boundary(base: &Value, context: InterpreterContext) -> InterpreterRes
             };
             Value::Time(low, TimePrecision::Millisecond)
         }
-        Value::Number(n) => Value::Number(*n),
+        Value::Number(n, p) => Value::Number(*n, *p),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -232,7 +230,7 @@ pub fn high_boundary(base: &Value, context: InterpreterContext) -> InterpreterRe
             };
             Value::Time(high, TimePrecision::Millisecond)
         }
-        Value::Number(n) => Value::Number(*n),
+        Value::Number(n, p) => Value::Number(*n, *p),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -240,8 +238,8 @@ pub fn high_boundary(base: &Value, context: InterpreterContext) -> InterpreterRe
 
 pub fn year(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Date(d, _) => Value::Number(f64::from(d.year())),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().year())),
+        Value::Date(d, _) => Value::Number(f64::from(d.year()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().year()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -253,8 +251,8 @@ pub fn month(base: &Value, context: InterpreterContext) -> InterpreterResult {
         Value::Date(_, DatePrecision::Year) | Value::DateTime(_, DateTimePrecision::Year, _) => {
             Value::collection(vec![])
         }
-        Value::Date(d, _) => Value::Number(f64::from(d.month())),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().month())),
+        Value::Date(d, _) => Value::Number(f64::from(d.month()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().month()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -266,8 +264,8 @@ pub fn day(base: &Value, context: InterpreterContext) -> InterpreterResult {
         | Value::DateTime(_, DateTimePrecision::Year | DateTimePrecision::Month, _) => {
             Value::collection(vec![])
         }
-        Value::Date(d, _) => Value::Number(f64::from(d.day())),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().day())),
+        Value::Date(d, _) => Value::Number(f64::from(d.day()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().day()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -280,8 +278,8 @@ pub fn hour(base: &Value, context: InterpreterContext) -> InterpreterResult {
             DateTimePrecision::Year | DateTimePrecision::Month | DateTimePrecision::Day,
             _,
         ) => Value::collection(vec![]),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().hour())),
-        Value::Time(t, _) => Value::Number(f64::from(t.hour())),
+        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().hour()), 0),
+        Value::Time(t, _) => Value::Number(f64::from(t.hour()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -298,8 +296,8 @@ pub fn minute(base: &Value, context: InterpreterContext) -> InterpreterResult {
             _,
         )
         | Value::Time(_, TimePrecision::Hour) => Value::collection(vec![]),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().minute())),
-        Value::Time(t, _) => Value::Number(f64::from(t.minute())),
+        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().minute()), 0),
+        Value::Time(t, _) => Value::Number(f64::from(t.minute()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -319,8 +317,8 @@ pub fn second(base: &Value, context: InterpreterContext) -> InterpreterResult {
         | Value::Time(_, TimePrecision::Hour | TimePrecision::Minute) => {
             Value::collection(vec![])
         }
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().second())),
-        Value::Time(t, _) => Value::Number(f64::from(t.second())),
+        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().second()), 0),
+        Value::Time(t, _) => Value::Number(f64::from(t.second()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -329,10 +327,10 @@ pub fn second(base: &Value, context: InterpreterContext) -> InterpreterResult {
 pub fn millisecond(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
         Value::DateTime(dt, DateTimePrecision::Millisecond, _) => {
-            Value::Number(f64::from(dt.and_utc().timestamp_subsec_millis() % 1000))
+            Value::Number(f64::from(dt.and_utc().timestamp_subsec_millis() % 1000), 0)
         }
         Value::Time(t, TimePrecision::Millisecond) => {
-            Value::Number(f64::from((t.nanosecond() / 1_000_000) % 1000))
+            Value::Number(f64::from((t.nanosecond() / 1_000_000) % 1000), 0)
         }
         _ => Value::collection(vec![]),
     };
@@ -363,7 +361,7 @@ pub fn comparable(base: &Value, args: &[Value], context: InterpreterContext) -> 
         ));
     }
     let result = match (base, &args[0]) {
-        (Value::Quantity(_, u1, t1), Value::Quantity(_, u2, t2)) if t1 == t2 => {
+        (Value::Quantity(_, _, u1, t1), Value::Quantity(_, _, u2, t2)) if t1 == t2 => {
             Value::Boolean(quantity_cmp_units(u1, u2))
         }
         _ => Value::collection(vec![]),
@@ -454,28 +452,30 @@ fn resolve_polymorphic(obj: &HashMap<String, Value>, member: &str) -> Option<Val
                 },
                 "Quantity" | "Age" | "Count" | "Distance" | "Duration" | "Money"
                 | "SimpleQuantity" => match raw {
-                    Value::Quantity(_, _, t) if t.is_some_and(|t| t.as_str() == type_suffix) => {
+                    Value::Quantity(_, _, _, t) if t.is_some_and(|t| t.as_str() == type_suffix) => {
                         Some(raw.clone())
                     }
-                    Value::Quantity(v, c, None) => Some(Value::Quantity(
+                    Value::Quantity(v, p, c, None) => Some(Value::Quantity(
                         *v,
+                        *p,
                         c.clone(),
                         QuantityType::from_suffix(type_suffix),
                     )),
                     Value::Object(obj) => {
-                        if let Some((num, code)) =
+                        if let Some((num, num_p, code)) =
                             match (obj.get("value"), obj.get("code"), obj.get("unit")) {
-                                (Some(Value::Number(n)), Some(Value::String(c)), _) => {
-                                    Some((*n, c.clone()))
+                                (Some(Value::Number(n, p)), Some(Value::String(c)), _) => {
+                                    Some((*n, *p, c.clone()))
                                 }
-                                (Some(Value::Number(n)), _, Some(Value::String(u))) => {
-                                    Some((*n, u.clone()))
+                                (Some(Value::Number(n, p)), _, Some(Value::String(u))) => {
+                                    Some((*n, *p, u.clone()))
                                 }
                                 _ => None,
                             }
                         {
                             Some(Value::Quantity(
                                 num,
+                                num_p,
                                 code,
                                 QuantityType::from_suffix(type_suffix),
                             ))
@@ -490,7 +490,7 @@ fn resolve_polymorphic(obj: &HashMap<String, Value>, member: &str) -> Option<Val
                     _ => None,
                 },
                 "Integer" | "PositiveInt" | "UnsignedInt" | "Integer64" | "Decimal" => match raw {
-                    Value::Number(_) => Some(raw.clone()),
+                    Value::Number(..) => Some(raw.clone()),
                     _ => None,
                 },
                 "String" | "Code" | "Id" | "Markdown" | "Base64Binary" | "Xhtml" | "Uri"

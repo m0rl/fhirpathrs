@@ -7,7 +7,7 @@ fn testindexof1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(12.0)]);
+    assert_eq!(actual, vec![Value::Number(12.0, 0)]);
 }
 
 #[test]
@@ -17,7 +17,7 @@ fn testindexof2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.0)]);
+    assert_eq!(actual, vec![Value::Number(-1.0, 0)]);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn testindexof3() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0)]);
+    assert_eq!(actual, vec![Value::Number(0.0, 0)]);
 }
 
 #[test]

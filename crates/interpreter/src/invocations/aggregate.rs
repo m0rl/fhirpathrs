@@ -69,7 +69,7 @@ pub fn any_false(base: &Value, context: InterpreterContext) -> InterpreterResult
 pub fn sum(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let items = base.to_vec();
     if items.is_empty() {
-        return Ok((Value::Number(0.0), context));
+        return Ok((Value::Number(0.0, 0), context));
     }
 
     let first_quantity = items
@@ -112,7 +112,9 @@ pub fn sum(base: &Value, context: InterpreterContext) -> InterpreterResult {
             let mut total = 0.0;
             for item in items {
                 match item {
-                    Value::Number(n) => total += n,
+                    Value::Number(n, _) => {
+                        total += n;
+                    }
                     Value::Null => {}
                     _ => {
                         return Err(InterpreterError::TypeMismatch(
@@ -121,7 +123,7 @@ pub fn sum(base: &Value, context: InterpreterContext) -> InterpreterResult {
                     }
                 }
             }
-            Ok((Value::Number(total), context))
+            Ok((Value::Number(total, Value::precision(total)), context))
         }
     }
 }
@@ -168,8 +170,10 @@ pub fn avg(base: &Value, context: InterpreterContext) -> InterpreterResult {
                     }
                 }
             }
-            if let Value::Quantity(v, ref u, t) = acc {
-                Ok((Value::Quantity(v / count as f64, u.clone(), t), context))
+            if let Value::Quantity(v, _, ref u, t) = acc {
+                let result = v / count as f64;
+                let p = Value::precision(result);
+                Ok((Value::Quantity(result, p, u.clone(), t), context))
             } else {
                 Ok((Value::Null, context))
             }
@@ -179,7 +183,7 @@ pub fn avg(base: &Value, context: InterpreterContext) -> InterpreterResult {
             let mut count = 0;
             for item in items {
                 match item {
-                    Value::Number(n) => {
+                    Value::Number(n, _) => {
                         total += n;
                         count += 1;
                     }
@@ -194,7 +198,9 @@ pub fn avg(base: &Value, context: InterpreterContext) -> InterpreterResult {
             if count == 0 {
                 return Ok((Value::Null, context));
             }
-            Ok((Value::Number(total / count as f64), context))
+            let result = total / count as f64;
+            let p = Value::precision(result);
+            Ok((Value::Number(result, p), context))
         }
     }
 }
@@ -243,10 +249,10 @@ pub fn min(base: &Value, context: InterpreterContext) -> InterpreterResult {
             Ok((min_q, context))
         }
         None => {
-            let mut min_val: Option<f64> = None;
+            let mut min_val: Option<(f64, u8)> = None;
             for item in items {
                 let n = match &item {
-                    Value::Number(n) => Some(*n),
+                    Value::Number(n, p) => Some((*n, *p)),
                     Value::Null => None,
                     _ => {
                         return Err(InterpreterError::TypeMismatch(
@@ -254,11 +260,13 @@ pub fn min(base: &Value, context: InterpreterContext) -> InterpreterResult {
                         ));
                     }
                 };
-                if let Some(n) = n {
-                    min_val = Some(min_val.map_or(n, |m| m.min(n)));
+                if let Some((n, p)) = n {
+                    min_val = Some(min_val.map_or((n, p), |(m, mp)| {
+                        if n < m { (n, p) } else { (m, mp) }
+                    }));
                 }
             }
-            Ok((min_val.map_or(Value::Null, Value::Number), context))
+            Ok((min_val.map_or(Value::Null, |(n, p)| Value::Number(n, p)), context))
         }
     }
 }
@@ -307,10 +315,10 @@ pub fn max(base: &Value, context: InterpreterContext) -> InterpreterResult {
             Ok((max_q, context))
         }
         None => {
-            let mut max_val: Option<f64> = None;
+            let mut max_val: Option<(f64, u8)> = None;
             for item in items {
                 let n = match &item {
-                    Value::Number(n) => Some(*n),
+                    Value::Number(n, p) => Some((*n, *p)),
                     Value::Null => None,
                     _ => {
                         return Err(InterpreterError::TypeMismatch(
@@ -318,11 +326,13 @@ pub fn max(base: &Value, context: InterpreterContext) -> InterpreterResult {
                         ));
                     }
                 };
-                if let Some(n) = n {
-                    max_val = Some(max_val.map_or(n, |m| m.max(n)));
+                if let Some((n, p)) = n {
+                    max_val = Some(max_val.map_or((n, p), |(m, mp)| {
+                        if n > m { (n, p) } else { (m, mp) }
+                    }));
                 }
             }
-            Ok((max_val.map_or(Value::Null, Value::Number), context))
+            Ok((max_val.map_or(Value::Null, |(n, p)| Value::Number(n, p)), context))
         }
     }
 }

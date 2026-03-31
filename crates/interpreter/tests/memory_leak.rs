@@ -47,7 +47,7 @@ fn no_leak_deep_collections() {
 #[test]
 fn no_leak_deep_objects() {
     assert_no_leak(|| {
-        let mut val = Value::Number(42.0);
+        let mut val = Value::Number(42.0, 0);
         for _ in 0..10_000 {
             val = Value::object(HashMap::from([("item".to_string(), val)]));
         }
@@ -82,7 +82,7 @@ fn no_leak_wide_collection_of_strings() {
 fn no_leak_wide_object() {
     assert_no_leak(|| {
         let map: HashMap<String, Value> = (0..1_000)
-            .map(|i| (format!("key_{i}"), Value::Number(i as f64)))
+            .map(|i| (format!("key_{i}"), Value::Number(i as f64, 0)))
             .collect();
         Value::object(map);
     });
@@ -107,9 +107,9 @@ fn no_leak_clone_drop_order() {
         let original = Value::collection(vec![
             Value::object(HashMap::from([
                 ("name".to_string(), Value::String("test".to_string())),
-                ("value".to_string(), Value::Number(42.0)),
+                ("value".to_string(), Value::Number(42.0, 0)),
             ])),
-            Value::Quantity(1.0, "mg".to_string(), None),
+            Value::Quantity(1.0, 0, "mg".to_string(), None),
         ]);
         let _clone = original.clone();
     });
@@ -120,7 +120,7 @@ fn no_leak_binary_tree() {
     assert_no_leak(|| {
         let depth = 15;
         let leaf_count = 1usize << depth;
-        let mut level: Vec<Value> = (0..leaf_count).map(|_| Value::Number(1.0)).collect();
+        let mut level: Vec<Value> = (0..leaf_count).map(|_| Value::Number(1.0, 0)).collect();
         for _ in 0..depth {
             let mut next = Vec::with_capacity(level.len() / 2);
             let mut iter = level.into_iter();
@@ -136,7 +136,7 @@ fn no_leak_binary_tree() {
 fn no_leak_quantities_in_collection() {
     assert_no_leak(|| {
         let items: Vec<Value> = (0..1_000)
-            .map(|i| Value::Quantity(i as f64, format!("unit_{i}"), None))
+            .map(|i| Value::Quantity(i as f64, 0, format!("unit_{i}"), None))
             .collect();
         Value::collection(items);
     });
@@ -168,7 +168,7 @@ fn no_leak_deep_shared_spine() {
     assert_no_leak(|| {
         let leaf = Value::collection(vec![
             Value::String("shared_leaf".to_string()),
-            Value::Number(99.0),
+            Value::Number(99.0, 0),
         ]);
         let mut val = leaf.clone();
         for _ in 0..5_000 {

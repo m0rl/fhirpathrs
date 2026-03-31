@@ -8,7 +8,7 @@ fn highboundarydecimaldefault() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5875_f64)]);
+    assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -19,7 +19,7 @@ fn highboundarydecimal1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.59_f64)]);
+    assert_eq!(actual, vec![Value::Number(1.59_f64, 2)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -30,7 +30,7 @@ fn highboundarydecimal2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5875_f64)]);
+    assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -52,7 +52,7 @@ fn highboundarydecimal4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.5865_f64)]);
+    assert_eq!(actual, vec![Value::Number(-1.5865_f64, 4)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -63,7 +63,7 @@ fn highboundarydecimal5() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.58_f64)]);
+    assert_eq!(actual, vec![Value::Number(-1.58_f64, 2)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -74,7 +74,7 @@ fn highboundarydecimal6() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.5865_f64)]);
+    assert_eq!(actual, vec![Value::Number(-1.5865_f64, 4)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -96,7 +96,7 @@ fn highboundarydecimal8() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5_f64)]);
+    assert_eq!(actual, vec![Value::Number(1.5_f64, 1)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -107,7 +107,7 @@ fn highboundarydecimal9() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(2.0_f64)]);
+    assert_eq!(actual, vec![Value::Number(2.0_f64, 0)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -118,7 +118,7 @@ fn highboundarydecimal10() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5_f64)]);
+    assert_eq!(actual, vec![Value::Number(1.5_f64, 1)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -129,7 +129,7 @@ fn highboundarydecimal11() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(12.59_f64)]);
+    assert_eq!(actual, vec![Value::Number(12.59_f64, 2)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -140,7 +140,7 @@ fn highboundarydecimal12() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(12.5005_f64)]);
+    assert_eq!(actual, vec![Value::Number(12.5005_f64, 4)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -151,7 +151,7 @@ fn highboundarydecimal13() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(120.5_f64)]);
+    assert_eq!(actual, vec![Value::Number(120.5_f64, 1)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -162,7 +162,7 @@ fn highboundarydecimal14() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-120.5_f64)]);
+    assert_eq!(actual, vec![Value::Number(-120.5_f64, 1)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -173,7 +173,7 @@ fn highboundarydecimal15() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0_f64)]);
+    assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -184,7 +184,7 @@ fn highboundarydecimal16() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0_f64)]);
+    assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -195,7 +195,7 @@ fn highboundarydecimal() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5875_f64)]);
+    assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
 }
 
 #[ignore] // not implemented: HighBoundary
@@ -206,7 +206,7 @@ fn highboundaryquantity() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Quantity(1.5875_f64, "m".to_string(), None)]);
+    assert_eq!(actual, vec![Value::Quantity(1.5875_f64, 4, "m".to_string(), None)]);
 }
 
 #[ignore] // not implemented: HighBoundary

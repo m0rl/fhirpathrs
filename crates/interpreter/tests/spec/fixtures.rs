@@ -60,7 +60,7 @@ thread_local! {
                     ])),
                 ])),
             ("description".to_string(), Value::String("Discussion on the results of your recent MRI".to_string())),
-            ("minutesDuration".to_string(), Value::Number(15.0)),
+            ("minutesDuration".to_string(), Value::Number(15.0, 0)),
             ("slot".to_string(), Value::collection(vec![
                     Value::object(HashMap::from([
                         ("reference".to_string(), Value::String("Slot/example".to_string())),
@@ -330,7 +330,7 @@ thread_local! {
             ("id".to_string(), Value::String("example".to_string())),
             ("supportingInfo".to_string(), Value::collection(vec![
                     Value::object(HashMap::from([
-                        ("sequence".to_string(), Value::Number(1.0)),
+                        ("sequence".to_string(), Value::Number(1.0, 0)),
                         ("category".to_string(), Value::object(HashMap::from([
                                 ("coding".to_string(), Value::collection(vec![
                                         Value::object(HashMap::from([
@@ -341,7 +341,7 @@ thread_local! {
                             ]))),
                     ])),
                     Value::object(HashMap::from([
-                        ("sequence".to_string(), Value::Number(2.0)),
+                        ("sequence".to_string(), Value::Number(2.0, 0)),
                         ("category".to_string(), Value::object(HashMap::from([
                                 ("coding".to_string(), Value::collection(vec![
                                         Value::object(HashMap::from([
@@ -354,15 +354,15 @@ thread_local! {
                 ])),
             ("item".to_string(), Value::collection(vec![
                     Value::object(HashMap::from([
-                        ("sequence".to_string(), Value::Number(1.0)),
+                        ("sequence".to_string(), Value::Number(1.0, 0)),
                         ("informationSequence".to_string(), Value::collection(vec![
-                                Value::Number(2.0),
+                                Value::Number(2.0, 0),
                             ])),
                     ])),
                     Value::object(HashMap::from([
-                        ("sequence".to_string(), Value::Number(2.0)),
+                        ("sequence".to_string(), Value::Number(2.0, 0)),
                         ("informationSequence".to_string(), Value::collection(vec![
-                                Value::Number(1.0),
+                                Value::Number(1.0, 0),
                             ])),
                     ])),
                 ])),
@@ -379,7 +379,7 @@ thread_local! {
                     Value::object(HashMap::from([
                         ("url".to_string(), Value::String("http://example.com/fhir/StructureDefinition/patient-age".to_string())),
                         ("valueAge".to_string(), Value::object(HashMap::from([
-                                ("value".to_string(), Value::Number(41.0)),
+                                ("value".to_string(), Value::Number(41.0, 0)),
                                 ("system".to_string(), Value::String("http://unitsofmeasure.org".to_string())),
                                 ("code".to_string(), Value::String("a".to_string())),
                             ]))),
@@ -434,7 +434,7 @@ thread_local! {
                 ]))),
             ("effectiveDateTime".to_string(), Value::from_date_str("2016-03-28").expect("date: 2016-03-28")),
             ("valueQuantity".to_string(), Value::object(HashMap::from([
-                    ("value".to_string(), Value::Number(185.0)),
+                    ("value".to_string(), Value::Number(185.0, 0)),
                     ("unit".to_string(), Value::String("lbs".to_string())),
                     ("system".to_string(), Value::String("http://unitsofmeasure.org".to_string())),
                     ("code".to_string(), Value::String("[lb_av]".to_string())),
@@ -452,7 +452,7 @@ thread_local! {
                     ])),
                     Value::object(HashMap::from([
                         ("name".to_string(), Value::String("integer".to_string())),
-                        ("valueInteger".to_string(), Value::Number(1.0)),
+                        ("valueInteger".to_string(), Value::Number(1.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("name".to_string(), Value::String("uuid".to_string())),
@@ -460,7 +460,7 @@ thread_local! {
                     ])),
                     Value::object(HashMap::from([
                         ("name".to_string(), Value::String("decimal".to_string())),
-                        ("valueDecimal".to_string(), Value::Number(1.0)),
+                        ("valueDecimal".to_string(), Value::Number(1.0, 0)),
                     ])),
                 ])),
         ]));
@@ -551,13 +551,13 @@ thread_local! {
                         ("system".to_string(), Value::String("phone".to_string())),
                         ("value".to_string(), Value::String("(03) 5555 6473".to_string())),
                         ("use".to_string(), Value::String("work".to_string())),
-                        ("rank".to_string(), Value::Number(1.0)),
+                        ("rank".to_string(), Value::Number(1.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("system".to_string(), Value::String("phone".to_string())),
                         ("value".to_string(), Value::String("(03) 3410 5613".to_string())),
                         ("use".to_string(), Value::String("mobile".to_string())),
-                        ("rank".to_string(), Value::Number(2.0)),
+                        ("rank".to_string(), Value::Number(2.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("system".to_string(), Value::String("phone".to_string())),
@@ -718,13 +718,13 @@ thread_local! {
                         ("system".to_string(), Value::String("phone".to_string())),
                         ("value".to_string(), Value::String("(03) 5555 6473".to_string())),
                         ("use".to_string(), Value::String("work".to_string())),
-                        ("rank".to_string(), Value::Number(1.0)),
+                        ("rank".to_string(), Value::Number(1.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("system".to_string(), Value::String("phone".to_string())),
                         ("value".to_string(), Value::String("(03) 3410 5613".to_string())),
                         ("use".to_string(), Value::String("mobile".to_string())),
-                        ("rank".to_string(), Value::Number(2.0)),
+                        ("rank".to_string(), Value::Number(2.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("system".to_string(), Value::String("phone".to_string())),
@@ -884,13 +884,13 @@ thread_local! {
                         ("system".to_string(), Value::String("phone".to_string())),
                         ("value".to_string(), Value::String("(03) 5555 6473".to_string())),
                         ("use".to_string(), Value::String("work".to_string())),
-                        ("rank".to_string(), Value::Number(1.0)),
+                        ("rank".to_string(), Value::Number(1.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("system".to_string(), Value::String("phone".to_string())),
                         ("value".to_string(), Value::String("(03) 3410 5613".to_string())),
                         ("use".to_string(), Value::String("mobile".to_string())),
-                        ("rank".to_string(), Value::Number(2.0)),
+                        ("rank".to_string(), Value::Number(2.0, 0)),
                     ])),
                     Value::object(HashMap::from([
                         ("system".to_string(), Value::String("phone".to_string())),
@@ -1198,8 +1198,8 @@ thread_local! {
                         ])),
                     ("identifier".to_string(), Value::String("urn:uuid:42316ff8-2714-4680-9980-f37a6d1a71bc".to_string())),
                     ("timestamp".to_string(), Value::from_datetime_str("2015-06-22T13:56:07Z").expect("datetime: 2015-06-22T13:56:07Z")),
-                    ("total".to_string(), Value::Number(8.0)),
-                    ("offset".to_string(), Value::Number(0.0)),
+                    ("total".to_string(), Value::Number(8.0, 0)),
+                    ("offset".to_string(), Value::Number(0.0, 0)),
                     ("parameter".to_string(), Value::collection(vec![
                             Value::object(HashMap::from([
                                 ("name".to_string(), Value::String("version".to_string())),

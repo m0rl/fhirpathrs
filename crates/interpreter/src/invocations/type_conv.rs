@@ -17,12 +17,12 @@ pub fn to_string(base: &Value, context: InterpreterContext) -> InterpreterResult
 #[allow(clippy::cast_precision_loss)]
 pub fn to_integer(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let value = match base {
-        Value::Number(n) => Value::Number(n.trunc()),
+        Value::Number(n, _) => Value::Number(n.trunc(), 0),
         Value::String(s) => match s.trim().parse::<i64>() {
-            Ok(i) => Value::Number(i as f64),
+            Ok(i) => Value::Number(i as f64, 0),
             Err(_) => Value::Null,
         },
-        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }),
+        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }, 0),
         _ => Value::Null,
     };
     Ok((value, context))
@@ -30,12 +30,12 @@ pub fn to_integer(base: &Value, context: InterpreterContext) -> InterpreterResul
 
 pub fn to_decimal(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let value = match base {
-        Value::Number(n) => Value::Number(*n),
+        Value::Number(n, p) => Value::Number(*n, *p),
         Value::String(s) => match s.trim().parse::<f64>() {
-            Ok(n) => Value::Number(n),
+            Ok(n) => Value::Number(n, Value::precision(n)),
             Err(_) => Value::Null,
         },
-        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }),
+        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }, 0),
         _ => Value::Null,
     };
     Ok((value, context))
@@ -49,7 +49,7 @@ pub fn to_boolean(base: &Value, context: InterpreterContext) -> InterpreterResul
             "false" | "f" | "no" | "n" | "0" | "0.0" => Value::Boolean(false),
             _ => Value::Null,
         },
-        Value::Number(n) => {
+        Value::Number(n, _) => {
             if *n == 1.0 {
                 Value::Boolean(true)
             } else if *n == 0.0 {
@@ -65,7 +65,7 @@ pub fn to_boolean(base: &Value, context: InterpreterContext) -> InterpreterResul
 
 pub fn converts_to_integer(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Number(n) => n.fract() == 0.0,
+        Value::Number(_, p) => *p == 0,
         Value::String(s) => s.trim().parse::<i64>().is_ok(),
         Value::Boolean(_) => true,
         _ => false,
@@ -75,7 +75,7 @@ pub fn converts_to_integer(base: &Value, context: InterpreterContext) -> Interpr
 
 pub fn converts_to_decimal(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Number(_) | Value::Boolean(_) => true,
+        Value::Number(..) | Value::Boolean(_) => true,
         Value::String(s) => s.trim().parse::<f64>().is_ok(),
         _ => false,
     };
@@ -91,7 +91,7 @@ pub fn converts_to_boolean(base: &Value, context: InterpreterContext) -> Interpr
                 "true" | "t" | "yes" | "y" | "1" | "1.0" | "false" | "f" | "no" | "n" | "0" | "0.0"
             )
         }
-        Value::Number(n) => *n == 1.0 || *n == 0.0,
+        Value::Number(n, _) => *n == 1.0 || *n == 0.0,
         _ => false,
     };
     Ok((Value::Boolean(result), context))
@@ -130,7 +130,7 @@ pub fn converts_to_time(base: &Value, context: InterpreterContext) -> Interprete
 
 pub fn converts_to_quantity(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Quantity(..) | Value::Number(_) => true,
+        Value::Quantity(..) | Value::Number(..) => true,
         Value::String(s) => {
             matches!(
                 parse_quantity_string(s, &context),
@@ -180,8 +180,8 @@ pub fn to_time(base: &Value, context: InterpreterContext) -> InterpreterResult {
 
 pub fn to_quantity(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
     let value = match base {
-        Value::Quantity(v, u, t) => Value::Quantity(*v, u.clone(), *t),
-        Value::Number(n) => {
+        Value::Quantity(v, p, u, t) => Value::Quantity(*v, *p, u.clone(), *t),
+        Value::Number(n, p) => {
             let unit = args
                 .first()
                 .and_then(|v| match v {
@@ -189,7 +189,7 @@ pub fn to_quantity(base: &Value, args: &[Value], context: InterpreterContext) ->
                     _ => None,
                 })
                 .unwrap_or_else(|| "1".to_string());
-            Value::Quantity(*n, unit, None)
+            Value::Quantity(*n, *p, unit, None)
         }
         Value::String(s) => {
             let (val, _) = parse_quantity_string(s, &context)?;
@@ -207,20 +207,20 @@ pub fn to_quantity(base: &Value, args: &[Value], context: InterpreterContext) ->
 )]
 pub fn to_long(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let value = match base {
-        Value::Number(n) if n.fract() == 0.0 => {
+        Value::Number(n, p) if *p == 0 => {
             let i = *n as i64;
             if (i as f64 - *n).abs() < f64::EPSILON {
-                Value::Number(*n)
+                Value::Number(*n, 0)
             } else {
                 Value::collection(vec![])
             }
         }
-        Value::Number(_) => Value::collection(vec![]),
+        Value::Number(..) => Value::collection(vec![]),
         Value::String(s) => match s.trim().parse::<i64>() {
-            Ok(i) => Value::Number(i as f64),
+            Ok(i) => Value::Number(i as f64, 0),
             Err(_) => Value::collection(vec![]),
         },
-        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }),
+        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }, 0),
         _ => Value::collection(vec![]),
     };
     Ok((value, context))
@@ -228,7 +228,7 @@ pub fn to_long(base: &Value, context: InterpreterContext) -> InterpreterResult {
 
 pub fn converts_to_long(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Number(n) => n.fract() == 0.0,
+        Value::Number(_, p) => *p == 0,
         Value::String(s) => s.trim().parse::<i64>().is_ok(),
         Value::Boolean(_) => true,
         _ => false,
@@ -257,7 +257,7 @@ fn parse_quantity_string(s: &str, context: &InterpreterContext) -> InterpreterRe
             .or_else(|| caps.get(3))
             .map_or_else(|| "1".to_string(), |m| m.as_str().to_string());
 
-        Ok((Value::Quantity(value, unit, None), context.clone()))
+        Ok((Value::Quantity(value, Value::precision(value), unit, None), context.clone()))
     } else {
         Ok((Value::collection(vec![]), context.clone()))
     }

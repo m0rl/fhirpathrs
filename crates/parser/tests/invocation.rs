@@ -20,8 +20,8 @@ fn test_invocation_expressions() {
         Ok(Expression::Term(Term::Invocation(Invocation::Function(
             "foo".to_string(),
             vec![
-                Expression::Term(Term::Literal(Literal::Number(1.0))),
-                Expression::Term(Term::Literal(Literal::Number(2.0)))
+                Expression::Term(Term::Literal(Literal::Number(1.0, 0))),
+                Expression::Term(Term::Literal(Literal::Number(2.0, 0)))
             ]
         ))))
     );

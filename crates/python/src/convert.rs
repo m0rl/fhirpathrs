@@ -24,7 +24,7 @@ pub fn py_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
                     results.push(Value::Boolean(b.is_true()));
                 } else if obj.is_instance_of::<PyInt>() || obj.is_instance_of::<PyFloat>() {
                     let n: f64 = obj.extract()?;
-                    results.push(Value::Number(n));
+                    results.push(Value::Number(n, 0));
                 } else if let Ok(s) = obj.cast::<PyString>() {
                     let rust_str = s.to_str().map_err(|e| {
                         PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())
@@ -116,7 +116,7 @@ pub fn value_to_py(py: Python<'_>, value: &Value) -> PyResult<Py<PyAny>> {
                 Value::String(s) => {
                     results.push(s.as_str().into_pyobject(py)?.into_any().unbind());
                 }
-                Value::Number(n) => {
+                Value::Number(n, _) => {
                     if n.fract() == 0.0 {
                         #[allow(clippy::cast_possible_truncation)]
                         let i = *n as i64;
@@ -137,7 +137,7 @@ pub fn value_to_py(py: Python<'_>, value: &Value) -> PyResult<Py<PyAny>> {
                     let s = format_time(*t, *p);
                     results.push(s.as_str().into_pyobject(py)?.into_any().unbind());
                 }
-                Value::Quantity(v, u, _) => {
+                Value::Quantity(v, _, u, _) => {
                     let dict = PyDict::new(py);
                     dict.set_item("value", v)?;
                     dict.set_item("unit", u)?;

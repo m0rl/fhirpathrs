@@ -52,8 +52,8 @@ pub(crate) fn interpret_polarity(
     let result = match op {
         PolarityOp::Plus => value.clone(),
         PolarityOp::Minus => match value {
-            Value::Number(n) => Value::Number(-n),
-            Value::Quantity(v, u, t) => Value::Quantity(-v, u.clone(), *t),
+            Value::Number(n, p) => Value::Number(-n, *p),
+            Value::Quantity(v, qp, u, t) => Value::Quantity(-v, *qp, u.clone(), *t),
             _ => {
                 return Err(InterpreterError::TypeMismatch(
                     "Cannot apply unary minus to this type".to_string(),
@@ -76,11 +76,13 @@ pub(crate) fn interpret_multiplicative(
 
     let value = match op {
         MultiplicativeOp::Multiply => {
-            if let (Value::Quantity(v, u, t), Value::Number(n)) = (left, right) {
-                return Ok((Value::Quantity(v * n, u.clone(), *t), context));
+            if let (Value::Quantity(v, _, u, t), Value::Number(n, _)) = (left, right) {
+                let result = v * n;
+                return Ok((Value::Quantity(result, Value::precision(result), u.clone(), *t), context));
             }
-            if let (Value::Number(n), Value::Quantity(v, u, t)) = (left, right) {
-                return Ok((Value::Quantity(n * v, u.clone(), *t), context));
+            if let (Value::Number(n, _), Value::Quantity(v, _, u, t)) = (left, right) {
+                let result = n * v;
+                return Ok((Value::Quantity(result, Value::precision(result), u.clone(), *t), context));
             }
             let left_num = left.to_f64().ok_or_else(|| {
                 InterpreterError::TypeMismatch("Left operand must be a number".to_string())
@@ -88,21 +90,23 @@ pub(crate) fn interpret_multiplicative(
             let right_num = right.to_f64().ok_or_else(|| {
                 InterpreterError::TypeMismatch("Right operand must be a number".to_string())
             })?;
-            Value::Number(left_num * right_num)
+            let result = left_num * right_num;
+            Value::Number(result, Value::precision(result))
         }
         MultiplicativeOp::Divide => {
-            if let (Value::Quantity(v, u, t), Value::Number(n)) = (left, right) {
+            if let (Value::Quantity(v, _, u, t), Value::Number(n, _)) = (left, right) {
                 if *n == 0.0 {
                     return Ok((Value::collection(vec![]), context));
                 }
-                return Ok((Value::Quantity(v / n, u.clone(), *t), context));
+                let result = v / n;
+                return Ok((Value::Quantity(result, Value::precision(result), u.clone(), *t), context));
             }
-            if let (Value::Quantity(..), Value::Quantity(v2, ..)) = (left, right) {
+            if let (Value::Quantity(..), Value::Quantity(v2, _, _, _)) = (left, right) {
                 if *v2 == 0.0 {
                     return Ok((Value::collection(vec![]), context));
                 }
                 return match quantity_div(left, right) {
-                    Some(ratio) => Ok((Value::Number(ratio), context)),
+                    Some(ratio) => Ok((Value::Number(ratio, Value::precision(ratio)), context)),
                     None => Ok((Value::collection(vec![]), context)),
                 };
             }
@@ -115,7 +119,8 @@ pub(crate) fn interpret_multiplicative(
             if right_num == 0.0 {
                 return Ok((Value::collection(vec![]), context));
             }
-            Value::Number(left_num / right_num)
+            let result = left_num / right_num;
+            Value::Number(result, Value::precision(result))
         }
         MultiplicativeOp::Div => {
             let left_num = left.to_f64().ok_or_else(|| {
@@ -127,7 +132,7 @@ pub(crate) fn interpret_multiplicative(
             if right_num == 0.0 {
                 return Ok((Value::collection(vec![]), context));
             }
-            Value::Number((left_num / right_num).trunc())
+            Value::Number((left_num / right_num).trunc(), 0)
         }
         MultiplicativeOp::Mod => {
             let left_num = left.to_f64().ok_or_else(|| {
@@ -139,7 +144,8 @@ pub(crate) fn interpret_multiplicative(
             if right_num == 0.0 {
                 return Ok((Value::collection(vec![]), context));
             }
-            Value::Number(left_num % right_num)
+            let result = left_num % right_num;
+            Value::Number(result, Value::precision(result))
         }
     };
     Ok((value, context))
@@ -231,7 +237,8 @@ pub(crate) fn interpret_additive(
                 };
             }
             if let (Some(l), Some(r)) = (left.to_f64(), right.to_f64()) {
-                return Ok((Value::Number(l + r), context));
+                let result = l + r;
+                return Ok((Value::Number(result, Value::precision(result)), context));
             }
             if let (Ok(l), Ok(r)) = (left.to_str(), right.to_str()) {
                 return Ok((Value::String(format!("{}{}", l, r)), context));
@@ -311,7 +318,8 @@ pub(crate) fn interpret_additive(
                 };
             }
             if let (Some(l), Some(r)) = (left.to_f64(), right.to_f64()) {
-                return Ok((Value::Number(l - r), context));
+                let result = l - r;
+                return Ok((Value::Number(result, Value::precision(result)), context));
             }
             return Err(InterpreterError::TypeMismatch(
                 "Cannot subtract these types".to_string(),
@@ -499,12 +507,12 @@ pub(crate) fn interpret_membership(
             if left.is_null_or_empty() {
                 return Ok((Value::collection(vec![]), context));
             }
-            if let Value::Collection(items) = left {
-                if items.len() > 1 {
-                    return Err(InterpreterError::InvalidOperation(
-                        "in operator requires a singleton on the left side".to_string(),
-                    ));
-                }
+            if let Value::Collection(items) = left
+                && items.len() > 1
+            {
+                return Err(InterpreterError::InvalidOperation(
+                    "in operator requires a singleton on the left side".to_string(),
+                ));
             }
             match right {
                 Value::Collection(items) => items.iter().any(|item| left.equals(item)),
@@ -515,12 +523,12 @@ pub(crate) fn interpret_membership(
             if right.is_null_or_empty() {
                 return Ok((Value::collection(vec![]), context));
             }
-            if let Value::Collection(items) = right {
-                if items.len() > 1 {
-                    return Err(InterpreterError::InvalidOperation(
-                        "contains operator requires a singleton on the right side".to_string(),
-                    ));
-                }
+            if let Value::Collection(items) = right
+                && items.len() > 1
+            {
+                return Err(InterpreterError::InvalidOperation(
+                    "contains operator requires a singleton on the right side".to_string(),
+                ));
             }
             match left {
                 Value::Collection(items) => items.iter().any(|item| item.equals(right)),
