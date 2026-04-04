@@ -1,6 +1,5 @@
 use super::*;
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimaldefault() {
     let data = Value::object(HashMap::new());
@@ -11,7 +10,6 @@ fn highboundarydecimaldefault() {
     assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal1() {
     let data = Value::object(HashMap::new());
@@ -22,7 +20,6 @@ fn highboundarydecimal1() {
     assert_eq!(actual, vec![Value::Number(1.59_f64, 2)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal2() {
     let data = Value::object(HashMap::new());
@@ -33,7 +30,6 @@ fn highboundarydecimal2() {
     assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal3() {
     let data = Value::object(HashMap::new());
@@ -44,7 +40,6 @@ fn highboundarydecimal3() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal4() {
     let data = Value::object(HashMap::new());
@@ -55,7 +50,6 @@ fn highboundarydecimal4() {
     assert_eq!(actual, vec![Value::Number(-1.5865_f64, 4)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal5() {
     let data = Value::object(HashMap::new());
@@ -66,7 +60,6 @@ fn highboundarydecimal5() {
     assert_eq!(actual, vec![Value::Number(-1.58_f64, 2)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal6() {
     let data = Value::object(HashMap::new());
@@ -77,7 +70,6 @@ fn highboundarydecimal6() {
     assert_eq!(actual, vec![Value::Number(-1.5865_f64, 4)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal7() {
     let data = Value::object(HashMap::new());
@@ -88,7 +80,6 @@ fn highboundarydecimal7() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal8() {
     let data = Value::object(HashMap::new());
@@ -99,7 +90,6 @@ fn highboundarydecimal8() {
     assert_eq!(actual, vec![Value::Number(1.5_f64, 1)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal9() {
     let data = Value::object(HashMap::new());
@@ -110,7 +100,6 @@ fn highboundarydecimal9() {
     assert_eq!(actual, vec![Value::Number(2.0_f64, 0)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal10() {
     let data = Value::object(HashMap::new());
@@ -121,7 +110,6 @@ fn highboundarydecimal10() {
     assert_eq!(actual, vec![Value::Number(1.5_f64, 1)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal11() {
     let data = Value::object(HashMap::new());
@@ -132,7 +120,6 @@ fn highboundarydecimal11() {
     assert_eq!(actual, vec![Value::Number(12.59_f64, 2)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal12() {
     let data = Value::object(HashMap::new());
@@ -143,7 +130,6 @@ fn highboundarydecimal12() {
     assert_eq!(actual, vec![Value::Number(12.5005_f64, 4)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal13() {
     let data = Value::object(HashMap::new());
@@ -154,7 +140,6 @@ fn highboundarydecimal13() {
     assert_eq!(actual, vec![Value::Number(120.5_f64, 1)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal14() {
     let data = Value::object(HashMap::new());
@@ -165,7 +150,6 @@ fn highboundarydecimal14() {
     assert_eq!(actual, vec![Value::Number(-120.5_f64, 1)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal15() {
     let data = Value::object(HashMap::new());
@@ -176,7 +160,6 @@ fn highboundarydecimal15() {
     assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal16() {
     let data = Value::object(HashMap::new());
@@ -187,7 +170,6 @@ fn highboundarydecimal16() {
     assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundarydecimal() {
     let data = Value::object(HashMap::new());
@@ -198,7 +180,6 @@ fn highboundarydecimal() {
     assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
 }
 
-#[ignore] // not implemented: HighBoundary
 #[test]
 fn highboundaryquantity() {
     let data = Value::object(HashMap::new());
@@ -209,7 +190,7 @@ fn highboundaryquantity() {
     assert_eq!(actual, vec![Value::Quantity(1.5875_f64, 4, "m".to_string(), None)]);
 }
 
-#[ignore] // not implemented: HighBoundary
+#[ignore] // date boundary with precision arg not implemented
 #[test]
 fn highboundarydatemonth() {
     let data = Value::object(HashMap::new());
@@ -220,7 +201,7 @@ fn highboundarydatemonth() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-12").expect("datetime")]);
 }
 
-#[ignore] // not implemented: HighBoundary
+#[ignore] // dateTime boundary with timezone injection not implemented
 #[test]
 fn highboundarydatetimemillisecond1() {
     let data = Value::object(HashMap::new());
@@ -241,7 +222,7 @@ fn highboundarydatetimemillisecond2() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:05:59.999-05:00").expect("datetime")]);
 }
 
-#[ignore] // not implemented: HighBoundary
+#[ignore] // dateTime boundary with timezone injection not implemented
 #[test]
 fn highboundarydatetimemillisecond3() {
     let data = Value::object(HashMap::new());

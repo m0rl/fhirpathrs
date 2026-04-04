@@ -93,8 +93,43 @@ pub fn precision(base: &Value, context: InterpreterContext) -> InterpreterResult
     Ok((result, context))
 }
 
-pub fn low_boundary(base: &Value, context: InterpreterContext) -> InterpreterResult {
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+pub fn low_boundary(
+    base: &Value,
+    args: &[Value],
+    context: InterpreterContext,
+) -> InterpreterResult {
     let result = match base {
+        Value::Number(n, vp) | Value::Quantity(n, vp, ..) => {
+            let precision = if args.is_empty() {
+                *vp
+            } else {
+                let na = args[0].to_f64().ok_or_else(|| {
+                    InterpreterError::TypeMismatch(
+                        "boundary precision must be a number".to_string(),
+                    )
+                })?;
+                let i = na as i32;
+                if !(0..=10).contains(&i) {
+                    return Ok((Value::collection(vec![]), context));
+                }
+                i as u8
+            };
+            let result = if !args.is_empty() && precision <= *vp {
+                let half = 0.5 * 10.0_f64.powi(-i32::from(precision));
+                let boundary = *n - half;
+                let scale = 10.0_f64.powi(i32::from(precision));
+                (boundary * scale).trunc() / scale
+            } else {
+                *n - 0.5 * 10.0_f64.powi(-i32::from(*vp))
+            };
+            match base {
+                Value::Quantity(_, _, u, t) => {
+                    Value::Quantity(result, Value::precision(result), u.clone(), *t)
+                }
+                _ => Value::Number(result, Value::precision(result)),
+            }
+        }
         Value::Date(d, p) => {
             let date = match p {
                 DatePrecision::Year => NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap_or(*d),
@@ -159,14 +194,52 @@ pub fn low_boundary(base: &Value, context: InterpreterContext) -> InterpreterRes
             };
             Value::Time(low, TimePrecision::Millisecond)
         }
-        Value::Number(n, p) => Value::Number(*n, *p),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
 }
 
-pub fn high_boundary(base: &Value, context: InterpreterContext) -> InterpreterResult {
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+pub fn high_boundary(
+    base: &Value,
+    args: &[Value],
+    context: InterpreterContext,
+) -> InterpreterResult {
     let result = match base {
+        Value::Number(n, vp) | Value::Quantity(n, vp, ..) => {
+            let precision = if args.is_empty() {
+                *vp
+            } else {
+                let na = args[0].to_f64().ok_or_else(|| {
+                    InterpreterError::TypeMismatch(
+                        "boundary precision must be a number".to_string(),
+                    )
+                })?;
+                let i = na as i32;
+                if !(0..=10).contains(&i) {
+                    return Ok((Value::collection(vec![]), context));
+                }
+                i as u8
+            };
+            let result = if !args.is_empty() && precision <= *vp {
+                let scale = 10.0_f64.powi(i32::from(precision));
+                let scaled = *n * scale;
+                if (scaled - scaled.round()).abs() < 1e-10 {
+                    scaled.round() / scale + 10.0_f64.powi(-i32::from(precision))
+                } else {
+                    let half = 0.5 * 10.0_f64.powi(-i32::from(precision));
+                    ((n + half) * scale).trunc() / scale
+                }
+            } else {
+                *n + 0.5 * 10.0_f64.powi(-i32::from(*vp))
+            };
+            match base {
+                Value::Quantity(_, _, u, t) => {
+                    Value::Quantity(result, Value::precision(result), u.clone(), *t)
+                }
+                _ => Value::Number(result, Value::precision(result)),
+            }
+        }
         Value::Date(d, p) => {
             let date = match p {
                 DatePrecision::Year => NaiveDate::from_ymd_opt(d.year(), 12, 31).unwrap_or(*d),
@@ -230,7 +303,6 @@ pub fn high_boundary(base: &Value, context: InterpreterContext) -> InterpreterRe
             };
             Value::Time(high, TimePrecision::Millisecond)
         }
-        Value::Number(n, p) => Value::Number(*n, *p),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -314,9 +386,7 @@ pub fn second(base: &Value, context: InterpreterContext) -> InterpreterResult {
             | DateTimePrecision::Minute,
             _,
         )
-        | Value::Time(_, TimePrecision::Hour | TimePrecision::Minute) => {
-            Value::collection(vec![])
-        }
+        | Value::Time(_, TimePrecision::Hour | TimePrecision::Minute) => Value::collection(vec![]),
         Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().second()), 0),
         Value::Time(t, _) => Value::Number(f64::from(t.second()), 0),
         _ => Value::collection(vec![]),

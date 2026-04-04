@@ -10,7 +10,7 @@ fn testperiodinvariantold() {
     assert_eq!(actual, vec![Value::Boolean(false)]);
 }
 
-#[ignore] // lowBoundary/highBoundary not implemented
+#[ignore] // lowBoundary/highBoundary for dates not fully implemented
 #[test]
 fn testperiodinvariantnew() {
     let data = fixtures::PATIENT_EXAMPLE_PERIOD.with(Value::clone);
