@@ -230,7 +230,6 @@ fn lowboundaryquantity() {
     assert_eq!(actual, vec![Value::Quantity(1.5865_f64, 8, "cm".to_string(), None)]);
 }
 
-#[ignore] // date boundary with precision arg not implemented
 #[test]
 fn lowboundarydatemonth() {
     let data = Value::object(HashMap::new());
@@ -241,7 +240,6 @@ fn lowboundarydatemonth() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01").expect("datetime")]);
 }
 
-#[ignore] // dateTime boundary with timezone injection not implemented
 #[test]
 fn lowboundarydatetimemillisecond1() {
     let data = Value::object(HashMap::new());
@@ -262,7 +260,6 @@ fn lowboundarydatetimemillisecond2() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:05:00.000+08:00").expect("datetime")]);
 }
 
-#[ignore] // dateTime boundary with precision arg not implemented
 #[test]
 fn lowboundarydatetimemillisecond3() {
     let data = Value::object(HashMap::new());

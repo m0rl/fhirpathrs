@@ -1,5 +1,5 @@
 use crate::Value;
-use chrono::{Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta};
+use chrono::{Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, Timelike};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DatePrecision {
@@ -26,6 +26,94 @@ impl DateTimePrecision {
                 (self, other),
                 (Self::Second, Self::Millisecond) | (Self::Millisecond, Self::Second)
             )
+    }
+
+    pub fn trunc(self, dt: NaiveDateTime) -> NaiveDateTime {
+        match self {
+            Self::Year => NaiveDateTime::new(
+                NaiveDate::from_ymd_opt(dt.date().year(), 1, 1).unwrap_or(dt.date()),
+                NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap_or_default(),
+            ),
+            Self::Month => NaiveDateTime::new(
+                NaiveDate::from_ymd_opt(dt.date().year(), dt.date().month(), 1)
+                    .unwrap_or(dt.date()),
+                NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap_or_default(),
+            ),
+            Self::Day => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap_or_default(),
+            ),
+            Self::Hour => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(dt.time().hour(), 0, 0, 0).unwrap_or_default(),
+            ),
+            Self::Minute => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(dt.time().hour(), dt.time().minute(), 0, 0)
+                    .unwrap_or_default(),
+            ),
+            Self::Second => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(
+                    dt.time().hour(),
+                    dt.time().minute(),
+                    dt.time().second(),
+                    0,
+                )
+                .unwrap_or_default(),
+            ),
+            Self::Millisecond => dt,
+        }
+    }
+
+    pub fn ceil(self, dt: NaiveDateTime) -> NaiveDateTime {
+        match self {
+            Self::Year => NaiveDateTime::new(
+                NaiveDate::from_ymd_opt(dt.date().year(), 12, 31).unwrap_or(dt.date()),
+                NaiveTime::from_hms_milli_opt(23, 59, 59, 999).unwrap_or_default(),
+            ),
+            Self::Month => NaiveDateTime::new(
+                last_day_of_month(dt.date().year(), dt.date().month()),
+                NaiveTime::from_hms_milli_opt(23, 59, 59, 999).unwrap_or_default(),
+            ),
+            Self::Day => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(23, 59, 59, 999).unwrap_or_default(),
+            ),
+            Self::Hour => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(dt.time().hour(), 59, 59, 999).unwrap_or_default(),
+            ),
+            Self::Minute => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(dt.time().hour(), dt.time().minute(), 59, 999)
+                    .unwrap_or_default(),
+            ),
+            Self::Second => NaiveDateTime::new(
+                dt.date(),
+                NaiveTime::from_hms_milli_opt(
+                    dt.time().hour(),
+                    dt.time().minute(),
+                    dt.time().second(),
+                    999,
+                )
+                .unwrap_or_default(),
+            ),
+            Self::Millisecond => dt,
+        }
+    }
+
+    pub fn from_ord(n: i32) -> Option<Self> {
+        match n {
+            4 => Some(Self::Year),
+            6 => Some(Self::Month),
+            8 => Some(Self::Day),
+            10 => Some(Self::Hour),
+            12 => Some(Self::Minute),
+            14 => Some(Self::Second),
+            17 => Some(Self::Millisecond),
+            _ => None,
+        }
     }
 }
 
@@ -221,7 +309,9 @@ pub fn calendar_duration_datetime(
 pub fn calendar_duration_time(t1: NaiveTime, precision: TimePrecision, t2: NaiveTime) -> Value {
     let diff = t2 - t1;
     match precision {
-        TimePrecision::Hour => Value::Quantity(diff.num_hours() as f64, 0, "hour".to_string(), None),
+        TimePrecision::Hour => {
+            Value::Quantity(diff.num_hours() as f64, 0, "hour".to_string(), None)
+        }
         TimePrecision::Minute => {
             Value::Quantity(diff.num_minutes() as f64, 0, "minute".to_string(), None)
         }
@@ -311,5 +401,120 @@ pub fn last_day_of_month(year: i32, month: u32) -> NaiveDate {
         NaiveDate::from_ymd_opt(year, month + 1, 1)
             .and_then(|d| d.pred_opt())
             .unwrap_or_default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dt(y: i32, mo: u32, d: u32, h: u32, mi: u32, s: u32, ms: u32) -> NaiveDateTime {
+        NaiveDateTime::new(
+            NaiveDate::from_ymd_opt(y, mo, d).unwrap(),
+            NaiveTime::from_hms_milli_opt(h, mi, s, ms).unwrap(),
+        )
+    }
+
+    #[test]
+    fn trunc_year() {
+        assert_eq!(
+            DateTimePrecision::Year.trunc(dt(2014, 6, 15, 10, 30, 45, 123)),
+            dt(2014, 1, 1, 0, 0, 0, 0),
+        );
+    }
+
+    #[test]
+    fn trunc_month() {
+        assert_eq!(
+            DateTimePrecision::Month.trunc(dt(2014, 6, 15, 10, 30, 45, 123)),
+            dt(2014, 6, 1, 0, 0, 0, 0),
+        );
+    }
+
+    #[test]
+    fn trunc_day() {
+        assert_eq!(
+            DateTimePrecision::Day.trunc(dt(2014, 6, 15, 10, 30, 45, 123)),
+            dt(2014, 6, 15, 0, 0, 0, 0),
+        );
+    }
+
+    #[test]
+    fn trunc_minute() {
+        assert_eq!(
+            DateTimePrecision::Minute.trunc(dt(2014, 6, 15, 10, 30, 45, 123)),
+            dt(2014, 6, 15, 10, 30, 0, 0),
+        );
+    }
+
+    #[test]
+    fn trunc_millisecond_is_identity() {
+        let original = dt(2014, 6, 15, 10, 30, 45, 123);
+        assert_eq!(DateTimePrecision::Millisecond.trunc(original), original);
+    }
+
+    #[test]
+    fn ceil_year() {
+        assert_eq!(
+            DateTimePrecision::Year.ceil(dt(2014, 6, 15, 10, 30, 45, 123)),
+            dt(2014, 12, 31, 23, 59, 59, 999),
+        );
+    }
+
+    #[test]
+    fn ceil_month() {
+        assert_eq!(
+            DateTimePrecision::Month.ceil(dt(2014, 2, 10, 8, 0, 0, 0)),
+            dt(2014, 2, 28, 23, 59, 59, 999),
+        );
+    }
+
+    #[test]
+    fn ceil_month_leap_year() {
+        assert_eq!(
+            DateTimePrecision::Month.ceil(dt(2024, 2, 10, 8, 0, 0, 0)),
+            dt(2024, 2, 29, 23, 59, 59, 999),
+        );
+    }
+
+    #[test]
+    fn ceil_day() {
+        assert_eq!(
+            DateTimePrecision::Day.ceil(dt(2014, 6, 15, 10, 30, 0, 0)),
+            dt(2014, 6, 15, 23, 59, 59, 999),
+        );
+    }
+
+    #[test]
+    fn ceil_minute() {
+        assert_eq!(
+            DateTimePrecision::Minute.ceil(dt(2014, 6, 15, 10, 30, 45, 123)),
+            dt(2014, 6, 15, 10, 30, 59, 999),
+        );
+    }
+
+    #[test]
+    fn ceil_millisecond_is_identity() {
+        let original = dt(2014, 6, 15, 10, 30, 45, 123);
+        assert_eq!(DateTimePrecision::Millisecond.ceil(original), original);
+    }
+
+    #[test]
+    fn from_ord_valid() {
+        assert_eq!(DateTimePrecision::from_ord(4), Some(DateTimePrecision::Year));
+        assert_eq!(DateTimePrecision::from_ord(6), Some(DateTimePrecision::Month));
+        assert_eq!(DateTimePrecision::from_ord(8), Some(DateTimePrecision::Day));
+        assert_eq!(DateTimePrecision::from_ord(10), Some(DateTimePrecision::Hour));
+        assert_eq!(DateTimePrecision::from_ord(12), Some(DateTimePrecision::Minute));
+        assert_eq!(DateTimePrecision::from_ord(14), Some(DateTimePrecision::Second));
+        assert_eq!(DateTimePrecision::from_ord(17), Some(DateTimePrecision::Millisecond));
+    }
+
+    #[test]
+    fn from_ord_invalid() {
+        assert_eq!(DateTimePrecision::from_ord(0), None);
+        assert_eq!(DateTimePrecision::from_ord(5), None);
+        assert_eq!(DateTimePrecision::from_ord(18), None);
+        assert_eq!(DateTimePrecision::from_ord(-1), None);
     }
 }

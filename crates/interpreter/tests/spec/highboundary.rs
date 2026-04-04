@@ -190,7 +190,6 @@ fn highboundaryquantity() {
     assert_eq!(actual, vec![Value::Quantity(1.5875_f64, 8, "m".to_string(), None)]);
 }
 
-#[ignore] // date boundary with precision arg not implemented
 #[test]
 fn highboundarydatemonth() {
     let data = Value::object(HashMap::new());
@@ -201,7 +200,6 @@ fn highboundarydatemonth() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-12").expect("datetime")]);
 }
 
-#[ignore] // dateTime boundary with timezone injection not implemented
 #[test]
 fn highboundarydatetimemillisecond1() {
     let data = Value::object(HashMap::new());
@@ -222,7 +220,6 @@ fn highboundarydatetimemillisecond2() {
     assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:05:59.999-05:00").expect("datetime")]);
 }
 
-#[ignore] // dateTime boundary with timezone injection not implemented
 #[test]
 fn highboundarydatetimemillisecond3() {
     let data = Value::object(HashMap::new());

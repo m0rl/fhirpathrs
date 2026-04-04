@@ -3,9 +3,9 @@ use crate::datetime;
 use crate::datetime::{DatePrecision, DateTimePrecision, TimePrecision};
 use crate::error::InterpreterError;
 use crate::units::quantity_cmp_units;
-use crate::value::{Value, MAX_DECIMAL_PRECISION};
+use crate::value::{MAX_DECIMAL_PRECISION, Value};
 use crate::{InterpreterResult, QuantityType};
-use chrono::{Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use chrono::{Datelike, FixedOffset, NaiveDate, NaiveTime, Timelike};
 use std::collections::HashMap;
 
 pub fn now(_base: &Value, context: InterpreterContext) -> InterpreterResult {
@@ -124,13 +124,24 @@ pub fn low_boundary(
                 *n - 0.5 * 10.0_f64.powi(-i32::from(*vp))
             };
             match base {
-                Value::Quantity(_, _, u, t) => {
-                    Value::Quantity(result, precision, u.clone(), *t)
-                }
+                Value::Quantity(_, _, u, t) => Value::Quantity(result, precision, u.clone(), *t),
                 _ => Value::Number(result, precision),
             }
         }
         Value::Date(d, p) => {
+            let target = if args.is_empty() {
+                DateTimePrecision::Millisecond
+            } else {
+                match DateTimePrecision::from_ord(args[0].to_f64().ok_or_else(|| {
+                    InterpreterError::TypeMismatch(
+                        "boundary precision must be a number".to_string(),
+                    )
+                })? as i32)
+                {
+                    Some(v) => v,
+                    None => return Ok((Value::collection(vec![]), context)),
+                }
+            };
             let date = match p {
                 DatePrecision::Year => NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap_or(*d),
                 DatePrecision::Month => {
@@ -139,45 +150,30 @@ pub fn low_boundary(
                 DatePrecision::Day => *d,
             };
             let dt = date.and_hms_milli_opt(0, 0, 0, 0).unwrap_or_default();
-            Value::DateTime(dt, DateTimePrecision::Millisecond, None)
+            Value::DateTime(target.trunc(dt), target, None)
         }
         Value::DateTime(dt, p, tz) => {
-            let low = match p {
-                DateTimePrecision::Year => NaiveDateTime::new(
-                    NaiveDate::from_ymd_opt(dt.date().year(), 1, 1).unwrap_or(dt.date()),
-                    NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap_or_default(),
-                ),
-                DateTimePrecision::Month => NaiveDateTime::new(
-                    NaiveDate::from_ymd_opt(dt.date().year(), dt.date().month(), 1)
-                        .unwrap_or(dt.date()),
-                    NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap_or_default(),
-                ),
-                DateTimePrecision::Day => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap_or_default(),
-                ),
-                DateTimePrecision::Hour => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(dt.time().hour(), 0, 0, 0).unwrap_or_default(),
-                ),
-                DateTimePrecision::Minute => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(dt.time().hour(), dt.time().minute(), 0, 0)
-                        .unwrap_or_default(),
-                ),
-                DateTimePrecision::Second => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(
-                        dt.time().hour(),
-                        dt.time().minute(),
-                        dt.time().second(),
-                        0,
+            let target = if args.is_empty() {
+                DateTimePrecision::Millisecond
+            } else {
+                match DateTimePrecision::from_ord(args[0].to_f64().ok_or_else(|| {
+                    InterpreterError::TypeMismatch(
+                        "boundary precision must be a number".to_string(),
                     )
-                    .unwrap_or_default(),
-                ),
-                DateTimePrecision::Millisecond => *dt,
+                })? as i32)
+                {
+                    Some(v) => v,
+                    None => return Ok((Value::collection(vec![]), context)),
+                }
             };
-            Value::DateTime(low, DateTimePrecision::Millisecond, *tz)
+            let p = if *p == DateTimePrecision::Hour { DateTimePrecision::Minute } else { *p };
+            let low = p.min(target).trunc(*dt);
+            let out_tz = if target == DateTimePrecision::Millisecond && tz.is_none() {
+                FixedOffset::east_opt(14 * 3600)
+            } else {
+                *tz
+            };
+            Value::DateTime(low, target, out_tz)
         }
         Value::Time(t, p) => {
             let low = match p {
@@ -233,58 +229,54 @@ pub fn high_boundary(
                 *n + 0.5 * 10.0_f64.powi(-i32::from(*vp))
             };
             match base {
-                Value::Quantity(_, _, u, t) => {
-                    Value::Quantity(result, precision, u.clone(), *t)
-                }
+                Value::Quantity(_, _, u, t) => Value::Quantity(result, precision, u.clone(), *t),
                 _ => Value::Number(result, precision),
             }
         }
         Value::Date(d, p) => {
+            let target = if args.is_empty() {
+                DateTimePrecision::Millisecond
+            } else {
+                match DateTimePrecision::from_ord(args[0].to_f64().ok_or_else(|| {
+                    InterpreterError::TypeMismatch(
+                        "boundary precision must be a number".to_string(),
+                    )
+                })? as i32)
+                {
+                    Some(v) => v,
+                    None => return Ok((Value::collection(vec![]), context)),
+                }
+            };
             let date = match p {
                 DatePrecision::Year => NaiveDate::from_ymd_opt(d.year(), 12, 31).unwrap_or(*d),
                 DatePrecision::Month => datetime::last_day_of_month(d.year(), d.month()),
                 DatePrecision::Day => *d,
             };
             let dt = date.and_hms_milli_opt(23, 59, 59, 999).unwrap_or_default();
-            Value::DateTime(dt, DateTimePrecision::Millisecond, None)
+            Value::DateTime(target.trunc(dt), target, None)
         }
         Value::DateTime(dt, p, tz) => {
-            let high = match p {
-                DateTimePrecision::Year => NaiveDateTime::new(
-                    NaiveDate::from_ymd_opt(dt.date().year(), 12, 31).unwrap_or(dt.date()),
-                    NaiveTime::from_hms_milli_opt(23, 59, 59, 999).unwrap_or_default(),
-                ),
-                DateTimePrecision::Month => NaiveDateTime::new(
-                    datetime::last_day_of_month(dt.date().year(), dt.date().month()),
-                    NaiveTime::from_hms_milli_opt(23, 59, 59, 999).unwrap_or_default(),
-                ),
-                DateTimePrecision::Day => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(23, 59, 59, 999).unwrap_or_default(),
-                ),
-                DateTimePrecision::Hour => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(dt.time().hour(), 59, 59, 999)
-                        .unwrap_or_default(),
-                ),
-                DateTimePrecision::Minute => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(dt.time().hour(), dt.time().minute(), 59, 999)
-                        .unwrap_or_default(),
-                ),
-                DateTimePrecision::Second => NaiveDateTime::new(
-                    dt.date(),
-                    NaiveTime::from_hms_milli_opt(
-                        dt.time().hour(),
-                        dt.time().minute(),
-                        dt.time().second(),
-                        999,
+            let target = if args.is_empty() {
+                DateTimePrecision::Millisecond
+            } else {
+                match DateTimePrecision::from_ord(args[0].to_f64().ok_or_else(|| {
+                    InterpreterError::TypeMismatch(
+                        "boundary precision must be a number".to_string(),
                     )
-                    .unwrap_or_default(),
-                ),
-                DateTimePrecision::Millisecond => *dt,
+                })? as i32)
+                {
+                    Some(v) => v,
+                    None => return Ok((Value::collection(vec![]), context)),
+                }
             };
-            Value::DateTime(high, DateTimePrecision::Millisecond, *tz)
+            let p = if *p == DateTimePrecision::Hour { DateTimePrecision::Minute } else { *p };
+            let high = p.ceil(*dt);
+            let out_tz = if target == DateTimePrecision::Millisecond && tz.is_none() {
+                FixedOffset::east_opt(-12 * 3600)
+            } else {
+                *tz
+            };
+            Value::DateTime(target.trunc(high), target, out_tz)
         }
         Value::Time(t, p) => {
             let high = match p {
