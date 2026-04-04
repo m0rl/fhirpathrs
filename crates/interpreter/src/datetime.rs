@@ -405,6 +405,7 @@ pub fn last_day_of_month(year: i32, month: u32) -> NaiveDate {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
