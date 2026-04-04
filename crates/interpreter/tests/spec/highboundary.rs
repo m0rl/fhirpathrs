@@ -7,7 +7,7 @@ fn highboundarydecimaldefault() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
+    assert_eq!(actual, vec![Value::Number(1.5875_f64, 8)]);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn highboundarydecimal2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
+    assert_eq!(actual, vec![Value::Number(1.5875_f64, 6)]);
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn highboundarydecimal4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.5865_f64, 4)]);
+    assert_eq!(actual, vec![Value::Number(-1.5865_f64, 8)]);
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn highboundarydecimal6() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.5865_f64, 4)]);
+    assert_eq!(actual, vec![Value::Number(-1.5865_f64, 6)]);
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn highboundarydecimal8() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5_f64, 1)]);
+    assert_eq!(actual, vec![Value::Number(1.5_f64, 8)]);
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn highboundarydecimal10() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5_f64, 1)]);
+    assert_eq!(actual, vec![Value::Number(1.5_f64, 5)]);
 }
 
 #[test]
@@ -137,7 +137,7 @@ fn highboundarydecimal13() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(120.5_f64, 1)]);
+    assert_eq!(actual, vec![Value::Number(120.5_f64, 2)]);
 }
 
 #[test]
@@ -147,7 +147,7 @@ fn highboundarydecimal14() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-120.5_f64, 1)]);
+    assert_eq!(actual, vec![Value::Number(-120.5_f64, 2)]);
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn highboundarydecimal15() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
+    assert_eq!(actual, vec![Value::Number(0.0_f64, 1)]);
 }
 
 #[test]
@@ -167,7 +167,7 @@ fn highboundarydecimal16() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
+    assert_eq!(actual, vec![Value::Number(0.0_f64, 1)]);
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn highboundarydecimal() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5875_f64, 4)]);
+    assert_eq!(actual, vec![Value::Number(1.5875_f64, 8)]);
 }
 
 #[test]
@@ -187,7 +187,7 @@ fn highboundaryquantity() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Quantity(1.5875_f64, 4, "m".to_string(), None)]);
+    assert_eq!(actual, vec![Value::Quantity(1.5875_f64, 8, "m".to_string(), None)]);
 }
 
 #[ignore] // date boundary with precision arg not implemented

@@ -3,7 +3,7 @@ use crate::datetime;
 use crate::datetime::{DatePrecision, DateTimePrecision, TimePrecision};
 use crate::error::InterpreterError;
 use crate::units::quantity_cmp_units;
-use crate::value::Value;
+use crate::value::{Value, MAX_DECIMAL_PRECISION};
 use crate::{InterpreterResult, QuantityType};
 use chrono::{Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use std::collections::HashMap;
@@ -84,7 +84,8 @@ pub fn precision(base: &Value, context: InterpreterContext) -> InterpreterResult
             TimePrecision::Second => Value::Number(6.0, 0),
             TimePrecision::Millisecond => Value::Number(9.0, 0),
         },
-        Value::Number(_, p) => {
+        Value::Number(_, p) =>
+        {
             #[allow(clippy::cast_lossless)]
             Value::Number(*p as f64, 0)
         }
@@ -102,18 +103,17 @@ pub fn low_boundary(
     let result = match base {
         Value::Number(n, vp) | Value::Quantity(n, vp, ..) => {
             let precision = if args.is_empty() {
-                *vp
+                MAX_DECIMAL_PRECISION
             } else {
-                let na = args[0].to_f64().ok_or_else(|| {
+                let arg_precision = args[0].to_f64().ok_or_else(|| {
                     InterpreterError::TypeMismatch(
                         "boundary precision must be a number".to_string(),
                     )
-                })?;
-                let i = na as i32;
-                if !(0..=10).contains(&i) {
+                })? as i32;
+                if !(0..=i32::from(MAX_DECIMAL_PRECISION)).contains(&arg_precision) {
                     return Ok((Value::collection(vec![]), context));
                 }
-                i as u8
+                arg_precision as u8
             };
             let result = if !args.is_empty() && precision <= *vp {
                 let half = 0.5 * 10.0_f64.powi(-i32::from(precision));
@@ -125,9 +125,9 @@ pub fn low_boundary(
             };
             match base {
                 Value::Quantity(_, _, u, t) => {
-                    Value::Quantity(result, Value::precision(result), u.clone(), *t)
+                    Value::Quantity(result, precision, u.clone(), *t)
                 }
-                _ => Value::Number(result, Value::precision(result)),
+                _ => Value::Number(result, precision),
             }
         }
         Value::Date(d, p) => {
@@ -208,18 +208,17 @@ pub fn high_boundary(
     let result = match base {
         Value::Number(n, vp) | Value::Quantity(n, vp, ..) => {
             let precision = if args.is_empty() {
-                *vp
+                MAX_DECIMAL_PRECISION
             } else {
-                let na = args[0].to_f64().ok_or_else(|| {
+                let arg_precision = args[0].to_f64().ok_or_else(|| {
                     InterpreterError::TypeMismatch(
                         "boundary precision must be a number".to_string(),
                     )
-                })?;
-                let i = na as i32;
-                if !(0..=10).contains(&i) {
+                })? as i32;
+                if !(0..=i32::from(MAX_DECIMAL_PRECISION)).contains(&arg_precision) {
                     return Ok((Value::collection(vec![]), context));
                 }
-                i as u8
+                arg_precision as u8
             };
             let result = if !args.is_empty() && precision <= *vp {
                 let scale = 10.0_f64.powi(i32::from(precision));
@@ -235,9 +234,9 @@ pub fn high_boundary(
             };
             match base {
                 Value::Quantity(_, _, u, t) => {
-                    Value::Quantity(result, Value::precision(result), u.clone(), *t)
+                    Value::Quantity(result, precision, u.clone(), *t)
                 }
-                _ => Value::Number(result, Value::precision(result)),
+                _ => Value::Number(result, precision),
             }
         }
         Value::Date(d, p) => {

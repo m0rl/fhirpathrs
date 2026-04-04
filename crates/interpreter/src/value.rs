@@ -41,6 +41,8 @@ impl QuantityType {
     }
 }
 
+pub const MAX_DECIMAL_PRECISION: u8 = 8;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Null,
@@ -111,7 +113,7 @@ impl Value {
     pub fn precision(v: f64) -> u8 {
         let mut n = v.abs();
         let mut p: u8 = 0;
-        while p < 10 {
+        while p < MAX_DECIMAL_PRECISION {
             let frac = n.fract();
             if frac < 1e-10 || frac > 1.0 - 1e-10 {
                 break;
