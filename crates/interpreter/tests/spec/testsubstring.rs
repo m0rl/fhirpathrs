@@ -90,7 +90,6 @@ fn testsubstring10() {
     assert_eq!(actual, vec![Value::String("alm".to_string())]);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn testsubstring10a() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

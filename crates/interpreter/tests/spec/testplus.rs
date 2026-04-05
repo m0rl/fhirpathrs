@@ -264,7 +264,6 @@ fn testplusdate22() {
     assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T01:00:00.000+10:00").expect("datetime")]);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn testplus6() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

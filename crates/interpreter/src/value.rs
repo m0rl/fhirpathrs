@@ -353,6 +353,21 @@ impl Value {
         }
     }
 
+    pub fn as_string(&self) -> Option<String> {
+        let mut current = self;
+        while let Value::Collection(items) = current {
+            if items.len() == 1 {
+                current = &items[0];
+            } else {
+                return None;
+            }
+        }
+        match current {
+            Value::String(s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
     pub fn as_quantity(&self) -> Option<Value> {
         let mut val = self;
         loop {
@@ -825,5 +840,37 @@ impl std::fmt::Display for Value {
             }
             Value::Object(_) => write!(f, "{{object}}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_string_value_returns_string() {
+        assert_eq!(
+            Value::String("hello".into()).as_string(),
+            Some("hello".into())
+        );
+    }
+
+    #[test]
+    fn as_string_value_unwraps_singleton() {
+        let val = Value::collection(vec![Value::String("x".into())]);
+        assert_eq!(val.as_string(), Some("x".into()));
+    }
+
+    #[test]
+    fn as_string_value_returns_none_for_non_string() {
+        assert_eq!(Value::Number(42.0, 0).as_string(), None);
+        assert_eq!(Value::Boolean(true).as_string(), None);
+        assert_eq!(Value::Null.as_string(), None);
+    }
+
+    #[test]
+    fn as_string_value_returns_none_for_multi_item() {
+        let val = Value::collection(vec![Value::String("a".into()), Value::String("b".into())]);
+        assert_eq!(val.as_string(), None);
     }
 }

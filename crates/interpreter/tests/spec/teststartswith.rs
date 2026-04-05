@@ -120,7 +120,6 @@ fn teststartswith12() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn teststartswith12a() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -131,7 +130,6 @@ fn teststartswith12a() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn teststartswithnonstring1() {
     let data = fixtures::APPOINTMENT_EXAMPLEREQ.with(Value::clone);

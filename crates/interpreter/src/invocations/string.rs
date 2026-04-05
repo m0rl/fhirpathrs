@@ -27,13 +27,19 @@ fn get_cached_regex(pattern: &str, flags: Option<String>) -> Result<Regex, Inter
 
 #[allow(clippy::cast_precision_loss)]
 pub fn index_of(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
-    let s = base.to_str()?;
+    let s = match base.as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     if args.is_empty() {
         return Err(InterpreterError::InvalidOperation(
             "indexOf() requires a substring argument".to_string(),
         ));
     }
-    let substring = args[0].to_str()?;
+    let substring = match args[0].as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     let char_index = s
         .find(&substring)
         .map_or(-1.0, |byte_idx| s[..byte_idx].chars().count() as f64);
@@ -41,15 +47,19 @@ pub fn index_of(base: &Value, args: &[Value], context: InterpreterContext) -> In
 }
 
 pub fn substring(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
-    let s = base.to_str()?;
+    let s = match base.as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     if args.is_empty() {
         return Err(InterpreterError::InvalidOperation(
             "substring() requires a start argument".to_string(),
         ));
     }
-    let start_f64 = args[0].to_f64().ok_or_else(|| {
-        InterpreterError::TypeMismatch("substring start must be a number".to_string())
-    })?;
+    let start_f64 = match args[0].to_f64() {
+        Some(v) => v,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
 
     if start_f64 < 0.0 {
         return Ok((Value::collection(vec![]), context));
@@ -64,9 +74,10 @@ pub fn substring(base: &Value, args: &[Value], context: InterpreterContext) -> I
     }
 
     let result = if args.len() > 1 {
-        let length = args[1].to_usize().ok_or_else(|| {
-            InterpreterError::TypeMismatch("substring length must be a number".to_string())
-        })?;
+        let length = match args[1].to_usize() {
+            Some(v) => v,
+            None => return Ok((Value::collection(vec![]), context)),
+        };
         chars[start..].iter().take(length).collect()
     } else {
         chars[start..].iter().collect()
@@ -75,35 +86,53 @@ pub fn substring(base: &Value, args: &[Value], context: InterpreterContext) -> I
 }
 
 pub fn starts_with(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
-    let s = base.to_str()?;
+    let s = match base.as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     if args.is_empty() {
         return Err(InterpreterError::InvalidOperation(
             "startsWith() requires a prefix argument".to_string(),
         ));
     }
-    let prefix = args[0].to_str()?;
+    let prefix = match args[0].as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     Ok((Value::Boolean(s.starts_with(&prefix)), context))
 }
 
 pub fn ends_with(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
-    let s = base.to_str()?;
+    let s = match base.as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     if args.is_empty() {
         return Err(InterpreterError::InvalidOperation(
             "endsWith() requires a suffix argument".to_string(),
         ));
     }
-    let suffix = args[0].to_str()?;
+    let suffix = match args[0].as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     Ok((Value::Boolean(s.ends_with(&suffix)), context))
 }
 
 pub fn contains(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
-    let s = base.to_str()?;
+    let s = match base.as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     if args.is_empty() {
         return Err(InterpreterError::InvalidOperation(
             "contains() requires a substring argument".to_string(),
         ));
     }
-    let substring = args[0].to_str()?;
+    let substring = match args[0].as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     Ok((Value::Boolean(s.contains(&substring)), context))
 }
 
@@ -175,7 +204,10 @@ pub fn replace_matches(
 }
 
 pub fn length(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let s = base.to_str()?;
+    let s = match base.as_string() {
+        Some(s) => s,
+        None => return Ok((Value::collection(vec![]), context)),
+    };
     #[allow(clippy::cast_precision_loss)]
     let len = s.chars().count() as f64;
     Ok((Value::Number(len, 0), context))

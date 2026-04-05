@@ -240,12 +240,10 @@ pub(crate) fn interpret_additive(
                 let result = l + r;
                 return Ok((Value::Number(result, Value::precision(result)), context));
             }
-            if let (Ok(l), Ok(r)) = (left.to_str(), right.to_str()) {
+            if let (Some(l), Some(r)) = (left.as_string(), right.as_string()) {
                 return Ok((Value::String(format!("{}{}", l, r)), context));
             }
-            return Err(InterpreterError::TypeMismatch(
-                "Cannot add these types".to_string(),
-            ));
+            return Ok((Value::collection(vec![]), context));
         }
         AdditiveOp::Minus => {
             let interval = if matches!(
