@@ -468,12 +468,12 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     eval_ctx,
                     saved_ctx,
                 }) => {
-                    if val.is_truthy() {
+                    if !val.is_multi_item_collection() && val.is_truthy() {
                         stack.push(Frame::IifRestore { saved_ctx });
                         ctx = eval_ctx;
                         current = &args[1];
                         continue 'dispatch;
-                    } else if args.len() >= 3 {
+                    } else if !val.is_multi_item_collection() && args.len() >= 3 {
                         stack.push(Frame::IifRestore { saved_ctx });
                         ctx = eval_ctx;
                         current = &args[2];

@@ -169,6 +169,10 @@ impl Value {
         }
     }
 
+    pub fn is_multi_item_collection(&self) -> bool {
+        matches!(self, Value::Collection(c) if c.len() > 1)
+    }
+
     #[allow(clippy::match_same_arms)]
     pub fn is(&self, type_spec: &TypeSpecifier) -> bool {
         let TypeSpecifier::QualifiedIdentifier(parts) = type_spec;
@@ -872,5 +876,23 @@ mod tests {
     fn as_string_value_returns_none_for_multi_item() {
         let val = Value::collection(vec![Value::String("a".into()), Value::String("b".into())]);
         assert_eq!(val.as_string(), None);
+    }
+
+    #[test]
+    fn is_multi_item_collection_true() {
+        let val = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
+        assert!(val.is_multi_item_collection());
+    }
+
+    #[test]
+    fn is_multi_item_collection_false_for_singleton() {
+        let val = Value::collection(vec![Value::Number(1.0, 0)]);
+        assert!(!val.is_multi_item_collection());
+    }
+
+    #[test]
+    fn is_multi_item_collection_false_for_non_collection() {
+        assert!(!Value::Number(1.0, 0).is_multi_item_collection());
+        assert!(!Value::Null.is_multi_item_collection());
     }
 }

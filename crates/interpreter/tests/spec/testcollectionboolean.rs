@@ -1,6 +1,5 @@
 use super::*;
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn testcollectionboolean1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
