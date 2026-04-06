@@ -7,6 +7,8 @@ use parser::{Expression, Invocation, Literal, Term, TypeSpecifier};
 
 mod aggregate;
 mod collection;
+mod constants;
+pub(crate) use constants::{is_system_variable, resolve_predefined_constant};
 mod math;
 mod string;
 mod type_conv;
@@ -325,6 +327,12 @@ pub(crate) fn dispatch_function<'a>(
                 ));
             }
             if let Expression::Term(Term::Literal(Literal::String(var_name))) = &args[0] {
+                if is_system_variable(var_name) {
+                    return Ok(Continuation::Resolved(
+                        Value::collection(vec![]),
+                        ctx.clone(),
+                    ));
+                }
                 if args.len() == 2 {
                     let item_ctx = ctx.clone().with_this(base.clone());
                     Ok(Continuation::Chain(

@@ -18,6 +18,7 @@ pub use datetime::TimePrecision;
 
 use crate::invocations::{
     Continuation, dispatch_function, interpret_function, interpret_member_access,
+    is_system_variable, resolve_predefined_constant,
 };
 use crate::operators::{
     interpret_additive, interpret_equality, interpret_indexer, interpret_inequality,
@@ -665,7 +666,10 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                             "defineVariable() first argument must evaluate to a string".to_string(),
                         )
                     })?;
-                    if args.len() == 2 {
+                    if is_system_variable(&name) {
+                        val = Value::collection(vec![]);
+                        ctx = saved_ctx;
+                    } else if args.len() == 2 {
                         let item_ctx = saved_ctx.clone().with_this(base.clone());
                         stack.push(Frame::DefineVarEval {
                             base,
@@ -675,9 +679,10 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                         ctx = item_ctx;
                         current = &args[1];
                         continue 'dispatch;
+                    } else {
+                        ctx = saved_ctx.with_constant(name, base.clone());
+                        val = base;
                     }
-                    ctx = saved_ctx.with_constant(name, base.clone());
-                    val = base;
                 }
                 Some(Frame::DefineVarEval {
                     base,
@@ -712,16 +717,6 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 }
             }
         }
-    }
-}
-
-fn resolve_predefined_constant(name: &str, context: &InterpreterContext) -> Option<Value> {
-    match name {
-        "context" | "resource" | "rootResource" => Some(context.root_resource.clone()),
-        "ucum" => Some(Value::String("http://unitsofmeasure.org".to_string())),
-        "sct" => Some(Value::String("http://snomed.info/sct".to_string())),
-        "loinc" => Some(Value::String("http://loinc.org".to_string())),
-        _ => None,
     }
 }
 

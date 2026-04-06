@@ -194,7 +194,6 @@ fn definevariable16() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn dvcantoverwritesystemvar() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
