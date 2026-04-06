@@ -18,11 +18,14 @@ pub fn exists(base: &Value, context: InterpreterContext) -> InterpreterResult {
 
 #[allow(clippy::cast_precision_loss)]
 pub fn count(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let value = Value::Number(match base {
-        Value::Collection(v) => v.len() as f64,
-        Value::Null => 0.0,
-        _ => 1.0,
-    }, 0);
+    let value = Value::Number(
+        match base {
+            Value::Collection(v) => v.len() as f64,
+            Value::Null => 0.0,
+            _ => 1.0,
+        },
+        0,
+    );
     Ok((value, context))
 }
 

@@ -193,7 +193,8 @@ fn testequivalent19() {
 #[test]
 fn testequivalent20() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("name.take(2).given ~ name.take(2).first().given | name.take(2).last().given").expect("parse");
+    let expr = parse("name.take(2).given ~ name.take(2).first().given | name.take(2).last().given")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -203,7 +204,8 @@ fn testequivalent20() {
 #[test]
 fn testequivalent21() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("name.take(2).given ~ name.take(2).last().given | name.take(2).first().given").expect("parse");
+    let expr = parse("name.take(2).given ~ name.take(2).last().given | name.take(2).first().given")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

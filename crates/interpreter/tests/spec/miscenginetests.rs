@@ -28,10 +28,7 @@ fn testprimitiveextensions() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    let expected = vec![
-        Value::Boolean(false),
-        Value::Boolean(true),
-    ];
+    let expected = vec![Value::Boolean(false), Value::Boolean(true)];
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
@@ -43,9 +40,6 @@ fn testprimitiveextensionselement() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    let expected = vec![
-        Value::Boolean(false),
-        Value::Boolean(true),
-    ];
+    let expected = vec![Value::Boolean(false), Value::Boolean(true)];
     assert_eq!(actual, expected, "results: {:?}", actual);
 }

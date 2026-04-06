@@ -78,11 +78,17 @@ pub(crate) fn interpret_multiplicative(
         MultiplicativeOp::Multiply => {
             if let (Value::Quantity(v, _, u, t), Value::Number(n, _)) = (left, right) {
                 let result = v * n;
-                return Ok((Value::Quantity(result, Value::precision(result), u.clone(), *t), context));
+                return Ok((
+                    Value::Quantity(result, Value::precision(result), u.clone(), *t),
+                    context,
+                ));
             }
             if let (Value::Number(n, _), Value::Quantity(v, _, u, t)) = (left, right) {
                 let result = n * v;
-                return Ok((Value::Quantity(result, Value::precision(result), u.clone(), *t), context));
+                return Ok((
+                    Value::Quantity(result, Value::precision(result), u.clone(), *t),
+                    context,
+                ));
             }
             let left_num = left.to_f64().ok_or_else(|| {
                 InterpreterError::TypeMismatch("Left operand must be a number".to_string())
@@ -99,7 +105,10 @@ pub(crate) fn interpret_multiplicative(
                     return Ok((Value::collection(vec![]), context));
                 }
                 let result = v / n;
-                return Ok((Value::Quantity(result, Value::precision(result), u.clone(), *t), context));
+                return Ok((
+                    Value::Quantity(result, Value::precision(result), u.clone(), *t),
+                    context,
+                ));
             }
             if let (Value::Quantity(..), Value::Quantity(v2, _, _, _)) = (left, right) {
                 if *v2 == 0.0 {
@@ -231,9 +240,7 @@ pub(crate) fn interpret_additive(
             if matches!((left, right), (Value::Quantity(..), Value::Quantity(..))) {
                 return match quantity_add(left, right) {
                     QuantityResult::Ok(q) => Ok((q, context)),
-                    QuantityResult::Incompatible => {
-                        Ok((Value::collection(vec![]), context))
-                    }
+                    QuantityResult::Incompatible => Ok((Value::collection(vec![]), context)),
                 };
             }
             if let (Some(l), Some(r)) = (left.to_f64(), right.to_f64()) {
@@ -310,9 +317,7 @@ pub(crate) fn interpret_additive(
             if matches!((left, right), (Value::Quantity(..), Value::Quantity(..))) {
                 return match quantity_sub(left, right) {
                     QuantityResult::Ok(q) => Ok((q, context)),
-                    QuantityResult::Incompatible => {
-                        Ok((Value::collection(vec![]), context))
-                    }
+                    QuantityResult::Incompatible => Ok((Value::collection(vec![]), context)),
                 };
             }
             if let (Some(l), Some(r)) = (left.to_f64(), right.to_f64()) {

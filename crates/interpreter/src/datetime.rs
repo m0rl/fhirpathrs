@@ -502,13 +502,31 @@ mod tests {
 
     #[test]
     fn from_ord_valid() {
-        assert_eq!(DateTimePrecision::from_ord(4), Some(DateTimePrecision::Year));
-        assert_eq!(DateTimePrecision::from_ord(6), Some(DateTimePrecision::Month));
+        assert_eq!(
+            DateTimePrecision::from_ord(4),
+            Some(DateTimePrecision::Year)
+        );
+        assert_eq!(
+            DateTimePrecision::from_ord(6),
+            Some(DateTimePrecision::Month)
+        );
         assert_eq!(DateTimePrecision::from_ord(8), Some(DateTimePrecision::Day));
-        assert_eq!(DateTimePrecision::from_ord(10), Some(DateTimePrecision::Hour));
-        assert_eq!(DateTimePrecision::from_ord(12), Some(DateTimePrecision::Minute));
-        assert_eq!(DateTimePrecision::from_ord(14), Some(DateTimePrecision::Second));
-        assert_eq!(DateTimePrecision::from_ord(17), Some(DateTimePrecision::Millisecond));
+        assert_eq!(
+            DateTimePrecision::from_ord(10),
+            Some(DateTimePrecision::Hour)
+        );
+        assert_eq!(
+            DateTimePrecision::from_ord(12),
+            Some(DateTimePrecision::Minute)
+        );
+        assert_eq!(
+            DateTimePrecision::from_ord(14),
+            Some(DateTimePrecision::Second)
+        );
+        assert_eq!(
+            DateTimePrecision::from_ord(17),
+            Some(DateTimePrecision::Millisecond)
+        );
     }
 
     #[test]

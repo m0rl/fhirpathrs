@@ -8,7 +8,6 @@ use interpreter::{InterpreterContext, Value, interpret};
 use parser::parse;
 use std::collections::HashMap;
 
-
 #[test]
 fn test_where_with_this_context() {
     let mut obj1 = HashMap::new();
@@ -1106,7 +1105,10 @@ fn test_descendants_primitive() {
 
 #[test]
 fn test_descendants_deeply_nested() {
-    let level3 = Value::object(HashMap::from([("three".to_string(), Value::Number(99.0, 0))]));
+    let level3 = Value::object(HashMap::from([(
+        "three".to_string(),
+        Value::Number(99.0, 0),
+    )]));
     let level2 = Value::object(HashMap::from([("two".to_string(), level3.clone())]));
     let level1 = Value::object(HashMap::from([("one".to_string(), level2.clone())]));
     let context = InterpreterContext::new(level1);
@@ -1208,7 +1210,11 @@ fn test_sort_with_criteria() {
 
 #[test]
 fn test_coalesce_returns_first_nonempty() {
-    let data = Value::collection(vec![Value::Null, Value::Number(1.0, 0), Value::Number(2.0, 0)]);
+    let data = Value::collection(vec![
+        Value::Null,
+        Value::Number(1.0, 0),
+        Value::Number(2.0, 0),
+    ]);
     let context = InterpreterContext::new(data);
     let expr = parse("coalesce()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");

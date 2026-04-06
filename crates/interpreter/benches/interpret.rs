@@ -34,10 +34,7 @@ mod path_navigation {
                     "c".to_string(),
                     Value::object(HashMap::from([(
                         "d".to_string(),
-                        Value::object(HashMap::from([(
-                            "e".to_string(),
-                            Value::Number(42.0, 0),
-                        )])),
+                        Value::object(HashMap::from([("e".to_string(), Value::Number(42.0, 0))])),
                     )])),
                 )])),
             )])),
@@ -117,9 +114,7 @@ mod aggregation {
     use super::*;
 
     fn numbers_1000() -> Value {
-        Value::collection(
-            (0..1000).map(|i| Value::Number(i as f64, 0)).collect(),
-        )
+        Value::collection((0..1000).map(|i| Value::Number(i as f64, 0)).collect())
     }
 
     #[divan::bench]

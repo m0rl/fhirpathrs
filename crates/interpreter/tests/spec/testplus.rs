@@ -57,7 +57,10 @@ fn testplusdate1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-01-01").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-01-01").expect("date")]
+    );
 }
 
 #[test]
@@ -67,7 +70,10 @@ fn testplusdate2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-01-01").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-01-01").expect("date")]
+    );
 }
 
 #[test]
@@ -77,7 +83,10 @@ fn testplusdate3() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1974-01-01T00:00:00.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1974-01-01T00:00:00.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -87,7 +96,10 @@ fn testplusdate4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1974-01-01T00:00:00.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1974-01-01T00:00:00.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -97,7 +109,10 @@ fn testplusdate5() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:00:01.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:00:01.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -107,7 +122,10 @@ fn testplusdate6() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:00:00.010+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:00:00.010+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -117,7 +135,10 @@ fn testplusdate7() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:01:00.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:01:00.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -127,7 +148,10 @@ fn testplusdate8() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T01:00:00.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T01:00:00.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -137,7 +161,10 @@ fn testplusdate9() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1973-12-26").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1973-12-26").expect("date")]
+    );
 }
 
 #[test]
@@ -147,7 +174,10 @@ fn testplusdate10() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-01-25").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-01-25").expect("date")]
+    );
 }
 
 #[test]
@@ -157,7 +187,10 @@ fn testplusdate11() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-01-01").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-01-01").expect("date")]
+    );
 }
 
 #[test]
@@ -167,7 +200,10 @@ fn testplusdate12() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-12-25").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-12-25").expect("date")]
+    );
 }
 
 #[test]
@@ -177,7 +213,10 @@ fn testplusdate13() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1973-12-26").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1973-12-26").expect("date")]
+    );
 }
 
 #[test]
@@ -195,7 +234,10 @@ fn testplusdate15() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-01-01").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-01-01").expect("date")]
+    );
 }
 
 #[test]
@@ -221,7 +263,10 @@ fn testplusdate18() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:00:01.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:00:01.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -231,7 +276,10 @@ fn testplusdate19() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:00:00.100+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:00:00.100+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -241,7 +289,10 @@ fn testplusdate20() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:00:00.010+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:00:00.010+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -251,7 +302,10 @@ fn testplusdate21() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T00:01:00.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T00:01:00.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -261,7 +315,10 @@ fn testplusdate22() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("1973-12-25T01:00:00.000+10:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("1973-12-25T01:00:00.000+10:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -281,7 +338,10 @@ fn testplustime1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("03:00:00").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("03:00:00").expect("time")]
+    );
 }
 
 #[test]
@@ -291,7 +351,10 @@ fn testplustime2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("01:00:00").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("01:00:00").expect("time")]
+    );
 }
 
 #[test]
@@ -301,7 +364,10 @@ fn testplustime3() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("01:00:00").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("01:00:00").expect("time")]
+    );
 }
 
 #[test]

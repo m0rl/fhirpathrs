@@ -23,7 +23,8 @@ fn testskip2() {
 #[test]
 fn testskip3() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("Patient.name.skip(1).given.trace('test') = 'Jim' | 'Peter' | 'James'").expect("parse");
+    let expr = parse("Patient.name.skip(1).given.trace('test') = 'Jim' | 'Peter' | 'James'")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

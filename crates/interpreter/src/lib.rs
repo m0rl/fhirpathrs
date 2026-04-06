@@ -647,12 +647,12 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                         continue 'dispatch;
                     }
                     keyed.sort_by(|(_, a_key), (_, b_key)| {
-                        let ord = a_key.compare_equal(b_key).unwrap_or(std::cmp::Ordering::Equal);
+                        let ord = a_key
+                            .compare_equal(b_key)
+                            .unwrap_or(std::cmp::Ordering::Equal);
                         if descending { ord.reverse() } else { ord }
                     });
-                    val = Value::collection(
-                        keyed.into_iter().map(|(item, _)| item).collect(),
-                    );
+                    val = Value::collection(keyed.into_iter().map(|(item, _)| item).collect());
                     ctx = saved_ctx;
                 }
                 Some(Frame::DefineVarEvalName {
@@ -662,8 +662,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 }) => {
                     let name = val.to_str().map_err(|_| {
                         InterpreterError::InvalidOperation(
-                            "defineVariable() first argument must evaluate to a string"
-                                .to_string(),
+                            "defineVariable() first argument must evaluate to a string".to_string(),
                         )
                     })?;
                     if args.len() == 2 {

@@ -9,7 +9,6 @@ use chrono::{Datelike, NaiveDate};
 use interpreter::{InterpreterContext, Value, interpret};
 use parser::parse;
 
-
 #[test]
 fn test_date_less_than() {
     let context = InterpreterContext::new(Value::Null);
@@ -404,7 +403,10 @@ fn test_duration_datetime_seconds() {
     let expr =
         parse("(@2024-01-01T00:00:00).duration(@2024-01-01T06:00:00)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(21600.0, 0, "second".to_string(), None));
+    assert_eq!(
+        result,
+        Value::Quantity(21600.0, 0, "second".to_string(), None)
+    );
 }
 
 #[test]
@@ -420,7 +422,10 @@ fn test_duration_time() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T10:00:00).duration(@T14:30:00)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(16200.0, 0, "second".to_string(), None));
+    assert_eq!(
+        result,
+        Value::Quantity(16200.0, 0, "second".to_string(), None)
+    );
 }
 
 #[test]

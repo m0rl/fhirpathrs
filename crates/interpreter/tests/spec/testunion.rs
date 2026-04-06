@@ -117,9 +117,6 @@ fn testunion12() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    let expected = vec![
-        Value::Boolean(true),
-        Value::String("Peter".to_string()),
-    ];
+    let expected = vec![Value::Boolean(true), Value::String("Peter".to_string())];
     assert_eq!(actual, expected, "results: {:?}", actual);
 }

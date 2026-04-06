@@ -3,7 +3,8 @@ use super::*;
 #[test]
 fn testdollarthis1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("Patient.name.given.where(substring($this.length()-3) = 'out')").expect("parse");
+    let expr =
+        parse("Patient.name.given.where(substring($this.length()-3) = 'out')").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -13,7 +14,8 @@ fn testdollarthis1() {
 #[test]
 fn testdollarthis2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("Patient.name.given.where(substring($this.length()-3) = 'ter')").expect("parse");
+    let expr =
+        parse("Patient.name.given.where(substring($this.length()-3) = 'ter')").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

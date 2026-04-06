@@ -413,7 +413,12 @@ pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
 
     if u1 == u2 {
         let result = v1 + v2;
-        return QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1));
+        return QuantityResult::Ok(Value::Quantity(
+            result,
+            Value::precision(result),
+            u1.to_string(),
+            *t1,
+        ));
     }
 
     let (base1, cat1) = match normalize(v1, u1) {
@@ -431,9 +436,12 @@ pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
 
     let result_base = base1 + base2;
     match from_base(result_base, u1) {
-        Some(result) => {
-            QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1))
-        }
+        Some(result) => QuantityResult::Ok(Value::Quantity(
+            result,
+            Value::precision(result),
+            u1.to_string(),
+            *t1,
+        )),
         None => QuantityResult::Incompatible,
     }
 }
@@ -454,7 +462,12 @@ pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
 
     if u1 == u2 {
         let result = v1 - v2;
-        return QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1));
+        return QuantityResult::Ok(Value::Quantity(
+            result,
+            Value::precision(result),
+            u1.to_string(),
+            *t1,
+        ));
     }
 
     let (base1, cat1) = match normalize(v1, u1) {
@@ -472,9 +485,12 @@ pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
 
     let result_base = base1 - base2;
     match from_base(result_base, u1) {
-        Some(result) => {
-            QuantityResult::Ok(Value::Quantity(result, Value::precision(result), u1.to_string(), *t1))
-        }
+        Some(result) => QuantityResult::Ok(Value::Quantity(
+            result,
+            Value::precision(result),
+            u1.to_string(),
+            *t1,
+        )),
         None => QuantityResult::Incompatible,
     }
 }

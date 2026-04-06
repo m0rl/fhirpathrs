@@ -166,7 +166,11 @@ pub fn low_boundary(
                     None => return Ok((Value::collection(vec![]), context)),
                 }
             };
-            let p = if *p == DateTimePrecision::Hour { DateTimePrecision::Minute } else { *p };
+            let p = if *p == DateTimePrecision::Hour {
+                DateTimePrecision::Minute
+            } else {
+                *p
+            };
             let low = p.min(target).trunc(*dt);
             let out_tz = if target == DateTimePrecision::Millisecond && tz.is_none() {
                 FixedOffset::east_opt(14 * 3600)
@@ -269,7 +273,11 @@ pub fn high_boundary(
                     None => return Ok((Value::collection(vec![]), context)),
                 }
             };
-            let p = if *p == DateTimePrecision::Hour { DateTimePrecision::Minute } else { *p };
+            let p = if *p == DateTimePrecision::Hour {
+                DateTimePrecision::Minute
+            } else {
+                *p
+            };
             let high = p.ceil(*dt);
             let out_tz = if target == DateTimePrecision::Millisecond && tz.is_none() {
                 FixedOffset::east_opt(-12 * 3600)

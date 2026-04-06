@@ -4,7 +4,8 @@ use super::*;
 #[test]
 fn testconformsto1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("conformsTo('http://hl7.org/fhir/StructureDefinition/Patient')").expect("parse");
+    let expr =
+        parse("conformsTo('http://hl7.org/fhir/StructureDefinition/Patient')").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -15,7 +16,8 @@ fn testconformsto1() {
 #[test]
 fn testconformsto2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("conformsTo('http://hl7.org/fhir/StructureDefinition/Person')").expect("parse");
+    let expr =
+        parse("conformsTo('http://hl7.org/fhir/StructureDefinition/Person')").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

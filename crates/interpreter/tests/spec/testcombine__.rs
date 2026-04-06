@@ -3,7 +3,8 @@ use super::*;
 #[test]
 fn testcombine1() {
     let data = fixtures::CODESYSTEM_EXAMPLE.with(Value::clone);
-    let expr = parse("concept.code.combine($this.descendants().concept.code).isDistinct()").expect("parse");
+    let expr = parse("concept.code.combine($this.descendants().concept.code).isDistinct()")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

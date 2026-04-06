@@ -13,9 +13,11 @@ pub fn all_true(base: &Value, context: InterpreterContext) -> InterpreterResult 
         match item {
             Value::Boolean(false) => return Ok((Value::Boolean(false), context)),
             Value::Boolean(true) => {}
-            _ => return Err(InterpreterError::InvalidOperation(
-                "allTrue() requires a collection of boolean values".to_string(),
-            )),
+            _ => {
+                return Err(InterpreterError::InvalidOperation(
+                    "allTrue() requires a collection of boolean values".to_string(),
+                ));
+            }
         }
     }
     Ok((Value::Boolean(true), context))
@@ -27,9 +29,11 @@ pub fn any_true(base: &Value, context: InterpreterContext) -> InterpreterResult 
         match item {
             Value::Boolean(true) => return Ok((Value::Boolean(true), context)),
             Value::Boolean(false) => {}
-            _ => return Err(InterpreterError::InvalidOperation(
-                "anyTrue() requires a collection of boolean values".to_string(),
-            )),
+            _ => {
+                return Err(InterpreterError::InvalidOperation(
+                    "anyTrue() requires a collection of boolean values".to_string(),
+                ));
+            }
         }
     }
     Ok((Value::Boolean(false), context))
@@ -44,9 +48,11 @@ pub fn all_false(base: &Value, context: InterpreterContext) -> InterpreterResult
         match item {
             Value::Boolean(true) => return Ok((Value::Boolean(false), context)),
             Value::Boolean(false) => {}
-            _ => return Err(InterpreterError::InvalidOperation(
-                "allFalse() requires a collection of boolean values".to_string(),
-            )),
+            _ => {
+                return Err(InterpreterError::InvalidOperation(
+                    "allFalse() requires a collection of boolean values".to_string(),
+                ));
+            }
         }
     }
     Ok((Value::Boolean(true), context))
@@ -58,9 +64,11 @@ pub fn any_false(base: &Value, context: InterpreterContext) -> InterpreterResult
         match item {
             Value::Boolean(false) => return Ok((Value::Boolean(true), context)),
             Value::Boolean(true) => {}
-            _ => return Err(InterpreterError::InvalidOperation(
-                "anyFalse() requires a collection of boolean values".to_string(),
-            )),
+            _ => {
+                return Err(InterpreterError::InvalidOperation(
+                    "anyFalse() requires a collection of boolean values".to_string(),
+                ));
+            }
         }
     }
     Ok((Value::Boolean(false), context))
@@ -261,12 +269,18 @@ pub fn min(base: &Value, context: InterpreterContext) -> InterpreterResult {
                     }
                 };
                 if let Some((n, p)) = n {
-                    min_val = Some(min_val.map_or((n, p), |(m, mp)| {
-                        if n < m { (n, p) } else { (m, mp) }
-                    }));
+                    min_val = Some(min_val.map_or(
+                        (n, p),
+                        |(m, mp)| {
+                            if n < m { (n, p) } else { (m, mp) }
+                        },
+                    ));
                 }
             }
-            Ok((min_val.map_or(Value::Null, |(n, p)| Value::Number(n, p)), context))
+            Ok((
+                min_val.map_or(Value::Null, |(n, p)| Value::Number(n, p)),
+                context,
+            ))
         }
     }
 }
@@ -327,12 +341,18 @@ pub fn max(base: &Value, context: InterpreterContext) -> InterpreterResult {
                     }
                 };
                 if let Some((n, p)) = n {
-                    max_val = Some(max_val.map_or((n, p), |(m, mp)| {
-                        if n > m { (n, p) } else { (m, mp) }
-                    }));
+                    max_val = Some(max_val.map_or(
+                        (n, p),
+                        |(m, mp)| {
+                            if n > m { (n, p) } else { (m, mp) }
+                        },
+                    ));
                 }
             }
-            Ok((max_val.map_or(Value::Null, |(n, p)| Value::Number(n, p)), context))
+            Ok((
+                max_val.map_or(Value::Null, |(n, p)| Value::Number(n, p)),
+                context,
+            ))
         }
     }
 }

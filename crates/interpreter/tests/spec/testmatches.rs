@@ -63,7 +63,10 @@ fn testmatchessinglelinemode1() {
 #[test]
 fn testmatcheswithinurl1() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('library')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('library')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -73,7 +76,10 @@ fn testmatcheswithinurl1() {
 #[test]
 fn testmatcheswithinurl2() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('Library')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('Library')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -83,7 +89,10 @@ fn testmatcheswithinurl2() {
 #[test]
 fn testmatcheswithinurl3() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('^Library$')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('^Library$')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -93,7 +102,10 @@ fn testmatcheswithinurl3() {
 #[test]
 fn testmatcheswithinurl1a() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('.*Library.*')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('.*Library.*')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -103,7 +115,10 @@ fn testmatcheswithinurl1a() {
 #[test]
 fn testmatcheswithinurl4() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('Measure')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matches('Measure')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -113,7 +128,10 @@ fn testmatcheswithinurl4() {
 #[test]
 fn testmatchesfullwithinurl1() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('library')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('library')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -123,7 +141,10 @@ fn testmatchesfullwithinurl1() {
 #[test]
 fn testmatchesfullwithinurl3() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('Library')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('Library')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -133,7 +154,10 @@ fn testmatchesfullwithinurl3() {
 #[test]
 fn testmatchesfullwithinurl4() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('^Library$')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('^Library$')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -153,7 +177,10 @@ fn testmatchesfullwithinurl1a() {
 #[test]
 fn testmatchesfullwithinurl2() {
     let data = Value::object(HashMap::new());
-    let expr = parse("'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('Measure')").expect("parse");
+    let expr = parse(
+        "'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'.matchesFull('Measure')",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

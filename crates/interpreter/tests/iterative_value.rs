@@ -43,10 +43,7 @@ fn test_to_str_singleton_wrapping_empty() {
 
 #[test]
 fn test_to_time_interval_deep_singleton() {
-    let val = nested_singleton(
-        Value::Quantity(3.0, 0, "days".to_string(), None),
-        10_000,
-    );
+    let val = nested_singleton(Value::Quantity(3.0, 0, "days".to_string(), None), 10_000);
     assert_eq!(
         val.to_time_interval(),
         Some(interpreter::datetime::TimeInterval::Duration(
@@ -136,10 +133,7 @@ fn test_equals_nested_objects() {
     let make = |x: f64| {
         Value::object(HashMap::from([(
             "item".to_string(),
-            Value::object(HashMap::from([(
-                "x".to_string(),
-                Value::Number(x, 0),
-            )])),
+            Value::object(HashMap::from([("x".to_string(), Value::Number(x, 0))])),
         )]))
     };
     assert!(make(1.0).equals(&make(1.0)));
@@ -241,14 +235,8 @@ fn test_equivalent_mixed_types_sorted_correctly() {
 
 #[test]
 fn test_equivalent_mixed_types_not_swapped() {
-    let a = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::String("2".to_string()),
-    ]);
-    let b = Value::collection(vec![
-        Value::Number(2.0, 0),
-        Value::String("1".to_string()),
-    ]);
+    let a = Value::collection(vec![Value::Number(1.0, 0), Value::String("2".to_string())]);
+    let b = Value::collection(vec![Value::Number(2.0, 0), Value::String("1".to_string())]);
     assert!(!a.equivalent(&b));
 }
 
@@ -290,14 +278,8 @@ fn test_equivalent_same_type_different_values_not_confused() {
 
 #[test]
 fn test_equivalent_same_type_wrong_values_after_sort() {
-    let a = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::String("b".to_string()),
-    ]);
-    let b = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::String("c".to_string()),
-    ]);
+    let a = Value::collection(vec![Value::Number(1.0, 0), Value::String("b".to_string())]);
+    let b = Value::collection(vec![Value::Number(1.0, 0), Value::String("c".to_string())]);
     assert!(!a.equivalent(&b));
 }
 

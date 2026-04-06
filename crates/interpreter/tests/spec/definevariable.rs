@@ -27,7 +27,8 @@ fn definevariable2() {
 #[test]
 fn definevariable3() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("defineVariable('n1', name.first()).select(%n1.given).first()").expect("parse");
+    let expr =
+        parse("defineVariable('n1', name.first()).select(%n1.given).first()").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -80,10 +81,7 @@ fn definevariable7() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    let expected = vec![
-        Value::Boolean(true),
-        Value::String("Jim".to_string()),
-    ];
+    let expected = vec![Value::Boolean(true), Value::String("Jim".to_string())];
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
@@ -167,10 +165,7 @@ fn definevariable14() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    let expected = vec![
-        Value::Boolean(true),
-        Value::String("JimJim".to_string()),
-    ];
+    let expected = vec![Value::Boolean(true), Value::String("JimJim".to_string())];
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
@@ -245,7 +240,8 @@ fn dvparametersdontcolide() {
 #[test]
 fn dvusageoutsidescopethrows() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("defineVariable('n1', 'v1').active | defineVariable('n2', 'v2').select(%n1)").expect("parse");
+    let expr = parse("defineVariable('n1', 'v1').active | defineVariable('n2', 'v2').select(%n1)")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

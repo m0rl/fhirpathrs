@@ -187,7 +187,10 @@ fn highboundaryquantity() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Quantity(1.5875_f64, 8, "m".to_string(), None)]);
+    assert_eq!(
+        actual,
+        vec![Value::Quantity(1.5875_f64, 8, "m".to_string(), None)]
+    );
 }
 
 #[test]
@@ -197,7 +200,10 @@ fn highboundarydatemonth() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-12").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-12").expect("datetime")]
+    );
 }
 
 #[test]
@@ -207,7 +213,10 @@ fn highboundarydatetimemillisecond1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:00:59.999-12:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01-01T08:00:59.999-12:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -217,7 +226,10 @@ fn highboundarydatetimemillisecond2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:05:59.999-05:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01-01T08:05:59.999-05:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -227,7 +239,10 @@ fn highboundarydatetimemillisecond3() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:00:59.999-12:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01-01T08:00:59.999-12:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -237,5 +252,8 @@ fn highboundarytimemillisecond() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("10:30:59.999").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("10:30:59.999").expect("time")]
+    );
 }

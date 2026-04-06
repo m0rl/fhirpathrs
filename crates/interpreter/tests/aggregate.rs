@@ -8,7 +8,6 @@
 use interpreter::{InterpreterContext, Value, interpret};
 use parser::parse;
 
-
 #[test]
 fn test_math_sum() {
     let data = Value::collection(vec![

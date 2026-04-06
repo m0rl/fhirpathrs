@@ -45,7 +45,10 @@ fn testminus5() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_date_str("1974-11-25").expect("date")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_date_str("1974-11-25").expect("date")]
+    );
 }
 
 #[test]
@@ -63,7 +66,10 @@ fn testminus7() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("23:30:00").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("23:30:00").expect("time")]
+    );
 }
 
 #[test]
@@ -73,7 +79,10 @@ fn testminus8() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("23:00:00").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("23:00:00").expect("time")]
+    );
 }
 
 #[test]

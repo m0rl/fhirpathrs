@@ -418,7 +418,10 @@ fn test_define_variable_basic() {
     let expr = parse("defineVariable('x')").expect("parse failed");
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Number(42.0, 0));
-    assert_eq!(ctx.external_constants.get("x"), Some(&Value::Number(42.0, 0)));
+    assert_eq!(
+        ctx.external_constants.get("x"),
+        Some(&Value::Number(42.0, 0))
+    );
 }
 
 #[test]
@@ -505,7 +508,10 @@ fn test_define_variable_overrides_existing_constant() {
 
     let expr = parse("defineVariable('x', 99)").expect("parse failed");
     let (_, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(ctx.external_constants.get("x"), Some(&Value::Number(99.0, 0)));
+    assert_eq!(
+        ctx.external_constants.get("x"),
+        Some(&Value::Number(99.0, 0))
+    );
 }
 
 #[test]
@@ -525,8 +531,14 @@ fn test_define_variable_chained() {
     let expr = parse("defineVariable('a', 10).defineVariable('b', 20)").expect("parse failed");
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Number(5.0, 0));
-    assert_eq!(ctx.external_constants.get("a"), Some(&Value::Number(10.0, 0)));
-    assert_eq!(ctx.external_constants.get("b"), Some(&Value::Number(20.0, 0)));
+    assert_eq!(
+        ctx.external_constants.get("a"),
+        Some(&Value::Number(10.0, 0))
+    );
+    assert_eq!(
+        ctx.external_constants.get("b"),
+        Some(&Value::Number(20.0, 0))
+    );
 }
 
 #[test]

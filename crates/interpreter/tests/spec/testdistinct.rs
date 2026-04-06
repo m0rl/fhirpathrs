@@ -23,7 +23,9 @@ fn testdistinct2() {
 #[test]
 fn testdistinct3() {
     let data = fixtures::QUESTIONNAIRE_EXAMPLE.with(Value::clone);
-    let expr = parse("Questionnaire.descendants().linkId.select(substring(0,1)).isDistinct().not()").expect("parse");
+    let expr =
+        parse("Questionnaire.descendants().linkId.select(substring(0,1)).isDistinct().not()")
+            .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -58,7 +60,9 @@ fn testdistinct5() {
 #[test]
 fn testdistinct6() {
     let data = fixtures::QUESTIONNAIRE_EXAMPLE.with(Value::clone);
-    let expr = parse("Questionnaire.descendants().linkId.select(substring(0,1)).distinct().count()").expect("parse");
+    let expr =
+        parse("Questionnaire.descendants().linkId.select(substring(0,1)).distinct().count()")
+            .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

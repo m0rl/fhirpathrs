@@ -93,10 +93,7 @@ pub(crate) fn dispatch_function<'a>(
             }
             let items = base.to_vec();
             if items.is_empty() {
-                return Ok(Continuation::Resolved(
-                    Value::collection(vec![]),
-                    ctx,
-                ));
+                return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
             }
             let total = items.len();
             let item_ctx = ctx
@@ -124,10 +121,7 @@ pub(crate) fn dispatch_function<'a>(
             }
             let items = base.to_vec();
             if items.is_empty() {
-                return Ok(Continuation::Resolved(
-                    Value::collection(vec![]),
-                    ctx,
-                ));
+                return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
             }
             let total = items.len();
             let item_ctx = ctx
@@ -211,10 +205,7 @@ pub(crate) fn dispatch_function<'a>(
             let dedup = name == "repeat";
             let to_process = base.to_vec();
             if to_process.is_empty() {
-                return Ok(Continuation::Resolved(
-                    Value::collection(vec![]),
-                    ctx,
-                ));
+                return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
             }
             let item_ctx = ctx.clone().with_this(to_process[0].clone());
             Ok(Continuation::Chain(
@@ -291,10 +282,7 @@ pub(crate) fn dispatch_function<'a>(
                             ctx.clone(),
                         ));
                     }
-                    return Ok(Continuation::Resolved(
-                        Value::collection(vec![]),
-                        ctx,
-                    ));
+                    return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
                 }
                 other => vec![other.clone()],
             };
@@ -309,10 +297,7 @@ pub(crate) fn dispatch_function<'a>(
                     ctx.clone(),
                 ))
             } else if items.is_empty() {
-                Ok(Continuation::Resolved(
-                    Value::collection(vec![]),
-                    ctx,
-                ))
+                Ok(Continuation::Resolved(Value::collection(vec![]), ctx))
             } else {
                 let accumulated = Value::collection(vec![]);
                 let item_ctx = ctx
@@ -417,10 +402,7 @@ pub(crate) fn dispatch_function<'a>(
             }
             let items = base.to_vec();
             if items.is_empty() {
-                return Ok(Continuation::Resolved(
-                    Value::collection(vec![]),
-                    ctx,
-                ));
+                return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
             }
             if criteria_args.is_empty() {
                 let mut sorted = items;
@@ -428,10 +410,7 @@ pub(crate) fn dispatch_function<'a>(
                     let ord = a.compare_equal(b).unwrap_or(std::cmp::Ordering::Equal);
                     if descending { ord.reverse() } else { ord }
                 });
-                return Ok(Continuation::Resolved(
-                    Value::collection(sorted),
-                    ctx,
-                ));
+                return Ok(Continuation::Resolved(Value::collection(sorted), ctx));
             }
             let criteria = &criteria_args[0];
             let item_ctx = ctx.clone().with_this(items[0].clone());
@@ -456,10 +435,7 @@ pub(crate) fn dispatch_function<'a>(
                 }
             }
             if args.is_empty() {
-                return Ok(Continuation::Resolved(
-                    Value::collection(vec![]),
-                    ctx,
-                ));
+                return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
             }
             Ok(Continuation::Chain(
                 &args[0],

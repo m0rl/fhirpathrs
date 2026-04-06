@@ -7,5 +7,8 @@ fn testjoin() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::String("Peter,James,Jim,Peter,James".to_string())]);
+    assert_eq!(
+        actual,
+        vec![Value::String("Peter,James,Jim,Peter,James".to_string())]
+    );
 }

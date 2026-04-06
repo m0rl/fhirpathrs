@@ -37,5 +37,10 @@ fn testsplit4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::String("[stop]ONE[stop][stop]TWO[stop][stop][stop]THREE[stop][stop]".to_string())]);
+    assert_eq!(
+        actual,
+        vec![Value::String(
+            "[stop]ONE[stop][stop]TWO[stop][stop][stop]THREE[stop][stop]".to_string()
+        )]
+    );
 }

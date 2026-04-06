@@ -7,7 +7,10 @@ fn testescapehtml() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::String("&quot;1&lt;2&quot;".to_string())]);
+    assert_eq!(
+        actual,
+        vec![Value::String("&quot;1&lt;2&quot;".to_string())]
+    );
 }
 
 #[test]

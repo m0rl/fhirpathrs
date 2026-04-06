@@ -13,7 +13,10 @@ fn testcomment1() {
 #[test]
 fn testcomment2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("// This is a multi line comment using // that\n// should not fail during parsing\n2+2").expect("parse");
+    let expr = parse(
+        "// This is a multi line comment using // that\n// should not fail during parsing\n2+2",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -23,7 +26,10 @@ fn testcomment2() {
 #[test]
 fn testcomment3() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("2 + 2\n/*\nThis is a multi-line comment\nAny text enclosed within is ignored\n+2\n*/").expect("parse");
+    let expr = parse(
+        "2 + 2\n/*\nThis is a multi-line comment\nAny text enclosed within is ignored\n+2\n*/",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -33,7 +39,10 @@ fn testcomment3() {
 #[test]
 fn testcomment4() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("2 + 2\n/*\nThis is a multi-line comment\nAny text enclosed within is ignored\n*/\n+2").expect("parse");
+    let expr = parse(
+        "2 + 2\n/*\nThis is a multi-line comment\nAny text enclosed within is ignored\n*/\n+2",
+    )
+    .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -43,7 +52,9 @@ fn testcomment4() {
 #[test]
 fn testcomment5() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("/*\nThis is a multi-line comment\nAny text enclosed within is ignored\n*/\n2+2").expect("parse");
+    let expr =
+        parse("/*\nThis is a multi-line comment\nAny text enclosed within is ignored\n*/\n2+2")
+            .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

@@ -160,9 +160,7 @@ pub fn to_date_time(base: &Value, context: InterpreterContext) -> InterpreterRes
             DateTimePrecision::Day,
             None,
         ),
-        Value::String(s) => {
-            Value::from_datetime_str(s).unwrap_or(Value::collection(vec![]))
-        }
+        Value::String(s) => Value::from_datetime_str(s).unwrap_or(Value::collection(vec![])),
         _ => Value::collection(vec![]),
     };
     Ok((value, context))
@@ -257,7 +255,10 @@ fn parse_quantity_string(s: &str, context: &InterpreterContext) -> InterpreterRe
             .or_else(|| caps.get(3))
             .map_or_else(|| "1".to_string(), |m| m.as_str().to_string());
 
-        Ok((Value::Quantity(value, Value::precision(value), unit, None), context.clone()))
+        Ok((
+            Value::Quantity(value, Value::precision(value), unit, None),
+            context.clone(),
+        ))
     } else {
         Ok((Value::collection(vec![]), context.clone()))
     }

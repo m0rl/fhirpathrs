@@ -721,7 +721,9 @@ fn test_spec_5_3_subsetting() {
                                             2.0, 0
                                         ))))
                                     )),
-                                    Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+                                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                        3.0, 0
+                                    ))))
                                 )),
                                 Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
                             )),
@@ -776,7 +778,9 @@ fn test_spec_5_3_subsetting() {
                                             3.0, 0
                                         ))))
                                     )),
-                                    Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+                                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                        4.0, 0
+                                    ))))
                                 )),
                                 Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
                             )),
@@ -797,8 +801,12 @@ fn test_spec_5_3_subsetting() {
                         Box::new(Expression::Union(
                             Box::new(Expression::Union(
                                 Box::new(Expression::Union(
-                                    Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
-                                    Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                        1.0, 0
+                                    )))),
+                                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                        2.0, 0
+                                    ))))
                                 )),
                                 Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
                             )),

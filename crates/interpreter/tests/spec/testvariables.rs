@@ -34,7 +34,9 @@ fn testvariables3() {
 #[test]
 fn testvariables4() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("%`vs-administrative-gender` = 'http://hl7.org/fhir/ValueSet/administrative-gender'").expect("parse");
+    let expr =
+        parse("%`vs-administrative-gender` = 'http://hl7.org/fhir/ValueSet/administrative-gender'")
+            .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

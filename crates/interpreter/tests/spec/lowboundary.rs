@@ -227,7 +227,10 @@ fn lowboundaryquantity() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Quantity(1.5865_f64, 8, "cm".to_string(), None)]);
+    assert_eq!(
+        actual,
+        vec![Value::Quantity(1.5865_f64, 8, "cm".to_string(), None)]
+    );
 }
 
 #[test]
@@ -237,7 +240,10 @@ fn lowboundarydatemonth() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01").expect("datetime")]
+    );
 }
 
 #[test]
@@ -247,7 +253,10 @@ fn lowboundarydatetimemillisecond1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:00:00.000+14:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01-01T08:00:00.000+14:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -257,7 +266,10 @@ fn lowboundarydatetimemillisecond2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01T08:05:00.000+08:00").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01-01T08:05:00.000+08:00").expect("datetime")]
+    );
 }
 
 #[test]
@@ -267,7 +279,10 @@ fn lowboundarydatetimemillisecond3() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_datetime_str("2014-01-01").expect("datetime")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_datetime_str("2014-01-01").expect("datetime")]
+    );
 }
 
 #[test]
@@ -277,5 +292,8 @@ fn lowboundarytimemillisecond() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::from_time_str("10:30:00.000").expect("time")]);
+    assert_eq!(
+        actual,
+        vec![Value::from_time_str("10:30:00.000").expect("time")]
+    );
 }

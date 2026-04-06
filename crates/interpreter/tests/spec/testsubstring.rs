@@ -63,7 +63,8 @@ fn testsubstring7() {
 #[test]
 fn testsubstring8() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("'LogicalModel-Person'.substring(0, 'LogicalModel-Person'.indexOf('-'))").expect("parse");
+    let expr = parse("'LogicalModel-Person'.substring(0, 'LogicalModel-Person'.indexOf('-'))")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -83,7 +84,8 @@ fn testsubstring9() {
 #[test]
 fn testsubstring10() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("Patient.name.family.first().select(substring(2, length()-5))").expect("parse");
+    let expr =
+        parse("Patient.name.family.first().select(substring(2, length()-5))").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();

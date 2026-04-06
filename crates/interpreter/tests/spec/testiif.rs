@@ -94,7 +94,8 @@ fn testiif9() {
 #[test]
 fn testiif10() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("('item1' | 'item2').iif(true, 'true-result', 'false-result')").expect("parse");
+    let expr =
+        parse("('item1' | 'item2').iif(true, 'true-result', 'false-result')").expect("parse");
     let ctx = InterpreterContext::new(data);
     assert!(interpret(&expr, ctx).is_err());
 }
@@ -102,7 +103,8 @@ fn testiif10() {
 #[test]
 fn testiif11() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
-    let expr = parse("('context').iif($this = 'context','true-result', 'false-result')").expect("parse");
+    let expr =
+        parse("('context').iif($this = 'context','true-result', 'false-result')").expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
@@ -112,7 +114,8 @@ fn testiif11() {
 #[test]
 fn testiif12() {
     let data = fixtures::PATIENT_EXAMPLE_NAME.with(Value::clone);
-    let expr = parse("Patient.name.first().iif(text.exists(), text, family+given.first())").expect("parse");
+    let expr = parse("Patient.name.first().iif(text.exists(), text, family+given.first())")
+        .expect("parse");
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
