@@ -6,7 +6,6 @@ use parser::{Expression, Invocation};
 pub(crate) enum BinOp<'a> {
     Multiplicative(&'a parser::MultiplicativeOp),
     Additive(&'a parser::AdditiveOp),
-    Union,
     Inequality(&'a parser::InequalityOp),
     Equality(&'a parser::EqualityOp),
     Membership(&'a parser::MembershipOp),
@@ -109,6 +108,8 @@ pub(crate) enum Frame<'a> {
         descending: bool,
         saved_ctx: InterpreterContext,
     },
+    UnionAfterLeft(&'a Expression, InterpreterContext),
+    UnionCombine(Value),
     DefineVarEvalName {
         base: Value,
         args: &'a [Expression],

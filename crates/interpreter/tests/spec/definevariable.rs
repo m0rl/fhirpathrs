@@ -99,29 +99,22 @@ fn definevariable8() {
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn definevariable9() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("defineVariable('n1', name.first()).active | defineVariable('n2', name.skip(1).first()).select(%n1.given)").expect("parse");
     let ctx = InterpreterContext::new(data);
-    let (result, _) = interpret(&expr, ctx).expect("interpret");
-    let actual = result.to_vec();
-    assert!(actual.is_empty(), "expected empty, got {:?}", actual);
+    assert!(interpret(&expr, ctx).is_err());
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn definevariable10() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("select(%fam.given)").expect("parse");
     let ctx = InterpreterContext::new(data);
-    let (result, _) = interpret(&expr, ctx).expect("interpret");
-    let actual = result.to_vec();
-    assert!(actual.is_empty(), "expected empty, got {:?}", actual);
+    assert!(interpret(&expr, ctx).is_err());
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn dvredefiningvariablethrowserror() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -132,15 +125,12 @@ fn dvredefiningvariablethrowserror() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn definevariable12() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("Patient.name.defineVariable('n1', first()).active | Patient.name.defineVariable('n2', skip(1).first()).select(%n1.given)").expect("parse");
     let ctx = InterpreterContext::new(data);
-    let (result, _) = interpret(&expr, ctx).expect("interpret");
-    let actual = result.to_vec();
-    assert!(actual.is_empty(), "expected empty, got {:?}", actual);
+    assert!(interpret(&expr, ctx).is_err());
 }
 
 #[test]
@@ -183,15 +173,12 @@ fn definevariable15() {
     assert_eq!(actual, expected, "results: {:?}", actual);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn definevariable16() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("defineVariable('root', 'r1-').select(defineVariable('v1', 'v1').defineVariable('v2', 'v2').select(%v1 | %v2)).select(%root & $this & %v1)").expect("parse");
     let ctx = InterpreterContext::new(data);
-    let (result, _) = interpret(&expr, ctx).expect("interpret");
-    let actual = result.to_vec();
-    assert!(actual.is_empty(), "expected empty, got {:?}", actual);
+    assert!(interpret(&expr, ctx).is_err());
 }
 
 #[test]
@@ -235,14 +222,11 @@ fn dvparametersdontcolide() {
     assert_eq!(actual, vec![Value::String("bbb".to_string())]);
 }
 
-#[ignore] // semantic validation not implemented
 #[test]
 fn dvusageoutsidescopethrows() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("defineVariable('n1', 'v1').active | defineVariable('n2', 'v2').select(%n1)")
         .expect("parse");
     let ctx = InterpreterContext::new(data);
-    let (result, _) = interpret(&expr, ctx).expect("interpret");
-    let actual = result.to_vec();
-    assert!(actual.is_empty(), "expected empty, got {:?}", actual);
+    assert!(interpret(&expr, ctx).is_err());
 }

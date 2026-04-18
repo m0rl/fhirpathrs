@@ -81,7 +81,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 continue 'dispatch;
             }
             Expression::Union(left, right) => {
-                stack.push(Frame::BinaryEvalRight(right, BinOp::Union));
+                stack.push(Frame::UnionAfterLeft(right, ctx.clone()));
                 current = left;
                 continue 'dispatch;
             }
@@ -173,6 +173,17 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     val = v;
                     ctx = c;
                 }
+                Some(Frame::UnionAfterLeft(right_expr, saved_ctx)) => {
+                    stack.push(Frame::UnionCombine(val));
+                    ctx = saved_ctx;
+                    current = right_expr;
+                    continue 'dispatch;
+                }
+                Some(Frame::UnionCombine(left_val)) => {
+                    let (v, c) = interpret_union(&left_val, &val, ctx)?;
+                    val = v;
+                    ctx = c;
+                }
                 Some(Frame::BinaryEvalRight(right_expr, op)) => {
                     stack.push(Frame::BinaryCombine(val, op));
                     current = right_expr;
@@ -184,7 +195,6 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                             interpret_multiplicative(&left_val, mop, &val, ctx)?
                         }
                         BinOp::Additive(aop) => interpret_additive(&left_val, aop, &val, ctx)?,
-                        BinOp::Union => interpret_union(&left_val, &val, ctx)?,
                         BinOp::Inequality(iop) => interpret_inequality(&left_val, iop, &val, ctx)?,
                         BinOp::Equality(eop) => interpret_equality(&left_val, eop, &val, ctx)?,
                         BinOp::Membership(mop) => interpret_membership(&left_val, mop, &val, ctx)?,
