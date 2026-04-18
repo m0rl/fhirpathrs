@@ -30,7 +30,6 @@ fn testtostring3() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // Integer/Decimal type distinction for toString not implemented
 #[test]
 fn testtostring4() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

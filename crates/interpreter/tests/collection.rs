@@ -634,9 +634,8 @@ fn test_of_type_filters_by_decimal() {
     let expr = parse("ofType(Decimal)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
-        assert_eq!(items.len(), 2, "All numbers are Decimal");
-        assert_eq!(items[0], Value::Number(1.0, 0));
-        assert_eq!(items[1], Value::Number(2.5, 1));
+        assert_eq!(items.len(), 1, "Only precision>0 Numbers are Decimal");
+        assert_eq!(items[0], Value::Number(2.5, 1));
     } else {
         panic!("Expected collection");
     }

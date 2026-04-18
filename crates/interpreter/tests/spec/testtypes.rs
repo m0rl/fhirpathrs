@@ -320,7 +320,6 @@ fn testintegerliteralconvertstodecimal() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // Integer/Decimal type distinction not implemented
 #[test]
 fn testintegerliteralisnotdecimal() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -951,7 +950,6 @@ fn testnegativeintegerliteraltostring() {
     assert_eq!(actual, vec![Value::String("-1".to_string())]);
 }
 
-#[ignore] // Integer/Decimal type distinction not implemented
 #[test]
 fn testdecimalliteraltostring() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

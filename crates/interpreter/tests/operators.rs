@@ -440,7 +440,7 @@ fn test_is_operator_decimal() {
 
     let expr = parse("1 is Decimal").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Boolean(true));
+    assert_eq!(result, Value::Boolean(false));
 
     let expr = parse("1.5 is Decimal").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");

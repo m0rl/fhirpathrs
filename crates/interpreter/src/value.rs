@@ -187,9 +187,11 @@ impl Value {
             (Value::Number(_, p), Some("Integer")) => {
                 (namespace.is_none() || namespace == Some("System")) && *p == 0
             }
+            (Value::Number(_, p), Some("Decimal")) => {
+                (namespace.is_none() || namespace == Some("System")) && *p > 0
+            }
             (Value::Boolean(_), Some("Boolean"))
             | (Value::String(_), Some("String"))
-            | (Value::Number(..), Some("Decimal"))
             | (Value::Date(..), Some("Date"))
             | (Value::DateTime(..), Some("DateTime"))
             | (Value::Time(..), Some("Time"))
@@ -824,7 +826,7 @@ impl std::fmt::Display for Value {
             Value::Null => write!(f, "{{}}"),
             Value::Boolean(b) => write!(f, "{}", b),
             Value::String(s) => write!(f, "{}", s),
-            Value::Number(n, _) => write!(f, "{}", n),
+            Value::Number(n, p) => write!(f, "{:.*}", usize::from(*p), n),
             Value::Date(d, p) => write!(f, "@{}", datetime::format_date(*d, *p)),
             Value::DateTime(dt, p, tz) => {
                 write!(f, "@{}", datetime::format_datetime(*dt, *p, tz))
