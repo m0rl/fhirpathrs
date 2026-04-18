@@ -4,11 +4,28 @@ use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::rc::Rc;
 
+#[derive(Clone, Debug)]
+pub enum ContextConstant {
+    System(Value),
+    User(Value),
+    Runtime(Value),
+}
+
+impl ContextConstant {
+    pub fn value(&self) -> &Value {
+        match self {
+            ContextConstant::System(v) | ContextConstant::User(v) | ContextConstant::Runtime(v) => {
+                v
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct InterpreterContext {
     pub data: Value,
     pub root_resource: Value,
-    pub external_constants: Rc<HashMap<String, Value>>,
+    pub constants: Rc<HashMap<String, ContextConstant>>,
     pub this_context: Option<Value>,
     pub index_context: Option<usize>,
     pub total_context: Option<Value>,
@@ -18,10 +35,33 @@ pub struct InterpreterContext {
 
 impl InterpreterContext {
     pub fn new(data: Value) -> Self {
+        let constants = HashMap::from([
+            ("context".to_string(), ContextConstant::System(data.clone())),
+            (
+                "resource".to_string(),
+                ContextConstant::System(data.clone()),
+            ),
+            (
+                "rootResource".to_string(),
+                ContextConstant::System(data.clone()),
+            ),
+            (
+                "ucum".to_string(),
+                ContextConstant::System(Value::String("http://unitsofmeasure.org".to_string())),
+            ),
+            (
+                "sct".to_string(),
+                ContextConstant::System(Value::String("http://snomed.info/sct".to_string())),
+            ),
+            (
+                "loinc".to_string(),
+                ContextConstant::System(Value::String("http://loinc.org".to_string())),
+            ),
+        ]);
         Self {
             root_resource: data.clone(),
             data,
-            external_constants: Rc::new(HashMap::new()),
+            constants: Rc::new(constants),
             this_context: None,
             index_context: None,
             total_context: None,
@@ -57,7 +97,12 @@ impl InterpreterContext {
     }
 
     pub fn with_constant(mut self, name: String, value: Value) -> Self {
-        Rc::make_mut(&mut self.external_constants).insert(name, value);
+        Rc::make_mut(&mut self.constants).insert(name, ContextConstant::User(value));
+        self
+    }
+
+    pub fn define_variable(mut self, name: String, value: Value) -> Self {
+        Rc::make_mut(&mut self.constants).insert(name, ContextConstant::Runtime(value));
         self
     }
 }

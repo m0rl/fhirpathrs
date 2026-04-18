@@ -8,7 +8,7 @@ mod trace;
 mod units;
 mod value;
 
-pub use crate::context::InterpreterContext;
+pub use crate::context::{ContextConstant, InterpreterContext};
 pub use crate::error::InterpreterError;
 pub use crate::trace::{CollectingTraceHandler, SharedTraceHandler, TraceEvent, TraceHandler};
 pub use crate::value::{QuantityType, Value};
@@ -18,7 +18,6 @@ pub use datetime::TimePrecision;
 
 use crate::invocations::{
     Continuation, dispatch_function, interpret_function, interpret_member_access,
-    is_system_variable, resolve_predefined_constant,
 };
 use crate::operators::{
     interpret_additive, interpret_equality, interpret_indexer, interpret_inequality,
@@ -666,7 +665,10 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                             "defineVariable() first argument must evaluate to a string".to_string(),
                         )
                     })?;
-                    if is_system_variable(&name) {
+                    if matches!(
+                        saved_ctx.constants.get(&name),
+                        Some(ContextConstant::System(_) | ContextConstant::Runtime(_))
+                    ) {
                         val = Value::collection(vec![]);
                         ctx = saved_ctx;
                     } else if args.len() == 2 {
@@ -680,7 +682,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                         current = &args[1];
                         continue 'dispatch;
                     } else {
-                        ctx = saved_ctx.with_constant(name, base.clone());
+                        ctx = saved_ctx.define_variable(name, base.clone());
                         val = base;
                     }
                 }
@@ -689,7 +691,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     name,
                     saved_ctx,
                 }) => {
-                    ctx = saved_ctx.with_constant(name, val);
+                    ctx = saved_ctx.define_variable(name, val);
                     val = base;
                 }
                 Some(Frame::CoalesceArgs {
@@ -744,10 +746,9 @@ fn interpret_term(term: &Term, context: InterpreterContext) -> InterpreterResult
         Term::ExternalConstant(constant) => {
             let name = &constant.value;
             let value = context
-                .external_constants
+                .constants
                 .get(name)
-                .cloned()
-                .or_else(|| resolve_predefined_constant(name, &context))
+                .map(|c| c.value().clone())
                 .or_else(|| {
                     if let Value::Object(ref map) = context.root_resource {
                         map.get(name).cloned()

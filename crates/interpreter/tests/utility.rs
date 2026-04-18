@@ -5,7 +5,7 @@
     clippy::approx_constant
 )]
 use chrono::{Datelike, Timelike};
-use interpreter::{CollectingTraceHandler, InterpreterContext, Value, interpret};
+use interpreter::{CollectingTraceHandler, ContextConstant, InterpreterContext, Value, interpret};
 use parser::parse;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -419,7 +419,7 @@ fn test_define_variable_basic() {
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Number(42.0, 0));
     assert_eq!(
-        ctx.external_constants.get("x"),
+        ctx.constants.get("x").map(ContextConstant::value),
         Some(&Value::Number(42.0, 0))
     );
 }
@@ -433,7 +433,7 @@ fn test_define_variable_with_expression() {
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Number(10.0, 0));
     assert_eq!(
-        ctx.external_constants.get("doubled"),
+        ctx.constants.get("doubled").map(ContextConstant::value),
         Some(&Value::Number(20.0, 0))
     );
 }
@@ -498,7 +498,10 @@ fn test_define_variable_on_collection() {
     let expr = parse("defineVariable('items')").expect("parse failed");
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, data);
-    assert_eq!(ctx.external_constants.get("items"), Some(&data));
+    assert_eq!(
+        ctx.constants.get("items").map(ContextConstant::value),
+        Some(&data)
+    );
 }
 
 #[test]
@@ -509,7 +512,7 @@ fn test_define_variable_overrides_existing_constant() {
     let expr = parse("defineVariable('x', 99)").expect("parse failed");
     let (_, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(
-        ctx.external_constants.get("x"),
+        ctx.constants.get("x").map(ContextConstant::value),
         Some(&Value::Number(99.0, 0))
     );
 }
@@ -532,11 +535,11 @@ fn test_define_variable_chained() {
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Number(5.0, 0));
     assert_eq!(
-        ctx.external_constants.get("a"),
+        ctx.constants.get("a").map(ContextConstant::value),
         Some(&Value::Number(10.0, 0))
     );
     assert_eq!(
-        ctx.external_constants.get("b"),
+        ctx.constants.get("b").map(ContextConstant::value),
         Some(&Value::Number(20.0, 0))
     );
 }

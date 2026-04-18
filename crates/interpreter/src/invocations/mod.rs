@@ -1,5 +1,5 @@
 use crate::InterpreterResult;
-use crate::context::InterpreterContext;
+use crate::context::{ContextConstant, InterpreterContext};
 use crate::error::InterpreterError;
 use crate::stack::Frame;
 use crate::value::Value;
@@ -7,8 +7,6 @@ use parser::{Expression, Invocation, Literal, Term, TypeSpecifier};
 
 mod aggregate;
 mod collection;
-mod constants;
-pub(crate) use constants::{is_system_variable, resolve_predefined_constant};
 mod math;
 mod string;
 mod type_conv;
@@ -327,7 +325,10 @@ pub(crate) fn dispatch_function<'a>(
                 ));
             }
             if let Expression::Term(Term::Literal(Literal::String(var_name))) = &args[0] {
-                if is_system_variable(var_name) {
+                if matches!(
+                    ctx.constants.get(var_name),
+                    Some(ContextConstant::System(_) | ContextConstant::Runtime(_))
+                ) {
                     return Ok(Continuation::Resolved(
                         Value::collection(vec![]),
                         ctx.clone(),
@@ -347,7 +348,7 @@ pub(crate) fn dispatch_function<'a>(
                 } else {
                     Ok(Continuation::Resolved(
                         base.clone(),
-                        ctx.clone().with_constant(var_name.clone(), base.clone()),
+                        ctx.clone().define_variable(var_name.clone(), base.clone()),
                     ))
                 }
             } else {
