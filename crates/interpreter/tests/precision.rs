@@ -522,6 +522,130 @@ fn test_day_from_datetime() {
 }
 
 #[test]
+fn test_year_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.000.yearOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(2014.0, 0));
+}
+
+#[test]
+fn test_month_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.000.monthOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(1.0, 0));
+}
+
+#[test]
+fn test_month_of_from_year_precision_returns_empty() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2012.monthOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
+fn test_day_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.000.dayOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(5.0, 0));
+}
+
+#[test]
+fn test_hour_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.000.hourOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(10.0, 0));
+}
+
+#[test]
+fn test_minute_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.000.minuteOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(30.0, 0));
+}
+
+#[test]
+fn test_second_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.000.secondOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(0.0, 0));
+}
+
+#[test]
+fn test_millisecond_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2014-01-05T10:30:00.002.millisecondOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(2.0, 0));
+}
+
+#[test]
+fn test_timezone_offset_of_negative() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2012-01-01T12:30:00.000-07:00.timezoneOffsetOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(-7.0, 0));
+}
+
+#[test]
+fn test_timezone_offset_of_fractional() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2012-01-01T12:30:00.000+08:45.timezoneOffsetOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(8.75, 2));
+}
+
+#[test]
+fn test_timezone_offset_of_naive_returns_empty() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2012-01-01T12:30:00.000.timezoneOffsetOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
+fn test_date_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2012-01-01T12:30:00.000-07:00.dateOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(
+        result,
+        Value::Date(
+            chrono::NaiveDate::from_ymd_opt(2012, 1, 1).unwrap(),
+            interpreter::DatePrecision::Day
+        )
+    );
+}
+
+#[test]
+fn test_time_of_from_datetime() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2012-01-01T12:30:00.000-07:00.timeOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(
+        result,
+        Value::Time(
+            chrono::NaiveTime::from_hms_milli_opt(12, 30, 0, 0).unwrap(),
+            interpreter::TimePrecision::Millisecond
+        )
+    );
+}
+
+#[test]
+fn test_time_of_from_day_precision_returns_empty() {
+    let context = InterpreterContext::new(Value::Null);
+    let expr = parse("@2024-06-15.toDateTime().timeOf()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
 fn test_comparable_same_unit() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("10 'kg'.comparable(20 'kg')").expect("parse failed");

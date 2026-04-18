@@ -423,6 +423,54 @@ pub fn timezone(base: &Value, context: InterpreterContext) -> InterpreterResult 
     Ok((result, context))
 }
 
+pub fn timezone_offset_of(base: &Value, context: InterpreterContext) -> InterpreterResult {
+    let result = match base {
+        Value::DateTime(_, _, Some(offset)) => {
+            let hours = f64::from(offset.local_minus_utc()) / 3600.0;
+            Value::Number(hours, Value::precision(hours))
+        }
+        _ => Value::collection(vec![]),
+    };
+    Ok((result, context))
+}
+
+pub fn date_of(base: &Value, context: InterpreterContext) -> InterpreterResult {
+    let result = match base {
+        Value::Date(d, p) => Value::Date(*d, *p),
+        Value::DateTime(dt, p, _) => {
+            let date_precision = match p {
+                DateTimePrecision::Year => DatePrecision::Year,
+                DateTimePrecision::Month => DatePrecision::Month,
+                _ => DatePrecision::Day,
+            };
+            Value::Date(dt.date(), date_precision)
+        }
+        _ => Value::collection(vec![]),
+    };
+    Ok((result, context))
+}
+
+pub fn time_of(base: &Value, context: InterpreterContext) -> InterpreterResult {
+    let result = match base {
+        Value::DateTime(
+            _,
+            DateTimePrecision::Year | DateTimePrecision::Month | DateTimePrecision::Day,
+            _,
+        ) => Value::collection(vec![]),
+        Value::DateTime(dt, p, _) => {
+            let time_precision = match p {
+                DateTimePrecision::Hour => TimePrecision::Hour,
+                DateTimePrecision::Minute => TimePrecision::Minute,
+                DateTimePrecision::Millisecond => TimePrecision::Millisecond,
+                _ => TimePrecision::Second,
+            };
+            Value::Time(dt.time(), time_precision)
+        }
+        _ => Value::collection(vec![]),
+    };
+    Ok((result, context))
+}
+
 pub fn comparable(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
     if args.is_empty() {
         return Err(InterpreterError::InvalidOperation(
