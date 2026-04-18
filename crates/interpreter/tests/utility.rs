@@ -68,7 +68,7 @@ fn test_iif_nested() {
 }
 
 #[test]
-fn test_iif_with_collection_this_refers_to_whole_collection() {
+fn test_iif_multi_item_input_errors() {
     let data = Value::collection(vec![
         Value::Number(1.0, 0),
         Value::Number(2.0, 0),
@@ -77,22 +77,7 @@ fn test_iif_with_collection_this_refers_to_whole_collection() {
     let context = InterpreterContext::new(data);
 
     let expr = parse("iif($this.count() > 2, 'many', 'few')").expect("parse failed");
-    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::String("many".to_string()));
-}
-
-#[test]
-fn test_iif_this_is_collection_can_use_first() {
-    let data = Value::collection(vec![
-        Value::String("alpha".to_string()),
-        Value::String("beta".to_string()),
-    ]);
-    let context = InterpreterContext::new(data);
-
-    let expr =
-        parse("iif($this.first() = 'alpha', 'starts with alpha', 'other')").expect("parse failed");
-    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::String("starts with alpha".to_string()));
+    assert!(interpret(&expr, context).is_err());
 }
 
 #[test]

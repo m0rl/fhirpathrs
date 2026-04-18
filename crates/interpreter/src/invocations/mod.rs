@@ -281,6 +281,11 @@ pub(crate) fn dispatch_function<'a>(
                         .to_string(),
                 ));
             }
+            if base.is_multi_item_collection() {
+                return Err(InterpreterError::InvalidOperation(
+                    "iif() requires a singleton input".to_string(),
+                ));
+            }
             let eval_ctx = if ctx.this_context.is_some() {
                 ctx.clone()
             } else {

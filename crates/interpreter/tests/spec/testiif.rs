@@ -90,7 +90,6 @@ fn testiif9() {
     assert_eq!(actual, vec![Value::String("context".to_string())]);
 }
 
-#[ignore] // iif() multi-item collection error not enforced
 #[test]
 fn testiif10() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
