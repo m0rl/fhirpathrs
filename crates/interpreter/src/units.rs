@@ -281,7 +281,35 @@ static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
             },
         ),
         (
+            "week",
+            UnitDef {
+                to_base: 604_800.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "weeks",
+            UnitDef {
+                to_base: 604_800.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
             "d",
+            UnitDef {
+                to_base: 86_400.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "day",
+            UnitDef {
+                to_base: 86_400.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "days",
             UnitDef {
                 to_base: 86_400.0,
                 category: UnitCategory::Time,
@@ -295,7 +323,35 @@ static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
             },
         ),
         (
+            "hour",
+            UnitDef {
+                to_base: 3_600.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "hours",
+            UnitDef {
+                to_base: 3_600.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
             "min",
+            UnitDef {
+                to_base: 60.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "minute",
+            UnitDef {
+                to_base: 60.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "minutes",
             UnitDef {
                 to_base: 60.0,
                 category: UnitCategory::Time,
@@ -309,7 +365,35 @@ static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
             },
         ),
         (
+            "second",
+            UnitDef {
+                to_base: 1.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "seconds",
+            UnitDef {
+                to_base: 1.0,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
             "ms",
+            UnitDef {
+                to_base: 0.001,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "millisecond",
+            UnitDef {
+                to_base: 0.001,
+                category: UnitCategory::Time,
+            },
+        ),
+        (
+            "milliseconds",
             UnitDef {
                 to_base: 0.001,
                 category: UnitCategory::Time,
@@ -521,6 +605,58 @@ pub fn quantity_cmp(left: &Value, right: &Value) -> Option<Ordering> {
     }
 
     base1.partial_cmp(&base2)
+}
+
+pub fn quantity_equivalent(left: &Value, right: &Value) -> bool {
+    let (v1, u1_raw, t1) = match left {
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
+        _ => return false,
+    };
+    let (v2, u2_raw, t2) = match right {
+        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
+        _ => return false,
+    };
+
+    if t1 != t2 {
+        return false;
+    }
+
+    if u1_raw == u2_raw {
+        return (v1 - v2).abs() < f64::EPSILON;
+    }
+
+    // Lowercase for case-insensitive unit match (`'cm' ~ 'CM'` is true per spec), then alias
+    // calendar year/month to UCUM `'a'`/`'mo'` so equivalence (~) treats them as equal per 3.0
+    // spec, even though equality (=) considers them uncomparable (year ≈ 365.25d vs UCUM `'a'`
+    // ≈ 365.2422d; same for `month` vs `'mo'`). Other calendar units (week/day/hour/...) are
+    // already in UNITS with exact UCUM factors.
+    let u1 = u1_raw.to_lowercase();
+    let u1 = match u1.as_str() {
+        "year" | "years" => "a",
+        "month" | "months" => "mo",
+        _ => u1.as_str(),
+    };
+    let u2 = u2_raw.to_lowercase();
+    let u2 = match u2.as_str() {
+        "year" | "years" => "a",
+        "month" | "months" => "mo",
+        _ => u2.as_str(),
+    };
+
+    if u1 == u2 {
+        return (v1 - v2).abs() < f64::EPSILON;
+    }
+
+    let (base1, cat1) = match normalize(v1, u1) {
+        Some(n) => n,
+        None => return false,
+    };
+    let (base2, cat2) = match normalize(v2, u2) {
+        Some(n) => n,
+        None => return false,
+    };
+
+    cat1 == cat2 && (base1 - base2).abs() < f64::EPSILON
 }
 
 pub fn quantity_cmp_units(unit_a: &str, unit_b: &str) -> bool {

@@ -62,21 +62,24 @@ fn test_to_time_interval_singleton_wrapping_empty() {
 fn test_compare_to_deep_singleton_both_sides() {
     let left = nested_singleton(Value::Number(1.0, 0), 5_000);
     let right = nested_singleton(Value::Number(2.0, 0), 5_000);
-    assert_eq!(left.compare_equal(&right), Some(std::cmp::Ordering::Less));
+    assert_eq!(left.compare_equal(&right), interpreter::Comparison::Less);
 }
 
 #[test]
 fn test_compare_to_deep_singleton_left_only() {
     let left = nested_singleton(Value::Number(5.0, 0), 10_000);
     let right = Value::Number(5.0, 0);
-    assert_eq!(left.compare_equal(&right), Some(std::cmp::Ordering::Equal));
+    assert_eq!(left.compare_equal(&right), interpreter::Comparison::Equal);
 }
 
 #[test]
 fn test_compare_to_singleton_wrapping_multi() {
     let inner = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
     let left = nested_singleton(inner, 100);
-    assert_eq!(left.compare_equal(&Value::Number(1.0, 0)), None);
+    assert_ne!(
+        left.compare_equal(&Value::Number(1.0, 0)),
+        interpreter::Comparison::Equal
+    );
 }
 
 #[test]
@@ -112,7 +115,7 @@ fn test_equals_nested_collections() {
         Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]),
         Value::collection(vec![Value::Number(3.0, 0), Value::Number(4.0, 0)]),
     ]);
-    assert!(a.equals(&b));
+    assert_eq!(a.compare_equal(&b), interpreter::Comparison::Equal);
 }
 
 #[test]
@@ -125,7 +128,7 @@ fn test_equals_nested_collections_mismatch() {
         Value::Number(1.0, 0),
         Value::Number(9.0, 0),
     ])]);
-    assert!(!a.equals(&b));
+    assert_ne!(a.compare_equal(&b), interpreter::Comparison::Equal);
 }
 
 #[test]
@@ -136,8 +139,14 @@ fn test_equals_nested_objects() {
             Value::object(HashMap::from([("x".to_string(), Value::Number(x, 0))])),
         )]))
     };
-    assert!(make(1.0).equals(&make(1.0)));
-    assert!(!make(1.0).equals(&make(999.0)));
+    assert_eq!(
+        make(1.0).compare_equal(&make(1.0)),
+        interpreter::Comparison::Equal
+    );
+    assert_ne!(
+        make(1.0).compare_equal(&make(999.0)),
+        interpreter::Comparison::Equal
+    );
 }
 
 #[test]
@@ -152,7 +161,7 @@ fn test_equivalent_different_order() {
         Value::Number(1.0, 0),
         Value::Number(2.0, 0),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -165,7 +174,7 @@ fn test_equivalent_nested_collections_different_order() {
         Value::collection(vec![Value::Number(3.0, 0), Value::Number(4.0, 0)]),
         Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -178,14 +187,14 @@ fn test_equivalent_case_insensitive_different_order() {
         Value::String("beta".to_string()),
         Value::String("alpha".to_string()),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
 fn test_equivalent_different_lengths() {
     let a = Value::collection(vec![Value::Number(1.0, 0)]);
     let b = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
-    assert!(!a.equivalent(&b));
+    assert!(!a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -200,7 +209,7 @@ fn test_equivalent_duplicates_match() {
         Value::Number(1.0, 0),
         Value::Number(1.0, 0),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -215,7 +224,7 @@ fn test_equivalent_duplicates_mismatch() {
         Value::Number(2.0, 0),
         Value::Number(1.0, 0),
     ]);
-    assert!(!a.equivalent(&b));
+    assert!(!a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -230,14 +239,14 @@ fn test_equivalent_mixed_types_sorted_correctly() {
         Value::Number(1.0, 0),
         Value::String("HELLO".to_string()),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
 fn test_equivalent_mixed_types_not_swapped() {
     let a = Value::collection(vec![Value::Number(1.0, 0), Value::String("2".to_string())]);
     let b = Value::collection(vec![Value::Number(2.0, 0), Value::String("1".to_string())]);
-    assert!(!a.equivalent(&b));
+    assert!(!a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -256,7 +265,7 @@ fn test_equivalent_all_types_reordered() {
         quantity.clone(),
     ]);
     let b = Value::collection(vec![quantity, string, null, num, bool_val]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -273,14 +282,14 @@ fn test_equivalent_same_type_different_values_not_confused() {
         Value::String("b".to_string()),
         Value::Number(1.0, 0),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
 fn test_equivalent_same_type_wrong_values_after_sort() {
     let a = Value::collection(vec![Value::Number(1.0, 0), Value::String("b".to_string())]);
     let b = Value::collection(vec![Value::Number(1.0, 0), Value::String("c".to_string())]);
-    assert!(!a.equivalent(&b));
+    assert!(!a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -291,8 +300,8 @@ fn test_equivalent_nested_objects() {
             Value::String(s.to_string()),
         )]))
     };
-    assert!(make("Value").equivalent(&make("value")));
-    assert!(!make("one").equivalent(&make("two")));
+    assert!(make("Value").compare_equivalent(&make("value")).is_equal());
+    assert!(!make("one").compare_equivalent(&make("two")).is_equal());
 }
 
 #[test]
@@ -305,7 +314,7 @@ fn test_equivalent_objects_different_keys_reordered() {
         Value::object(HashMap::from([("b".to_string(), Value::Number(2.0, 0))])),
         Value::object(HashMap::from([("a".to_string(), Value::Number(1.0, 0))])),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -318,7 +327,7 @@ fn test_equivalent_objects_different_keys_not_equivalent() {
         Value::object(HashMap::from([("a".to_string(), Value::Number(1.0, 0))])),
         Value::object(HashMap::from([("c".to_string(), Value::Number(2.0, 0))])),
     ]);
-    assert!(!a.equivalent(&b));
+    assert!(!a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -331,7 +340,7 @@ fn test_equivalent_objects_with_nested_collection_values_reordered() {
         "items".to_string(),
         Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]),
     )]));
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -344,7 +353,7 @@ fn test_equivalent_mixed_depth_reordered() {
         Value::collection(vec![Value::Number(2.0, 0), Value::Number(1.0, 0)]),
         Value::Number(42.0, 0),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -364,7 +373,7 @@ fn test_equivalent_deep_objects_in_collections_reordered() {
     };
     let a = Value::collection(vec![make_patient("Alice", 30.0), make_patient("Bob", 25.0)]);
     let b = Value::collection(vec![make_patient("bob", 25.0), make_patient("alice", 30.0)]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -383,7 +392,7 @@ fn test_equivalent_case_insensitive_deep_in_nested_structure() {
             Value::String("urgent".to_string()),
         ]),
     )]))]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }
 
 #[test]
@@ -396,5 +405,5 @@ fn test_equivalent_nested_sets_reordered() {
         Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]),
         Value::collection(vec![Value::Number(3.0, 0), Value::Number(1.0, 0)]),
     ]);
-    assert!(a.equivalent(&b));
+    assert!(a.compare_equivalent(&b).is_equal());
 }

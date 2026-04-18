@@ -3,7 +3,7 @@ use crate::context::InterpreterContext;
 use crate::datetime::TimeInterval;
 use crate::error::InterpreterError;
 use crate::units::{QuantityResult, quantity_add, quantity_cmp, quantity_div, quantity_sub};
-use crate::value::Value;
+use crate::value::{Comparison, Value};
 use chrono::{Months, NaiveTime, Timelike};
 use parser::{
     AdditiveOp, EqualityOp, InequalityOp, MembershipOp, MultiplicativeOp, OrOp, PolarityOp, TypeOp,
@@ -373,7 +373,10 @@ pub(crate) fn interpret_union(
     let mut result: Vec<Value> = vec![];
 
     let mut add_if_unique = |value: Value| {
-        if !result.iter().any(|existing| existing.equals(&value)) {
+        if !result
+            .iter()
+            .any(|existing| existing.compare_equal(&value).is_equal())
+        {
             result.push(value);
         }
     };
@@ -433,27 +436,23 @@ pub(crate) fn interpret_inequality(
         return Ok((Value::collection(vec![]), context));
     }
 
-    if let Some(ordering) = left.compare_equal(&right) {
-        let result = match op {
-            InequalityOp::Less => ordering == Ordering::Less,
-            InequalityOp::LessEqual => ordering != Ordering::Greater,
-            InequalityOp::Greater => ordering == Ordering::Greater,
-            InequalityOp::GreaterEqual => ordering != Ordering::Less,
-        };
-        return Ok((Value::Boolean(result), context));
+    let cmp = left.compare_equal(&right);
+    match cmp.as_ordering() {
+        Some(ordering) => {
+            let result = match op {
+                InequalityOp::Less => ordering == Ordering::Less,
+                InequalityOp::LessEqual => ordering != Ordering::Greater,
+                InequalityOp::Greater => ordering == Ordering::Greater,
+                InequalityOp::GreaterEqual => ordering != Ordering::Less,
+            };
+            Ok((Value::Boolean(result), context))
+        }
+        None if cmp == Comparison::Unequal => Err(InterpreterError::TypeMismatch(format!(
+            "Cannot compare {:?} with {:?}",
+            left, right
+        ))),
+        None => Ok((Value::collection(vec![]), context)),
     }
-
-    if left
-        .compare_precision(&right)
-        .is_some_and(|ord| ord != Ordering::Equal)
-    {
-        return Ok((Value::collection(vec![]), context));
-    }
-
-    Err(InterpreterError::TypeMismatch(format!(
-        "Cannot compare {:?} with {:?}",
-        left, right
-    )))
 }
 
 pub(crate) fn interpret_equality(
@@ -489,14 +488,25 @@ pub(crate) fn interpret_equality(
     let left = left.as_quantity().unwrap_or(left);
     let right = right.as_quantity().unwrap_or(right);
 
-    let result = match op {
-        EqualityOp::Equal => left.equals(&right),
-        EqualityOp::Equivalent => left.equivalent(&right),
-        EqualityOp::NotEqual => !left.equals(&right),
-        EqualityOp::NotEquivalent => !left.equivalent(&right),
+    let result: Option<bool> = match op {
+        EqualityOp::Equal => match left.compare_equal(&right) {
+            Comparison::Equal => Some(true),
+            Comparison::Uncomparable => None,
+            _ => Some(false),
+        },
+        EqualityOp::NotEqual => match left.compare_equal(&right) {
+            Comparison::Equal => Some(false),
+            Comparison::Uncomparable => None,
+            _ => Some(true),
+        },
+        EqualityOp::Equivalent => Some(left.compare_equivalent(&right).is_equal()),
+        EqualityOp::NotEquivalent => Some(!left.compare_equivalent(&right).is_equal()),
     };
 
-    Ok((Value::Boolean(result), context))
+    match result {
+        Some(b) => Ok((Value::Boolean(b), context)),
+        None => Ok((Value::collection(vec![]), context)),
+    }
 }
 
 pub(crate) fn interpret_membership(
@@ -518,8 +528,10 @@ pub(crate) fn interpret_membership(
                 ));
             }
             match right {
-                Value::Collection(items) => items.iter().any(|item| left.equals(item)),
-                _ => left.equals(right),
+                Value::Collection(items) => {
+                    items.iter().any(|item| left.compare_equal(item).is_equal())
+                }
+                _ => left.compare_equal(right).is_equal(),
             }
         }
         MembershipOp::Contains => {
@@ -534,8 +546,10 @@ pub(crate) fn interpret_membership(
                 ));
             }
             match left {
-                Value::Collection(items) => items.iter().any(|item| item.equals(right)),
-                _ => left.equals(right),
+                Value::Collection(items) => items
+                    .iter()
+                    .any(|item| item.compare_equal(right).is_equal()),
+                _ => left.compare_equal(right).is_equal(),
             }
         }
     };

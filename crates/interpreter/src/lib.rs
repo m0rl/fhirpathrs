@@ -11,7 +11,7 @@ mod value;
 pub use crate::context::{ContextConstant, InterpreterContext};
 pub use crate::error::InterpreterError;
 pub use crate::trace::{CollectingTraceHandler, SharedTraceHandler, TraceEvent, TraceHandler};
-pub use crate::value::{QuantityType, Value};
+pub use crate::value::{Comparison, QuantityType, Value};
 pub use datetime::DatePrecision;
 pub use datetime::DateTimePrecision;
 pub use datetime::TimePrecision;
@@ -429,7 +429,10 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     let projected = val.to_vec();
                     for proj_item in projected {
                         if dedup {
-                            if !result.iter().any(|existing| existing.equals(&proj_item)) {
+                            if !result
+                                .iter()
+                                .any(|existing| existing.compare_equal(&proj_item).is_equal())
+                            {
                                 result.push(proj_item.clone());
                                 new_items.push(proj_item);
                             }
@@ -659,6 +662,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     keyed.sort_by(|(_, a_key), (_, b_key)| {
                         let ord = a_key
                             .compare_equal(b_key)
+                            .as_ordering()
                             .unwrap_or(std::cmp::Ordering::Equal);
                         if descending { ord.reverse() } else { ord }
                     });

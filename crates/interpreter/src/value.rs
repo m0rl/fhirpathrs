@@ -6,6 +6,54 @@ use parser::TypeSpecifier;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+/// Result of comparing two `Value`s. Distinguishes the three cases the FHIRPath
+/// equality/comparison operators need:
+///
+/// - `Equal`/`Less`/`Greater` — determinate result with ordering (when types support it)
+/// - `Unequal` — definitely not equal, but no meaningful ordering (e.g. cross-type `1` vs `'a'`,
+///   Boolean `true` vs `false`). Equality operators derive `false`; ordering operators error.
+/// - `Uncomparable` — empty-propagation result (empty operand, incompatible quantity units,
+///   mixed date/time precision). All operators derive empty.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Comparison {
+    Equal,
+    Less,
+    Greater,
+    Unequal,
+    Uncomparable,
+}
+
+impl Comparison {
+    pub fn is_equal(self) -> bool {
+        matches!(self, Comparison::Equal)
+    }
+
+    pub fn as_ordering(self) -> Option<std::cmp::Ordering> {
+        match self {
+            Comparison::Equal => Some(std::cmp::Ordering::Equal),
+            Comparison::Less => Some(std::cmp::Ordering::Less),
+            Comparison::Greater => Some(std::cmp::Ordering::Greater),
+            Comparison::Unequal | Comparison::Uncomparable => None,
+        }
+    }
+}
+
+impl From<std::cmp::Ordering> for Comparison {
+    fn from(ord: std::cmp::Ordering) -> Self {
+        match ord {
+            std::cmp::Ordering::Equal => Comparison::Equal,
+            std::cmp::Ordering::Less => Comparison::Less,
+            std::cmp::Ordering::Greater => Comparison::Greater,
+        }
+    }
+}
+
+impl From<Option<std::cmp::Ordering>> for Comparison {
+    fn from(ord: Option<std::cmp::Ordering>) -> Self {
+        ord.map_or(Comparison::Uncomparable, Comparison::from)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QuantityType {
     Age,
@@ -561,62 +609,39 @@ impl Value {
             .map(|t| Value::Time(t, precision))
     }
 
-    pub fn equals(&self, other: &Value) -> bool {
+    pub fn compare_equivalent(&self, other: &Value) -> Comparison {
+        use std::cmp::Ordering;
         let mut stack: Vec<(&Value, &Value)> = vec![(self, other)];
+        let mut result: Option<Comparison> = None;
         while let Some((a, b)) = stack.pop() {
-            if !match (a, b) {
-                (Value::Null, Value::Null) => true,
-                (Value::Boolean(ba), Value::Boolean(bb)) => ba == bb,
-                (Value::String(sa), Value::String(sb)) => sa == sb,
-                (Value::Number(na, _), Value::Number(nb, _)) => (na - nb).abs() < f64::EPSILON,
-                (Value::Date(da, pa), Value::Date(db, pb)) => pa == pb && da == db,
-                (Value::DateTime(da, pa, tza), Value::DateTime(db, pb, tzb)) => {
-                    pa.comparable_to(*pb)
-                        && match (tza, tzb) {
-                            (Some(oa), Some(ob)) => {
-                                datetime::to_utc_naive(*da, oa) == datetime::to_utc_naive(*db, ob)
-                            }
-                            (None, None) => da == db,
-                            _ => false,
-                        }
+            let pair: Comparison = match (a, b) {
+                (Value::Null, Value::Null) => Comparison::Equal,
+                (Value::Boolean(ba), Value::Boolean(bb)) => ba.cmp(bb).into(),
+                (Value::Number(na, pa), Value::Number(nb, pb)) => {
+                    let min_prec = (*pa).min(*pb).min(17);
+                    let factor = 10_f64.powi(i32::from(min_prec));
+                    (na * factor)
+                        .round()
+                        .total_cmp(&(nb * factor).round())
+                        .into()
                 }
-                (Value::Time(ta, pa), Value::Time(tb, pb)) => pa.comparable_to(*pb) && ta == tb,
-                (Value::Quantity(v1, _, u1, qt1), Value::Quantity(v2, _, u2, qt2)) => {
-                    (v1 - v2).abs() < f64::EPSILON && u1 == u2 && qt1 == qt2
+                (Value::String(sa), Value::String(sb)) => {
+                    sa.to_lowercase().cmp(&sb.to_lowercase()).into()
                 }
-                (Value::Collection(ca), Value::Collection(cb)) => {
-                    if ca.len() != cb.len() {
-                        return false;
-                    }
-                    for (x, y) in ca.iter().zip(cb.iter()) {
-                        stack.push((x, y));
-                    }
-                    continue;
+                (Value::Date(da, _), Value::Date(db, _)) => da.cmp(db).into(),
+                (Value::DateTime(da, _, tza), Value::DateTime(db, _, tzb)) => {
+                    let utc_a = tza.map_or(*da, |o| datetime::to_utc_naive(*da, &o));
+                    let utc_b = tzb.map_or(*db, |o| datetime::to_utc_naive(*db, &o));
+                    utc_a.cmp(&utc_b).into()
                 }
-                (Value::Object(oa), Value::Object(ob)) => {
-                    if oa.len() != ob.len() {
-                        return false;
+                (Value::Time(ta, _), Value::Time(tb, _)) => ta.cmp(tb).into(),
+                (Value::Quantity(..), Value::Quantity(..)) => {
+                    if crate::units::quantity_equivalent(a, b) {
+                        Comparison::Equal
+                    } else {
+                        Comparison::Unequal
                     }
-                    for (k, v) in oa.iter() {
-                        match ob.get(k) {
-                            Some(bv) => stack.push((v, bv)),
-                            None => return false,
-                        }
-                    }
-                    continue;
                 }
-                _ => false,
-            } {
-                return false;
-            }
-        }
-        true
-    }
-
-    pub fn equivalent(&self, other: &Value) -> bool {
-        let mut stack: Vec<(&Value, &Value)> = vec![(self, other)];
-        while let Some((a, b)) = stack.pop() {
-            if !match (a, b) {
                 (Value::Collection(ca), Value::Collection(cb)) => {
                     let mut flat_a: Vec<&Value> = Vec::new();
                     let mut flat_b: Vec<&Value> = Vec::new();
@@ -637,104 +662,61 @@ impl Value {
                         }
                     }
                     if flat_a.len() != flat_b.len() {
-                        return false;
+                        Comparison::Unequal
+                    } else {
+                        let sort_key = |x: &&Value, y: &&Value| {
+                            x.compare_equivalent(y)
+                                .as_ordering()
+                                .unwrap_or_else(|| x.discriminant().cmp(&y.discriminant()))
+                        };
+                        flat_a.sort_by(sort_key);
+                        flat_b.sort_by(sort_key);
+                        for (x, y) in flat_a.into_iter().zip(flat_b) {
+                            stack.push((x, y));
+                        }
+                        Comparison::Equal
                     }
-                    let sort_key = |x: &&Value, y: &&Value| {
-                        x.compare_equivalent(y)
-                            .unwrap_or_else(|| x.discriminant().cmp(&y.discriminant()))
-                    };
-                    flat_a.sort_by(sort_key);
-                    flat_b.sort_by(sort_key);
-                    for (x, y) in flat_a.into_iter().zip(flat_b) {
-                        stack.push((x, y));
-                    }
-                    continue;
                 }
-                (Value::Object(oa), Value::Object(ob)) => {
-                    if oa.len() != ob.len() {
-                        return false;
-                    }
-                    for (k, v) in oa.iter() {
-                        match ob.get(k) {
-                            Some(bv) => stack.push((v, bv)),
-                            None => return false,
+                (Value::Object(oa), Value::Object(ob)) => match oa.len().cmp(&ob.len()) {
+                    Ordering::Equal => {
+                        let mut ka: Vec<&String> = oa.keys().collect();
+                        let mut kb: Vec<&String> = ob.keys().collect();
+                        ka.sort();
+                        kb.sort();
+                        match ka.cmp(&kb) {
+                            Ordering::Equal => {
+                                for key in ka.into_iter().rev() {
+                                    stack.push((&oa[key], &ob[key]));
+                                }
+                                Comparison::Equal
+                            }
+                            ord => ord.into(),
                         }
                     }
-                    continue;
-                }
-                (Value::Number(na, pa), Value::Number(nb, pb)) => {
-                    let min_prec = (*pa).min(*pb).min(17);
-                    let factor = 10_f64.powi(i32::from(min_prec));
-                    (na * factor).round().total_cmp(&(nb * factor).round())
-                        == std::cmp::Ordering::Equal
-                }
-                (Value::Quantity(v1, p1, u1, _), Value::Quantity(v2, p2, u2, _)) => {
-                    u1.to_lowercase() == u2.to_lowercase() && {
-                        let min_prec = (*p1).min(*p2).min(17);
-                        let factor = 10_f64.powi(i32::from(min_prec));
-                        (v1 * factor).round().total_cmp(&(v2 * factor).round())
-                            == std::cmp::Ordering::Equal
-                    }
-                }
-                _ => a.compare_equivalent(b) == Some(std::cmp::Ordering::Equal),
-            } {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn compare_equivalent(&self, other: &Value) -> Option<std::cmp::Ordering> {
-        let mut stack: Vec<(&Value, &Value)> = vec![(self, other)];
-        while let Some((a, b)) = stack.pop() {
-            let ord = match (a, b) {
-                (Value::Null, Value::Null) => std::cmp::Ordering::Equal,
-                (Value::Boolean(ba), Value::Boolean(bb)) => ba.cmp(bb),
-                (Value::Number(na, _), Value::Number(nb, _)) => na.total_cmp(nb),
-                (Value::String(sa), Value::String(sb)) => sa.to_lowercase().cmp(&sb.to_lowercase()),
-                (Value::Date(da, _), Value::Date(db, _)) => da.cmp(db),
-                (Value::DateTime(da, _, tza), Value::DateTime(db, _, tzb)) => tza
-                    .map_or(*da, |o| datetime::to_utc_naive(*da, &o))
-                    .cmp(&tzb.map_or(*db, |o| datetime::to_utc_naive(*db, &o))),
-                (Value::Time(ta, _), Value::Time(tb, _)) => ta.cmp(tb),
-                (Value::Quantity(v1, _, u1, qt1), Value::Quantity(v2, _, u2, qt2)) => v1
-                    .total_cmp(v2)
-                    .then_with(|| u1.to_lowercase().cmp(&u2.to_lowercase()))
-                    .then_with(|| qt1.cmp(qt2)),
-                (Value::Object(oa), Value::Object(ob)) => {
-                    match oa.len().cmp(&ob.len()) {
-                        std::cmp::Ordering::Equal => {}
-                        ord => return Some(ord),
-                    }
-                    let mut ka: Vec<&String> = oa.keys().collect();
-                    let mut kb: Vec<&String> = ob.keys().collect();
-                    ka.sort();
-                    kb.sort();
-                    match ka.cmp(&kb) {
-                        std::cmp::Ordering::Equal => {}
-                        ord => return Some(ord),
-                    }
-                    for key in ka.into_iter().rev() {
-                        stack.push((&oa[key], &ob[key]));
-                    }
-                    continue;
-                }
-                _ => return None,
+                    ord => ord.into(),
+                },
+                _ => Comparison::Unequal,
             };
-            if ord != std::cmp::Ordering::Equal {
-                return Some(ord);
+            match pair {
+                Comparison::Equal | Comparison::Uncomparable => {}
+                definite => {
+                    if result.is_none() {
+                        result = Some(definite);
+                    }
+                }
             }
         }
-        Some(std::cmp::Ordering::Equal)
+        result.unwrap_or(Comparison::Equal)
     }
 
-    pub fn compare_equal(&self, other: &Value) -> Option<std::cmp::Ordering> {
+    pub fn compare_equal(&self, other: &Value) -> Comparison {
+        use std::cmp::Ordering;
         let mut left = self;
         while let Value::Collection(items) = left {
             if items.len() == 1 {
                 left = &items[0];
             } else {
-                return None;
+                break;
             }
         }
         let mut right = other;
@@ -742,40 +724,127 @@ impl Value {
             if items.len() == 1 {
                 right = &items[0];
             } else {
-                return None;
+                break;
             }
         }
-        match (left, right) {
-            (Value::Number(a, _), Value::Number(b, _)) => a.partial_cmp(b),
-            (Value::Date(a, pa), Value::Date(b, pb)) if pa == pb => Some(a.cmp(b)),
-            (Value::DateTime(a, pa, tza), Value::DateTime(b, pb, tzb)) if pa.comparable_to(*pb) => {
-                match (tza, tzb) {
-                    (Some(oa), Some(ob)) => {
-                        Some(datetime::to_utc_naive(*a, oa).cmp(&datetime::to_utc_naive(*b, ob)))
+        let mut stack: Vec<(&Value, &Value)> = vec![(left, right)];
+        let mut uncomparable = false;
+        let mut result: Option<Comparison> = None;
+        while let Some((a, b)) = stack.pop() {
+            let pair: Comparison = match (a, b) {
+                (Value::Null, Value::Null) => Comparison::Equal,
+                (Value::Boolean(ba), Value::Boolean(bb)) => {
+                    if ba == bb {
+                        Comparison::Equal
+                    } else {
+                        Comparison::Unequal
                     }
-                    (None, None) => Some(a.cmp(b)),
-                    _ => None,
+                }
+                (Value::Number(na, _), Value::Number(nb, _)) => {
+                    if (na - nb).abs() < f64::EPSILON {
+                        Comparison::Equal
+                    } else {
+                        na.partial_cmp(nb).into()
+                    }
+                }
+                (Value::String(sa), Value::String(sb)) => sa.cmp(sb).into(),
+                (Value::Date(da, pa), Value::Date(db, pb)) => {
+                    if pa == pb {
+                        da.cmp(db).into()
+                    } else {
+                        Comparison::Uncomparable
+                    }
+                }
+                (Value::DateTime(da, pa, tza), Value::DateTime(db, pb, tzb)) => {
+                    if pa.comparable_to(*pb) {
+                        match (tza, tzb) {
+                            (Some(oa), Some(ob)) => datetime::to_utc_naive(*da, oa)
+                                .cmp(&datetime::to_utc_naive(*db, ob))
+                                .into(),
+                            (None, None) => da.cmp(db).into(),
+                            _ => Comparison::Uncomparable,
+                        }
+                    } else {
+                        Comparison::Uncomparable
+                    }
+                }
+                (Value::Time(ta, pa), Value::Time(tb, pb)) => {
+                    if pa.comparable_to(*pb) {
+                        ta.cmp(tb).into()
+                    } else {
+                        Comparison::Uncomparable
+                    }
+                }
+                (Value::Quantity(v1, _, u1, qt1), Value::Quantity(v2, _, u2, qt2)) => {
+                    if qt1 != qt2 {
+                        Comparison::Unequal
+                    } else if u1 == u2 {
+                        if (v1 - v2).abs() < f64::EPSILON {
+                            Comparison::Equal
+                        } else {
+                            v1.partial_cmp(v2).into()
+                        }
+                    } else {
+                        crate::units::quantity_cmp(a, b).into()
+                    }
+                }
+                (Value::DateTime(dt, _, _), Value::Date(d, _)) => match dt.date().cmp(d) {
+                    Ordering::Equal => Comparison::Uncomparable,
+                    ord => ord.into(),
+                },
+                (Value::Date(d, _), Value::DateTime(dt, _, _)) => match d.cmp(&dt.date()) {
+                    Ordering::Equal => Comparison::Uncomparable,
+                    ord => ord.into(),
+                },
+                (Value::Collection(ca), Value::Collection(cb)) => {
+                    if ca.len() != cb.len() {
+                        Comparison::Unequal
+                    } else {
+                        for (x, y) in ca.iter().zip(cb.iter()) {
+                            stack.push((x, y));
+                        }
+                        Comparison::Equal
+                    }
+                }
+                (Value::Object(oa), Value::Object(ob)) => {
+                    if oa.len() != ob.len() {
+                        Comparison::Unequal
+                    } else {
+                        let mut matched = true;
+                        for (k, v) in oa.iter() {
+                            match ob.get(k) {
+                                Some(bv) => stack.push((v, bv)),
+                                None => {
+                                    matched = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if matched {
+                            Comparison::Equal
+                        } else {
+                            Comparison::Unequal
+                        }
+                    }
+                }
+                _ => Comparison::Unequal,
+            };
+            match pair {
+                Comparison::Equal => {}
+                Comparison::Uncomparable => uncomparable = true,
+                definite => {
+                    if result.is_none() {
+                        result = Some(definite);
+                    }
                 }
             }
-            (Value::Time(a, pa), Value::Time(b, pb)) if pa.comparable_to(*pb) => Some(a.cmp(b)),
-            (Value::String(a), Value::String(b)) => Some(a.cmp(b)),
-            (Value::DateTime(dt, _, _), Value::Date(d, _)) => {
-                let cmp = dt.date().cmp(d);
-                if cmp == std::cmp::Ordering::Equal {
-                    None
-                } else {
-                    Some(cmp)
-                }
-            }
-            (Value::Date(d, _), Value::DateTime(dt, _, _)) => {
-                let cmp = d.cmp(&dt.date());
-                if cmp == std::cmp::Ordering::Equal {
-                    None
-                } else {
-                    Some(cmp)
-                }
-            }
-            _ => None,
+        }
+        if let Some(r) = result {
+            r
+        } else if uncomparable {
+            Comparison::Uncomparable
+        } else {
+            Comparison::Equal
         }
     }
 

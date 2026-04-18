@@ -416,7 +416,10 @@ pub(crate) fn dispatch_function<'a>(
             if criteria_args.is_empty() {
                 let mut sorted = items;
                 sorted.sort_by(|a, b| {
-                    let ord = a.compare_equal(b).unwrap_or(std::cmp::Ordering::Equal);
+                    let ord = a
+                        .compare_equal(b)
+                        .as_ordering()
+                        .unwrap_or(std::cmp::Ordering::Equal);
                     if descending { ord.reverse() } else { ord }
                 });
                 return Ok(Continuation::Resolved(Value::collection(sorted), ctx));

@@ -410,6 +410,84 @@ fn test_equality_vs_equivalence_quantity() {
 }
 
 #[test]
+fn test_quantity_equality_ucum_conversion() {
+    let context = InterpreterContext::new(Value::Null);
+
+    let expr = parse("4 'cm' = 40 'mm'").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+
+    let expr = parse("4 'g' = 4000 'mg'").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+}
+
+#[test]
+fn test_quantity_equality_calendar_ucum_time_units() {
+    let context = InterpreterContext::new(Value::Null);
+
+    for expr_str in [
+        "1 day = 1 'd'",
+        "1 week = 1 'wk'",
+        "1 hour = 1 'h'",
+        "1 minute = 1 'min'",
+        "1 second = 1 's'",
+    ] {
+        let expr = parse(expr_str).expect("parse failed");
+        let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+        assert_eq!(result, Value::Boolean(true), "{expr_str}");
+    }
+}
+
+#[test]
+fn test_quantity_equality_year_month_uncomparable() {
+    let context = InterpreterContext::new(Value::Null);
+
+    let expr = parse("1 year = 1 'a'").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+
+    let expr = parse("1 month = 1 'mo'").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
+fn test_quantity_equality_same_unit_fast_path() {
+    let context = InterpreterContext::new(Value::Null);
+
+    let expr = parse("1 year = 1 year").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+
+    let expr = parse("1 month = 1 month").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+}
+
+#[test]
+fn test_quantity_equivalence_ucum_conversion() {
+    let context = InterpreterContext::new(Value::Null);
+
+    let expr = parse("4 'cm' ~ 40 'mm'").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+}
+
+#[test]
+fn test_quantity_equivalence_calendar_ucum_permissive() {
+    let context = InterpreterContext::new(Value::Null);
+
+    let expr = parse("1 year ~ 1 'a'").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+
+    let expr = parse("1 month ~ 1 'mo'").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+}
+
+#[test]
 fn test_is_operator_integer() {
     let context = InterpreterContext::new(Value::Null);
 

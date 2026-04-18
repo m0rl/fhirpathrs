@@ -125,7 +125,10 @@ pub fn distinct(base: &Value, context: InterpreterContext) -> InterpreterResult 
     let items = base.to_vec();
     let mut result: Vec<Value> = Vec::new();
     for item in items.iter() {
-        if !result.iter().any(|existing| existing.equals(item)) {
+        if !result
+            .iter()
+            .any(|existing| existing.compare_equal(item).is_equal())
+        {
             result.push(item.clone());
         }
     }
@@ -136,7 +139,10 @@ pub fn is_distinct(base: &Value, context: InterpreterContext) -> InterpreterResu
     let items = base.to_vec();
     let mut seen: Vec<Value> = Vec::new();
     for item in items.iter() {
-        if seen.iter().any(|existing| existing.equals(item)) {
+        if seen
+            .iter()
+            .any(|existing| existing.compare_equal(item).is_equal())
+        {
             return Ok((Value::Boolean(false), context));
         }
         seen.push(item.clone());
@@ -154,8 +160,12 @@ pub fn intersect(base: &Value, args: &[Value], context: InterpreterContext) -> I
     let right_items = args[0].to_vec();
     let mut result: Vec<Value> = Vec::new();
     for item in left_items {
-        if right_items.iter().any(|r| r.equals(&item))
-            && !result.iter().any(|existing| existing.equals(&item))
+        if right_items
+            .iter()
+            .any(|r| r.compare_equal(&item).is_equal())
+            && !result
+                .iter()
+                .any(|existing| existing.compare_equal(&item).is_equal())
         {
             result.push(item);
         }
@@ -173,7 +183,7 @@ pub fn exclude(base: &Value, args: &[Value], context: InterpreterContext) -> Int
     let right_items = args[0].to_vec();
     let result: Vec<Value> = left_items
         .into_iter()
-        .filter(|item| !right_items.iter().any(|r| r.equals(item)))
+        .filter(|item| !right_items.iter().any(|r| r.compare_equal(item).is_equal()))
         .collect();
     Ok((Value::collection(result), context))
 }
@@ -188,7 +198,7 @@ pub fn subset_of(base: &Value, args: &[Value], context: InterpreterContext) -> I
     let right_items = args[0].to_vec();
     let result = left_items
         .iter()
-        .all(|item| right_items.iter().any(|r| r.equals(item)));
+        .all(|item| right_items.iter().any(|r| r.compare_equal(item).is_equal()));
     Ok((Value::Boolean(result), context))
 }
 
@@ -202,7 +212,7 @@ pub fn superset_of(base: &Value, args: &[Value], context: InterpreterContext) ->
     let right_items = args[0].to_vec();
     let result = right_items
         .iter()
-        .all(|item| left_items.iter().any(|l| l.equals(item)));
+        .all(|item| left_items.iter().any(|l| l.compare_equal(item).is_equal()));
     Ok((Value::Boolean(result), context))
 }
 
@@ -234,12 +244,18 @@ pub fn union(base: &Value, args: &[Value], context: InterpreterContext) -> Inter
     }
     let mut result: Vec<Value> = Vec::new();
     for item in base.to_vec() {
-        if !result.iter().any(|existing| existing.equals(&item)) {
+        if !result
+            .iter()
+            .any(|existing| existing.compare_equal(&item).is_equal())
+        {
             result.push(item);
         }
     }
     for item in args[0].to_vec() {
-        if !result.iter().any(|existing| existing.equals(&item)) {
+        if !result
+            .iter()
+            .any(|existing| existing.compare_equal(&item).is_equal())
+        {
             result.push(item);
         }
     }
