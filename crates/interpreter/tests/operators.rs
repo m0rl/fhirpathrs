@@ -488,6 +488,63 @@ fn test_quantity_equivalence_calendar_ucum_permissive() {
 }
 
 #[test]
+fn test_multi_item_conversion_errors() {
+    let context = InterpreterContext::new(Value::Null);
+
+    for expr_str in [
+        "(1 | 2).toInteger()",
+        "(true | false).toBoolean()",
+        "(1.0 | 2.0).toDecimal()",
+        "(1 | 2).toString()",
+        "(1 | 2).toLong()",
+    ] {
+        let expr = parse(expr_str).expect("parse failed");
+        assert!(
+            interpret(&expr, context.clone()).is_err(),
+            "{expr_str} should error on multi-item input"
+        );
+    }
+}
+
+#[test]
+fn test_iif_multi_item_criterion_errors() {
+    let context = InterpreterContext::new(Value::Null);
+
+    let expr = parse("iif(1 | 2, 'a', 'b')").expect("parse failed");
+    assert!(interpret(&expr, context).is_err());
+}
+
+#[test]
+fn test_zero_arg_functions_reject_arguments() {
+    let context = InterpreterContext::new(Value::Null);
+
+    for expr_str in [
+        "type(1)",
+        "now(1)",
+        "today(0)",
+        "'abc'.upper('x')",
+        "'abc'.length(0)",
+        "'abc'.trim(0)",
+        "@2024-01-15.year(0)",
+        "1.toString(0)",
+        "1.toInteger(1)",
+        "1.precision(0)",
+    ] {
+        let expr = parse(expr_str).expect("parse failed");
+        assert!(
+            interpret(&expr, context.clone()).is_err(),
+            "{expr_str} should reject extra arguments"
+        );
+    }
+
+    // Sanity: the same functions work with zero args
+    let expr = parse("'abc'.upper()").expect("parse failed");
+    assert!(interpret(&expr, context.clone()).is_ok());
+    let expr = parse("1.toInteger()").expect("parse failed");
+    assert!(interpret(&expr, context).is_ok());
+}
+
+#[test]
 fn test_is_operator_integer() {
     let context = InterpreterContext::new(Value::Null);
 

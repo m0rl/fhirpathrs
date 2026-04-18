@@ -12,6 +12,43 @@ mod string;
 mod type_conv;
 mod utility;
 
+/// Functions the spec defines as zero-arg. Passing any argument to them is a
+/// semantic error — without this check they'd silently ignore extras. `toQuantity`,
+/// `convertsToQuantity`, `toDate`, `toDateTime`, `convertsToDate`, `convertsToDateTime`
+/// are excluded because the 3.0 spec makes their `unit`/`format` argument optional.
+const ZERO_ARG_FUNCTIONS: &[&str] = &[
+    "now",
+    "today",
+    "timeOfDay",
+    "type",
+    "precision",
+    "year",
+    "month",
+    "day",
+    "hour",
+    "minute",
+    "second",
+    "millisecond",
+    "timezone",
+    "upper",
+    "lower",
+    "length",
+    "toChars",
+    "trim",
+    "toString",
+    "toInteger",
+    "toDecimal",
+    "toBoolean",
+    "toTime",
+    "toLong",
+    "convertsToInteger",
+    "convertsToDecimal",
+    "convertsToBoolean",
+    "convertsToString",
+    "convertsToTime",
+    "convertsToLong",
+];
+
 pub(crate) fn interpret_member_access(
     base: &Value,
     member: &str,
@@ -84,6 +121,11 @@ pub(crate) fn dispatch_function<'a>(
     args: &'a [Expression],
     ctx: InterpreterContext,
 ) -> Result<Continuation<'a>, InterpreterError> {
+    if !args.is_empty() && ZERO_ARG_FUNCTIONS.contains(&name) {
+        return Err(InterpreterError::InvalidOperation(format!(
+            "{name}() requires zero arguments"
+        )));
+    }
     match name {
         "where" => {
             if args.len() != 1 {

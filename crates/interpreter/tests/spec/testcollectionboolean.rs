@@ -5,9 +5,7 @@ fn testcollectionboolean1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("iif(1 | 2 | 3, true, false)").expect("parse");
     let ctx = InterpreterContext::new(data);
-    let (result, _) = interpret(&expr, ctx).expect("interpret");
-    let actual = result.to_vec();
-    assert!(actual.is_empty(), "expected empty, got {:?}", actual);
+    assert!(interpret(&expr, ctx).is_err());
 }
 
 #[test]

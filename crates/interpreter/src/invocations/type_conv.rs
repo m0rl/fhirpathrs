@@ -1,11 +1,18 @@
 use crate::InterpreterResult;
 use crate::context::InterpreterContext;
 use crate::datetime::{DatePrecision, DateTimePrecision, TimePrecision};
+use crate::error::InterpreterError;
 use crate::value::Value;
 use regex::Regex;
 
 pub fn to_string(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let s = match base {
+    if base.is_multi_item_collection() {
+        return Err(InterpreterError::InvalidOperation(
+            "toString() requires a singleton input".to_string(),
+        ));
+    }
+    let base = base.unwrap_singleton();
+    let s = match &base {
         Value::Date(d, p) => crate::datetime::format_date(*d, *p),
         Value::DateTime(dt, p, tz) => crate::datetime::format_datetime(*dt, *p, tz),
         Value::Time(t, p) => crate::datetime::format_time(*t, *p),
@@ -16,7 +23,13 @@ pub fn to_string(base: &Value, context: InterpreterContext) -> InterpreterResult
 
 #[allow(clippy::cast_precision_loss)]
 pub fn to_integer(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let value = match base {
+    if base.is_multi_item_collection() {
+        return Err(InterpreterError::InvalidOperation(
+            "toInteger() requires a singleton input".to_string(),
+        ));
+    }
+    let base = base.unwrap_singleton();
+    let value = match &base {
         Value::Number(n, _) => Value::Number(n.trunc(), 0),
         Value::String(s) => match s.trim().parse::<i64>() {
             Ok(i) => Value::Number(i as f64, 0),
@@ -29,7 +42,13 @@ pub fn to_integer(base: &Value, context: InterpreterContext) -> InterpreterResul
 }
 
 pub fn to_decimal(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let value = match base {
+    if base.is_multi_item_collection() {
+        return Err(InterpreterError::InvalidOperation(
+            "toDecimal() requires a singleton input".to_string(),
+        ));
+    }
+    let base = base.unwrap_singleton();
+    let value = match &base {
         Value::Number(n, p) => Value::Number(*n, *p),
         Value::String(s) => match s.trim().parse::<f64>() {
             Ok(n) => Value::Number(n, Value::precision(n)),
@@ -42,7 +61,13 @@ pub fn to_decimal(base: &Value, context: InterpreterContext) -> InterpreterResul
 }
 
 pub fn to_boolean(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let value = match base {
+    if base.is_multi_item_collection() {
+        return Err(InterpreterError::InvalidOperation(
+            "toBoolean() requires a singleton input".to_string(),
+        ));
+    }
+    let base = base.unwrap_singleton();
+    let value = match &base {
         Value::Boolean(b) => Value::Boolean(*b),
         Value::String(s) => match s.to_lowercase().as_str() {
             "true" | "t" | "yes" | "y" | "1" | "1.0" => Value::Boolean(true),
@@ -204,7 +229,13 @@ pub fn to_quantity(base: &Value, args: &[Value], context: InterpreterContext) ->
     clippy::match_same_arms
 )]
 pub fn to_long(base: &Value, context: InterpreterContext) -> InterpreterResult {
-    let value = match base {
+    if base.is_multi_item_collection() {
+        return Err(InterpreterError::InvalidOperation(
+            "toLong() requires a singleton input".to_string(),
+        ));
+    }
+    let base = base.unwrap_singleton();
+    let value = match &base {
         Value::Number(n, p) if *p == 0 => {
             let i = *n as i64;
             if (i as f64 - *n).abs() < f64::EPSILON {
