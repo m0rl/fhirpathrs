@@ -447,6 +447,9 @@ fn peek_infix_op(input: &str) -> Option<(InfixOp, &str)> {
     if let Some(rest) = input.strip_prefix("!=") {
         return Some((InfixOp::Equality(EqualityOp::NotEqual), rest));
     }
+    if let Some(rest) = input.strip_prefix("<>") {
+        return Some((InfixOp::Equality(EqualityOp::NotEqual), rest));
+    }
     if let Some(rest) = input.strip_prefix("!~") {
         return Some((InfixOp::Equality(EqualityOp::NotEquivalent), rest));
     }

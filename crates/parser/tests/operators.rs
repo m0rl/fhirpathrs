@@ -172,6 +172,11 @@ fn test_not_equal() {
 }
 
 #[test]
+fn test_not_equal_alias_angle_brackets() {
+    assert_eq!(parse("1 <> 2"), parse("1 != 2"));
+}
+
+#[test]
 fn test_not_equivalent() {
     assert_eq!(
         parse("1 !~ 2"),
