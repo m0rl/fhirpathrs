@@ -515,6 +515,17 @@ fn test_iif_multi_item_criterion_errors() {
 }
 
 #[test]
+fn test_to_string_non_applicable_returns_empty() {
+    let mut data = HashMap::new();
+    data.insert("id".to_string(), Value::String("x".to_string()));
+    let context = InterpreterContext::new(Value::object(data));
+
+    let expr = parse("$this.toString()").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
 fn test_zero_arg_functions_reject_arguments() {
     let context = InterpreterContext::new(Value::Null);
 

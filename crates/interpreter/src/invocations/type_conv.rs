@@ -12,13 +12,16 @@ pub fn to_string(base: &Value, context: InterpreterContext) -> InterpreterResult
         ));
     }
     let base = base.unwrap_singleton();
-    let s = match &base {
-        Value::Date(d, p) => crate::datetime::format_date(*d, *p),
-        Value::DateTime(dt, p, tz) => crate::datetime::format_datetime(*dt, *p, tz),
-        Value::Time(t, p) => crate::datetime::format_time(*t, *p),
-        _ => base.to_string(),
+    let value = match &base {
+        Value::Boolean(..) | Value::String(..) | Value::Number(..) | Value::Quantity(..) => {
+            Value::String(base.to_string())
+        }
+        Value::Date(d, p) => Value::String(crate::datetime::format_date(*d, *p)),
+        Value::DateTime(dt, p, tz) => Value::String(crate::datetime::format_datetime(*dt, *p, tz)),
+        Value::Time(t, p) => Value::String(crate::datetime::format_time(*t, *p)),
+        _ => Value::collection(vec![]),
     };
-    Ok((Value::String(s), context))
+    Ok((value, context))
 }
 
 #[allow(clippy::cast_precision_loss)]
