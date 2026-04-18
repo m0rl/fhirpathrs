@@ -51,6 +51,16 @@ fn testdiv5() {
 }
 
 #[test]
+fn testdiv6() {
+    let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
+    let expr = parse("-5.5 div 2 = -2").expect("parse");
+    let ctx = InterpreterContext::new(data);
+    let (result, _) = interpret(&expr, ctx).expect("interpret");
+    let actual = result.to_vec();
+    assert_eq!(actual, vec![Value::Boolean(true)]);
+}
+
+#[test]
 fn testdivempty1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("1 div {}").expect("parse");

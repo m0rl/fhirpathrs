@@ -51,6 +51,16 @@ fn testmod5() {
 }
 
 #[test]
+fn testmod6() {
+    let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
+    let expr = parse("-5.5 mod 2 = -1.5").expect("parse");
+    let ctx = InterpreterContext::new(data);
+    let (result, _) = interpret(&expr, ctx).expect("interpret");
+    let actual = result.to_vec();
+    assert_eq!(actual, vec![Value::Boolean(true)]);
+}
+
+#[test]
 fn testmodempty1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
     let expr = parse("1 mod {}").expect("parse");

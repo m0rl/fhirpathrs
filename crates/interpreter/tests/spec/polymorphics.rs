@@ -10,7 +10,7 @@ fn testpolymorphicsa() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // semantic validation not implemented
+#[ignore] // polymorphic choice field resolution not implemented
 #[test]
 fn testpolymorphicsb() {
     let data = fixtures::OBSERVATION_EXAMPLE.with(Value::clone);
