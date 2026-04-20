@@ -150,7 +150,12 @@ pub fn low_boundary(
                 DatePrecision::Day => *d,
             };
             let dt = date.and_hms_milli_opt(0, 0, 0, 0).unwrap_or_default();
-            Value::DateTime(target.trunc(dt), target, None)
+            let out_tz = if target == DateTimePrecision::Millisecond {
+                FixedOffset::east_opt(14 * 3600)
+            } else {
+                None
+            };
+            Value::DateTime(target.trunc(dt), target, out_tz)
         }
         Value::DateTime(dt, p, tz) => {
             let target = if args.is_empty() {
@@ -257,7 +262,12 @@ pub fn high_boundary(
                 DatePrecision::Day => *d,
             };
             let dt = date.and_hms_milli_opt(23, 59, 59, 999).unwrap_or_default();
-            Value::DateTime(target.trunc(dt), target, None)
+            let out_tz = if target == DateTimePrecision::Millisecond {
+                FixedOffset::east_opt(-12 * 3600)
+            } else {
+                None
+            };
+            Value::DateTime(target.trunc(dt), target, out_tz)
         }
         Value::DateTime(dt, p, tz) => {
             let target = if args.is_empty() {
