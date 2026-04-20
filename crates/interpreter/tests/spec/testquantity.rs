@@ -1,6 +1,5 @@
 use super::*;
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity1() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -11,7 +10,6 @@ fn testquantity1() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity2() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -32,7 +30,6 @@ fn testquantity3() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity4() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -43,7 +40,6 @@ fn testquantity4() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity5() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -54,7 +50,6 @@ fn testquantity5() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity6() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -65,7 +60,6 @@ fn testquantity6() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity7() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -76,7 +70,6 @@ fn testquantity7() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
 #[test]
 fn testquantity8() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -87,7 +80,7 @@ fn testquantity8() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
+#[ignore] // compound unit algebra (m * m = m2) not implemented
 #[test]
 fn testquantity9() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -98,7 +91,7 @@ fn testquantity9() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
+#[ignore] // compound unit algebra (g / m = g/m) not implemented
 #[test]
 fn testquantity10() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -109,7 +102,7 @@ fn testquantity10() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // not implemented: testQuantity
+#[ignore] // same-unit division → dimensionless '1' not implemented
 #[test]
 fn testquantity11() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

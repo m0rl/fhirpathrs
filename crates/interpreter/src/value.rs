@@ -1,5 +1,6 @@
 use crate::datetime;
 pub use crate::datetime::{DatePrecision, DateTimePrecision, TimeInterval, TimePrecision};
+use crate::decimal;
 use crate::error::InterpreterError;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta};
 use parser::TypeSpecifier;
@@ -618,12 +619,8 @@ impl Value {
                 (Value::Null, Value::Null) => Comparison::Equal,
                 (Value::Boolean(ba), Value::Boolean(bb)) => ba.cmp(bb).into(),
                 (Value::Number(na, pa), Value::Number(nb, pb)) => {
-                    let min_prec = (*pa).min(*pb).min(17);
-                    let factor = 10_f64.powi(i32::from(min_prec));
-                    (na * factor)
-                        .round()
-                        .total_cmp(&(nb * factor).round())
-                        .into()
+                    let (ra, rb) = decimal::round_to_min_precision(*na, *nb, *pa, *pb);
+                    ra.total_cmp(&rb).into()
                 }
                 (Value::String(sa), Value::String(sb)) => {
                     sa.to_lowercase().cmp(&sb.to_lowercase()).into()

@@ -1,3 +1,4 @@
+use crate::decimal;
 use crate::value::Value;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -630,12 +631,12 @@ pub fn quantity_cmp(left: &Value, right: &Value) -> Option<Ordering> {
 }
 
 pub fn quantity_equivalent(left: &Value, right: &Value) -> bool {
-    let (v1, u1_raw, t1) = match left {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
+    let (v1, p1, u1_raw, t1) = match left {
+        Value::Quantity(v, p, u, t) => (*v, *p, u.as_str(), t),
         _ => return false,
     };
-    let (v2, u2_raw, t2) = match right {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
+    let (v2, p2, u2_raw, t2) = match right {
+        Value::Quantity(v, p, u, t) => (*v, *p, u.as_str(), t),
         _ => return false,
     };
 
@@ -643,8 +644,16 @@ pub fn quantity_equivalent(left: &Value, right: &Value) -> bool {
         return false;
     }
 
+    // Equivalence rounds both operands to the lesser precision per the Decimal equivalence rule
+    // (3.0 spec): `4 'g' ~ 4040 'mg'` is true because both are integer-precision (p=0) and
+    // 4040 mg = 4.04 g rounds to 4 at 0 dp.
+    let round_eq = |a: f64, b: f64, pa: u8, pb: u8| {
+        let (ra, rb) = decimal::round_to_min_precision(a, b, pa, pb);
+        ra == rb
+    };
+
     if u1_raw == u2_raw {
-        return (v1 - v2).abs() < f64::EPSILON;
+        return round_eq(v1, v2, p1, p2);
     }
 
     // Lowercase for case-insensitive unit match (`'cm' ~ 'CM'` is true per spec), then alias
@@ -666,7 +675,7 @@ pub fn quantity_equivalent(left: &Value, right: &Value) -> bool {
     };
 
     if u1 == u2 {
-        return (v1 - v2).abs() < f64::EPSILON;
+        return round_eq(v1, v2, p1, p2);
     }
 
     let (base1, cat1) = match normalize(v1, u1) {
@@ -678,7 +687,7 @@ pub fn quantity_equivalent(left: &Value, right: &Value) -> bool {
         None => return false,
     };
 
-    cat1 == cat2 && (base1 - base2).abs() < f64::EPSILON
+    cat1 == cat2 && round_eq(base1, base2, p1, p2)
 }
 
 pub fn quantity_cmp_units(unit_a: &str, unit_b: &str) -> bool {
@@ -789,5 +798,37 @@ mod tests {
         let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
         let right = Value::Quantity(500.0, 0, "g".to_string(), None);
         assert!((quantity_div(&left, &right).expect("should work") - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_quantity_equivalent_rounds_to_min_precision() {
+        // 4 'g' ~ 4040 'mg' : both p=0, 4040 mg = 4.04 g rounds to 4 at 0dp → equivalent
+        let left = Value::Quantity(4.0, 0, "g".to_string(), None);
+        let right = Value::Quantity(4040.0, 0, "mg".to_string(), None);
+        assert!(quantity_equivalent(&left, &right));
+    }
+
+    #[test]
+    fn test_quantity_equivalent_precise_not_equivalent() {
+        // 4.000 'g' vs 4040 'mg' at min precision 3: 4.000 != 4.040 → not equivalent.
+        let left = Value::Quantity(4.0, 3, "g".to_string(), None);
+        let right = Value::Quantity(4040.0, 3, "mg".to_string(), None);
+        assert!(!quantity_equivalent(&left, &right));
+    }
+
+    #[test]
+    fn test_quantity_equivalent_same_unit_precision() {
+        // 1.0 'g' ~ 1.04 'g' : min precision 1 → round(1.0) == round(1.04) at 1dp → 1.0 == 1.0
+        let left = Value::Quantity(1.0, 1, "g".to_string(), None);
+        let right = Value::Quantity(1.04, 2, "g".to_string(), None);
+        assert!(quantity_equivalent(&left, &right));
+    }
+
+    #[test]
+    fn test_quantity_equivalent_days_week() {
+        // 7 days ~ 1 week : 7 * 86400 = 604800 s, 1 * 604800 = 604800 s, p=0 → equivalent
+        let days = Value::Quantity(7.0, 0, "days".to_string(), None);
+        let week = Value::Quantity(1.0, 0, "week".to_string(), None);
+        assert!(quantity_equivalent(&days, &week));
     }
 }

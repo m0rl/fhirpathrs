@@ -1,5 +1,6 @@
 mod context;
 pub mod datetime;
+mod decimal;
 mod error;
 mod invocations;
 mod operators;
