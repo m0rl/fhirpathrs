@@ -62,19 +62,19 @@ def test_high_boundary_quantity():
 
 def test_low_boundary_date():
     result = fhirpathrs.evaluate("@2014-01-25.lowBoundary()")
-    assert result == "2014-01-25T00:00:00.000"
+    assert result == "2014-01-25T00:00:00.000+14:00"
 
 
 def test_high_boundary_date():
     result = fhirpathrs.evaluate("@2014-01-25.highBoundary()")
-    assert result == "2014-01-25T23:59:59.999"
+    assert result == "2014-01-25T23:59:59.999-12:00"
 
 
 def test_low_boundary_year():
     result = fhirpathrs.evaluate("@2014.lowBoundary()")
-    assert result == "2014-01-01T00:00:00.000"
+    assert result == "2014-01-01T00:00:00.000+14:00"
 
 
 def test_high_boundary_year():
     result = fhirpathrs.evaluate("@2014.highBoundary()")
-    assert result == "2014-12-31T23:59:59.999"
+    assert result == "2014-12-31T23:59:59.999-12:00"
