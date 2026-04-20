@@ -158,7 +158,7 @@ pub fn converts_to_time(base: &Value, context: InterpreterContext) -> Interprete
 
 pub fn converts_to_quantity(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Quantity(..) | Value::Number(..) => true,
+        Value::Quantity(..) | Value::Number(..) | Value::Boolean(_) => true,
         Value::String(s) => {
             matches!(
                 parse_quantity_string(s, &context),
@@ -221,6 +221,7 @@ pub fn to_quantity(base: &Value, args: &[Value], context: InterpreterContext) ->
             let (val, _) = parse_quantity_string(s, &context)?;
             val
         }
+        Value::Boolean(b) => Value::Quantity(if *b { 1.0 } else { 0.0 }, 0, "1".to_string(), None),
         _ => Value::collection(vec![]),
     };
     Ok((value, context))

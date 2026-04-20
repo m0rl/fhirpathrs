@@ -592,7 +592,6 @@ fn teststringdecimalliteralisnotsystemquantity() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // Boolean.convertsToQuantity not implemented
 #[test]
 fn testbooleanliteralconvertstoquantity() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
