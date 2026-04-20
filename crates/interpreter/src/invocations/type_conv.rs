@@ -275,26 +275,33 @@ fn parse_quantity_string(s: &str, context: &InterpreterContext) -> InterpreterRe
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     #[allow(clippy::expect_used)] // Hardcoded regex, validated by tests
     let re = RE.get_or_init(|| {
-        Regex::new(r"^(-?\d+\.?\d*)\s*(?:'([^']+)'|(\S+))?$")
+        Regex::new(r"^(-?\d+(?:\.\d+)?)\s*(?:'([^']+)'|([A-Za-z]+))?$")
             .expect("Invalid regex for parsing quantity strings")
     });
 
-    if let Some(caps) = re.captures(s) {
-        let value: f64 = caps
-            .get(1)
-            .and_then(|m| m.as_str().parse().ok())
-            .unwrap_or(0.0);
+    let Some(caps) = re.captures(s) else {
+        return Ok((Value::collection(vec![]), context.clone()));
+    };
 
-        let unit = caps
-            .get(2)
-            .or_else(|| caps.get(3))
-            .map_or_else(|| "1".to_string(), |m| m.as_str().to_string());
+    let value: f64 = caps
+        .get(1)
+        .and_then(|m| m.as_str().parse().ok())
+        .unwrap_or(0.0);
 
-        Ok((
-            Value::Quantity(value, Value::precision(value), unit, None),
-            context.clone(),
-        ))
+    let unit = if let Some(quoted) = caps.get(2) {
+        quoted.as_str().to_string()
+    } else if let Some(unquoted) = caps.get(3) {
+        if crate::units::is_calendar_unit(unquoted.as_str()) {
+            unquoted.as_str().to_string()
+        } else {
+            return Ok((Value::collection(vec![]), context.clone()));
+        }
     } else {
-        Ok((Value::collection(vec![]), context.clone()))
-    }
+        "1".to_string()
+    };
+
+    Ok((
+        Value::Quantity(value, Value::precision(value), unit, None),
+        context.clone(),
+    ))
 }

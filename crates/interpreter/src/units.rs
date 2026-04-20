@@ -13,6 +13,28 @@ pub enum UnitCategory {
     Dimensionless,
 }
 
+pub fn is_calendar_unit(u: &str) -> bool {
+    matches!(
+        u,
+        "year"
+            | "years"
+            | "month"
+            | "months"
+            | "week"
+            | "weeks"
+            | "day"
+            | "days"
+            | "hour"
+            | "hours"
+            | "minute"
+            | "minutes"
+            | "second"
+            | "seconds"
+            | "millisecond"
+            | "milliseconds"
+    )
+}
+
 #[derive(Debug, Clone, Copy)]
 struct UnitDef {
     to_base: f64,

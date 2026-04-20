@@ -550,7 +550,6 @@ fn teststringquantityweekconvertstoquantity() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // UCUM quantity validation not implemented
 #[test]
 fn teststringquantityweekconvertstoquantityfalse() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -561,7 +560,6 @@ fn teststringquantityweekconvertstoquantityfalse() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // quantity string validation not implemented
 #[test]
 fn teststringdecimalliteralconvertstoquantityfalse() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -655,7 +653,6 @@ fn teststringquantityliteraltoquantity() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // UCUM quantity alias not implemented
 #[test]
 fn teststringquantitydayliteraltoquantity() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -666,7 +663,6 @@ fn teststringquantitydayliteraltoquantity() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // UCUM quantity alias not implemented
 #[test]
 fn teststringquantityweekliteraltoquantity() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -677,7 +673,6 @@ fn teststringquantityweekliteraltoquantity() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // UCUM quantity alias not implemented
 #[test]
 fn teststringquantitymonthliteraltoquantity() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -688,7 +683,6 @@ fn teststringquantitymonthliteraltoquantity() {
     assert!(actual.is_empty(), "expected empty, got {:?}", actual);
 }
 
-#[ignore] // UCUM quantity alias not implemented
 #[test]
 fn teststringquantityyearliteraltoquantity() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);
@@ -989,7 +983,6 @@ fn testquantityliteralwktostring() {
     assert_eq!(actual, vec![Value::String("1 'wk'".to_string())]);
 }
 
-#[ignore] // Quantity toString not implemented
 #[test]
 fn testquantityliteralweektostring() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

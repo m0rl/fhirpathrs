@@ -98,9 +98,17 @@ fn test_converts_to_quantity() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Boolean(true));
 
-    let expr = parse("'5.5 mg'.convertsToQuantity()").expect("parse failed");
+    let expr = parse("'5.5 \\'mg\\''.convertsToQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Boolean(true));
+
+    let expr = parse("'5 day'.convertsToQuantity()").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(true));
+
+    let expr = parse("'5.5 mg'.convertsToQuantity()").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::Boolean(false));
 
     let expr = parse("'100'.convertsToQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -435,9 +443,17 @@ fn test_to_quantity_from_string() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Quantity(10.0, 0, "kg".to_string(), None));
 
-    let expr = parse("'5.5 mg'.toQuantity()").expect("parse failed");
+    let expr = parse("'5.5 \\'mg\\''.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::Quantity(5.5, 1, "mg".to_string(), None));
+
+    let expr = parse("'5 day'.toQuantity()").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::Quantity(5.0, 0, "day".to_string(), None));
+
+    let expr = parse("'5.5 mg'.toQuantity()").expect("parse failed");
+    let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
 
     let expr = parse("'100'.toQuantity()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");

@@ -901,7 +901,13 @@ impl std::fmt::Display for Value {
                 write!(f, "@{}", datetime::format_datetime(*dt, *p, tz))
             }
             Value::Time(t, p) => write!(f, "@T{}", datetime::format_time(*t, *p)),
-            Value::Quantity(v, _, u, _) => write!(f, "{} '{}'", v, u),
+            Value::Quantity(v, _, u, _) => {
+                if crate::units::is_calendar_unit(u) {
+                    write!(f, "{} {}", v, u)
+                } else {
+                    write!(f, "{} '{}'", v, u)
+                }
+            }
             Value::Collection(items) => {
                 write!(
                     f,
