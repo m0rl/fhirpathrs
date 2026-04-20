@@ -1,6 +1,5 @@
 use super::*;
 
-#[ignore] // decimal precision tracking not implemented
 #[test]
 fn precisiondecimal() {
     let data = Value::object(HashMap::new());
