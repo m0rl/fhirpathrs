@@ -70,7 +70,6 @@ fn testsort7() {
     assert_eq!(actual, vec![Value::Boolean(true)]);
 }
 
-#[ignore] // descending sort (-$this) not implemented
 #[test]
 fn testsort8() {
     let data = fixtures::PATIENT_EXAMPLE.with(Value::clone);

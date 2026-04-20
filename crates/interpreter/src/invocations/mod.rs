@@ -481,7 +481,10 @@ pub(crate) fn dispatch_function<'a>(
                 });
                 return Ok(Continuation::Resolved(Value::collection(sorted), ctx));
             }
-            let criteria = &criteria_args[0];
+            let (criteria, descending) = match &criteria_args[0] {
+                Expression::Polarity(PolarityOp::Minus, inner) => (inner.as_ref(), !descending),
+                other => (other, descending),
+            };
             let item_ctx = ctx.clone().with_this(items[0].clone());
             Ok(Continuation::Chain(
                 criteria,
