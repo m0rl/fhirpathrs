@@ -3,7 +3,7 @@ use crate::context::{ContextConstant, InterpreterContext};
 use crate::error::InterpreterError;
 use crate::stack::Frame;
 use crate::value::Value;
-use parser::{Expression, Invocation, Literal, Term, TypeSpecifier};
+use parser::{Expression, Invocation, Literal, PolarityOp, Term, TypeSpecifier};
 
 mod aggregate;
 mod collection;
