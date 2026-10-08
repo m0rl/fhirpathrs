@@ -639,7 +639,7 @@ fn teststringintegerliteraltoquantity() {
     let actual = result.to_vec();
     assert_eq!(
         actual,
-        vec![Value::Quantity(1.0_f64, 0, "1".to_string(), None)]
+        vec![Value::quantity(1.0_f64, 0, "1".to_string(), None)]
     );
 }
 

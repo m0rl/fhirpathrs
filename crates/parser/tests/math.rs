@@ -11,12 +11,18 @@ fn test_arithmetic_expressions() {
     assert_eq!(
         parse("1 + 2 * 3"),
         Ok(Expression::Additive(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             AdditiveOp::Plus,
             Box::new(Expression::Multiplicative(
-                Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0)))),
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "2".to_string()
+                )))),
                 MultiplicativeOp::Multiply,
-                Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "3".to_string()
+                ))))
             ))
         ))
     );
@@ -24,68 +30,102 @@ fn test_arithmetic_expressions() {
         parse("2 * 3 + 1"),
         Ok(Expression::Additive(
             Box::new(Expression::Multiplicative(
-                Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0)))),
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "2".to_string()
+                )))),
                 MultiplicativeOp::Multiply,
-                Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "3".to_string()
+                ))))
             )),
             AdditiveOp::Plus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("1 + 2"),
         Ok(Expression::Additive(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             AdditiveOp::Plus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("10 - 5"),
         Ok(Expression::Additive(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(10.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "10".to_string()
+            )))),
             AdditiveOp::Minus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "5".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("1 & 3"),
         Ok(Expression::Additive(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             AdditiveOp::Ampersand,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("3 * 4"),
         Ok(Expression::Multiplicative(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            )))),
             MultiplicativeOp::Multiply,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "4".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("3 div 4"),
         Ok(Expression::Multiplicative(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            )))),
             MultiplicativeOp::Div,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "4".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("3 mod 4"),
         Ok(Expression::Multiplicative(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            )))),
             MultiplicativeOp::Mod,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "4".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("20 / 5"),
         Ok(Expression::Multiplicative(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(20.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "20".to_string()
+            )))),
             MultiplicativeOp::Divide,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "5".to_string()
+            ))))
         ))
     );
 }

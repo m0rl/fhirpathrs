@@ -1,6 +1,7 @@
 use crate::InterpreterResult;
 use crate::context::InterpreterContext;
 use crate::datetime::{DatePrecision, DateTimePrecision, TimePrecision};
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
 use crate::value::Value;
 use regex::Regex;
@@ -35,10 +36,10 @@ pub fn to_integer(base: &Value, context: InterpreterContext) -> InterpreterResul
     let value = match &base {
         Value::Number(n, _) => Value::Number(n.trunc(), 0),
         Value::String(s) => match s.trim().parse::<i64>() {
-            Ok(i) => Value::Number(i as f64, 0),
+            Ok(i) => Value::Number(Decimal::from(i), 0),
             Err(_) => Value::Null,
         },
-        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }, 0),
+        Value::Boolean(b) => Value::Number(if *b { Decimal::ONE } else { Decimal::ZERO }, 0),
         _ => Value::Null,
     };
     Ok((value, context))
@@ -53,11 +54,8 @@ pub fn to_decimal(base: &Value, context: InterpreterContext) -> InterpreterResul
     let base = base.unwrap_singleton();
     let value = match &base {
         Value::Number(n, p) => Value::Number(*n, *p),
-        Value::String(s) => match s.trim().parse::<f64>() {
-            Ok(n) => Value::Number(n, Value::precision(n)),
-            Err(_) => Value::Null,
-        },
-        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }, 0),
+        Value::String(s) => Decimal::parse(s).map_or(Value::Null, Value::decimal),
+        Value::Boolean(b) => Value::Number(if *b { Decimal::ONE } else { Decimal::ZERO }, 0),
         _ => Value::Null,
     };
     Ok((value, context))
@@ -78,9 +76,9 @@ pub fn to_boolean(base: &Value, context: InterpreterContext) -> InterpreterResul
             _ => Value::Null,
         },
         Value::Number(n, _) => {
-            if *n == 1.0 {
+            if *n == Decimal::ONE {
                 Value::Boolean(true)
-            } else if *n == 0.0 {
+            } else if n.is_zero() {
                 Value::Boolean(false)
             } else {
                 Value::Null
@@ -104,7 +102,7 @@ pub fn converts_to_integer(base: &Value, context: InterpreterContext) -> Interpr
 pub fn converts_to_decimal(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
         Value::Number(..) | Value::Boolean(_) => true,
-        Value::String(s) => s.trim().parse::<f64>().is_ok(),
+        Value::String(s) => Decimal::parse(s).is_some(),
         _ => false,
     };
     Ok((Value::Boolean(result), context))
@@ -119,7 +117,7 @@ pub fn converts_to_boolean(base: &Value, context: InterpreterContext) -> Interpr
                 "true" | "t" | "yes" | "y" | "1" | "1.0" | "false" | "f" | "no" | "n" | "0" | "0.0"
             )
         }
-        Value::Number(n, _) => *n == 1.0 || *n == 0.0,
+        Value::Number(n, _) => *n == Decimal::ONE || n.is_zero(),
         _ => false,
     };
     Ok((Value::Boolean(result), context))
@@ -221,7 +219,12 @@ pub fn to_quantity(base: &Value, args: &[Value], context: InterpreterContext) ->
             let (val, _) = parse_quantity_string(s, &context)?;
             val
         }
-        Value::Boolean(b) => Value::Quantity(if *b { 1.0 } else { 0.0 }, 0, "1".to_string(), None),
+        Value::Boolean(b) => Value::Quantity(
+            if *b { Decimal::ONE } else { Decimal::ZERO },
+            0,
+            "1".to_string(),
+            None,
+        ),
         _ => Value::collection(vec![]),
     };
     Ok((value, context))
@@ -240,20 +243,15 @@ pub fn to_long(base: &Value, context: InterpreterContext) -> InterpreterResult {
     }
     let base = base.unwrap_singleton();
     let value = match &base {
-        Value::Number(n, p) if *p == 0 => {
-            let i = *n as i64;
-            if (i as f64 - *n).abs() < f64::EPSILON {
-                Value::Number(*n, 0)
-            } else {
-                Value::collection(vec![])
-            }
+        Value::Number(n, 0) if n.is_integer() && i64::try_from(n.trunc_to_i128()).is_ok() => {
+            Value::Number(*n, 0)
         }
         Value::Number(..) => Value::collection(vec![]),
         Value::String(s) => match s.trim().parse::<i64>() {
-            Ok(i) => Value::Number(i as f64, 0),
+            Ok(i) => Value::Number(Decimal::from(i), 0),
             Err(_) => Value::collection(vec![]),
         },
-        Value::Boolean(b) => Value::Number(if *b { 1.0 } else { 0.0 }, 0),
+        Value::Boolean(b) => Value::Number(if *b { Decimal::ONE } else { Decimal::ZERO }, 0),
         _ => Value::collection(vec![]),
     };
     Ok((value, context))
@@ -283,10 +281,9 @@ fn parse_quantity_string(s: &str, context: &InterpreterContext) -> InterpreterRe
         return Ok((Value::collection(vec![]), context.clone()));
     };
 
-    let value: f64 = caps
-        .get(1)
-        .and_then(|m| m.as_str().parse().ok())
-        .unwrap_or(0.0);
+    let Some(value) = caps.get(1).and_then(|m| Decimal::parse(m.as_str())) else {
+        return Ok((Value::collection(vec![]), context.clone()));
+    };
 
     let unit = if let Some(quoted) = caps.get(2) {
         quoted.as_str().to_string()
@@ -301,7 +298,7 @@ fn parse_quantity_string(s: &str, context: &InterpreterContext) -> InterpreterRe
     };
 
     Ok((
-        Value::Quantity(value, Value::precision(value), unit, None),
+        Value::Quantity(value, value.precision(), unit, None),
         context.clone(),
     ))
 }

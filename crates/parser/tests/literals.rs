@@ -392,7 +392,9 @@ fn test_datetime_t_only() {
 fn test_integer_literal() {
     assert_eq!(
         parse("42"),
-        Ok(Expression::Term(Term::Literal(Literal::Number(42.0, 0))))
+        Ok(Expression::Term(Term::Literal(Literal::Number(
+            "42".to_string()
+        ))))
     );
 }
 
@@ -400,7 +402,9 @@ fn test_integer_literal() {
 fn test_decimal_literal() {
     assert_eq!(
         parse("2.75"),
-        Ok(Expression::Term(Term::Literal(Literal::Number(2.75, 2))))
+        Ok(Expression::Term(Term::Literal(Literal::Number(
+            "2.75".to_string()
+        ))))
     );
 }
 
@@ -408,7 +412,9 @@ fn test_decimal_literal() {
 fn test_zero_literal() {
     assert_eq!(
         parse("0"),
-        Ok(Expression::Term(Term::Literal(Literal::Number(0.0, 0))))
+        Ok(Expression::Term(Term::Literal(Literal::Number(
+            "0".to_string()
+        ))))
     );
 }
 
@@ -458,8 +464,7 @@ fn test_quantity_all_date_time_units() {
             result,
             Ok(Expression::Term(Term::Literal(Literal::Quantity(
                 parser::Quantity {
-                    value: 1.0,
-                    precision: 0,
+                    value: "1".to_string(),
                     unit: unit.to_string()
                 }
             )))),
@@ -474,8 +479,7 @@ fn test_quantity_decimal_value() {
         parse("2.5 'mg'"),
         Ok(Expression::Term(Term::Literal(Literal::Quantity(
             parser::Quantity {
-                value: 2.5,
-                precision: 1,
+                value: "2.5".to_string(),
                 unit: "mg".to_string()
             }
         ))))

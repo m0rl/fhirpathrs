@@ -10,6 +10,7 @@ mod units;
 mod value;
 
 pub use crate::context::{ContextConstant, InterpreterContext};
+pub use crate::decimal::Decimal;
 pub use crate::error::InterpreterError;
 pub use crate::trace::{CollectingTraceHandler, SharedTraceHandler, TraceEvent, TraceHandler};
 pub use crate::value::{Comparison, QuantityType, Value};
@@ -133,12 +134,9 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                             val = ctx.this_context.clone().unwrap_or_else(|| ctx.data.clone());
                         }
                         Invocation::Index => {
-                            #[allow(clippy::cast_precision_loss)]
-                            {
-                                val = ctx
-                                    .index_context
-                                    .map_or(Value::Null, |i| Value::Number(i as f64, 0));
-                            }
+                            val = ctx
+                                .index_context
+                                .map_or(Value::Null, |i| Value::Number(Decimal::from(i as i64), 0));
                         }
                         Invocation::Total => {
                             val = ctx.total_context.clone().unwrap_or(Value::Null);
@@ -749,7 +747,13 @@ fn interpret_term(term: &Term, context: InterpreterContext) -> InterpreterResult
                 Literal::Null => Value::Null,
                 Literal::Boolean(b) => Value::Boolean(*b),
                 Literal::String(s) => Value::String(s.clone()),
-                Literal::Number(n, p) => Value::Number(*n, *p),
+                Literal::Number(text) => Decimal::parse(text)
+                    .map(|n| Value::Number(n, Decimal::text_precision(text)))
+                    .ok_or_else(|| {
+                        InterpreterError::InvalidOperation(format!(
+                            "Decimal literal out of range: {text}"
+                        ))
+                    })?,
                 Literal::Date(d) => Value::from_date_str(d).ok_or_else(|| {
                     InterpreterError::InvalidOperation(format!("Invalid date: {}", d))
                 })?,
@@ -759,7 +763,16 @@ fn interpret_term(term: &Term, context: InterpreterContext) -> InterpreterResult
                 Literal::Time(t) => Value::from_time_str(t).ok_or_else(|| {
                     InterpreterError::InvalidOperation(format!("Invalid time: {}", t))
                 })?,
-                Literal::Quantity(q) => Value::Quantity(q.value, q.precision, q.unit.clone(), None),
+                Literal::Quantity(q) => Decimal::parse(&q.value)
+                    .map(|n| {
+                        Value::Quantity(n, Decimal::text_precision(&q.value), q.unit.clone(), None)
+                    })
+                    .ok_or_else(|| {
+                        InterpreterError::InvalidOperation(format!(
+                            "Decimal literal out of range: {}",
+                            q.value
+                        ))
+                    })?,
             };
             Ok((value, context))
         }

@@ -13,7 +13,7 @@ fn test_precision_date_year() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024.precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(4.0, 0));
+    assert_eq!(result, Value::number(4.0, 0));
 }
 
 #[test]
@@ -21,7 +21,7 @@ fn test_precision_date_month() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-06.precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(6.0, 0));
+    assert_eq!(result, Value::number(6.0, 0));
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn test_precision_date_day() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-06-15.precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(8.0, 0));
+    assert_eq!(result, Value::number(8.0, 0));
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn test_precision_datetime_second() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-01-15T10:30:00).precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(14.0, 0));
+    assert_eq!(result, Value::number(14.0, 0));
 }
 
 #[test]
@@ -45,7 +45,7 @@ fn test_precision_datetime_minute() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-01-15T10:30).precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(12.0, 0));
+    assert_eq!(result, Value::number(12.0, 0));
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn test_precision_time_second() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T10:30:00).precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(6.0, 0));
+    assert_eq!(result, Value::number(6.0, 0));
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn test_precision_time_minute() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T10:30).precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(4.0, 0));
+    assert_eq!(result, Value::number(4.0, 0));
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn test_precision_decimal() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("3.14.precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0, 0));
+    assert_eq!(result, Value::number(2.0, 0));
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn test_precision_integer() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("42.precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0, 0));
+    assert_eq!(result, Value::number(0.0, 0));
 }
 
 #[test]
@@ -278,7 +278,7 @@ fn test_date_precision_preserved_through_arithmetic() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06 + 1 month).precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(6.0, 0));
+    assert_eq!(result, Value::number(6.0, 0));
 }
 
 #[test]
@@ -286,7 +286,7 @@ fn test_datetime_precision_preserved_through_arithmetic() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-01-15T10:30:00 + 2 hours).precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(14.0, 0));
+    assert_eq!(result, Value::number(14.0, 0));
 }
 
 #[test]
@@ -294,7 +294,7 @@ fn test_today_precision_is_day() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("today().precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(8.0, 0));
+    assert_eq!(result, Value::number(8.0, 0));
 }
 
 #[test]
@@ -302,7 +302,7 @@ fn test_now_precision_is_millisecond() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("now().precision()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(17.0, 0));
+    assert_eq!(result, Value::number(17.0, 0));
 }
 
 #[test]
@@ -334,7 +334,7 @@ fn test_year_from_date() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-06-15.year()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(2024.0, 0));
+    assert_eq!(result, Value::number(2024.0, 0));
 }
 
 #[test]
@@ -342,7 +342,7 @@ fn test_year_from_year_precision_date() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024.year()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(2024.0, 0));
+    assert_eq!(result, Value::number(2024.0, 0));
 }
 
 #[test]
@@ -350,7 +350,7 @@ fn test_month_from_date() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-06-15.month()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(6.0, 0));
+    assert_eq!(result, Value::number(6.0, 0));
 }
 
 #[test]
@@ -366,7 +366,7 @@ fn test_day_from_date() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-06-15.day()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(15.0, 0));
+    assert_eq!(result, Value::number(15.0, 0));
 }
 
 #[test]
@@ -382,7 +382,7 @@ fn test_hour_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:00).hour()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
 }
 
 #[test]
@@ -390,7 +390,7 @@ fn test_hour_from_time() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T14:30:00).hour()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(14.0, 0));
+    assert_eq!(result, Value::number(14.0, 0));
 }
 
 #[test]
@@ -406,7 +406,7 @@ fn test_minute_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:00).minute()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(30.0, 0));
+    assert_eq!(result, Value::number(30.0, 0));
 }
 
 #[test]
@@ -414,7 +414,7 @@ fn test_minute_from_time() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T14:30:00).minute()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(30.0, 0));
+    assert_eq!(result, Value::number(30.0, 0));
 }
 
 #[test]
@@ -422,7 +422,7 @@ fn test_second_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:45).second()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(45.0, 0));
+    assert_eq!(result, Value::number(45.0, 0));
 }
 
 #[test]
@@ -430,7 +430,7 @@ fn test_second_from_time() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@T14:30:45).second()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(45.0, 0));
+    assert_eq!(result, Value::number(45.0, 0));
 }
 
 #[test]
@@ -438,7 +438,7 @@ fn test_millisecond_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:45.123).millisecond()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(123.0, 0));
+    assert_eq!(result, Value::number(123.0, 0));
 }
 
 #[test]
@@ -486,7 +486,7 @@ fn test_hour_preserves_local_time_with_offset() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2024-01-15T10:30:00+05:00.hour()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
 }
 
 #[test]
@@ -502,7 +502,7 @@ fn test_year_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:00).year()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(2024.0, 0));
+    assert_eq!(result, Value::number(2024.0, 0));
 }
 
 #[test]
@@ -510,7 +510,7 @@ fn test_month_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:00).month()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(6.0, 0));
+    assert_eq!(result, Value::number(6.0, 0));
 }
 
 #[test]
@@ -518,7 +518,7 @@ fn test_day_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("(@2024-06-15T10:30:00).day()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(15.0, 0));
+    assert_eq!(result, Value::number(15.0, 0));
 }
 
 #[test]
@@ -526,7 +526,7 @@ fn test_year_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.000.yearOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(2014.0, 0));
+    assert_eq!(result, Value::number(2014.0, 0));
 }
 
 #[test]
@@ -534,7 +534,7 @@ fn test_month_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.000.monthOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0, 0));
+    assert_eq!(result, Value::number(1.0, 0));
 }
 
 #[test]
@@ -550,7 +550,7 @@ fn test_day_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.000.dayOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(5.0, 0));
+    assert_eq!(result, Value::number(5.0, 0));
 }
 
 #[test]
@@ -558,7 +558,7 @@ fn test_hour_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.000.hourOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
 }
 
 #[test]
@@ -566,7 +566,7 @@ fn test_minute_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.000.minuteOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(30.0, 0));
+    assert_eq!(result, Value::number(30.0, 0));
 }
 
 #[test]
@@ -574,7 +574,7 @@ fn test_second_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.000.secondOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0, 0));
+    assert_eq!(result, Value::number(0.0, 0));
 }
 
 #[test]
@@ -582,7 +582,7 @@ fn test_millisecond_of_from_datetime() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2014-01-05T10:30:00.002.millisecondOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0, 0));
+    assert_eq!(result, Value::number(2.0, 0));
 }
 
 #[test]
@@ -590,7 +590,7 @@ fn test_timezone_offset_of_negative() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2012-01-01T12:30:00.000-07:00.timezoneOffsetOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(-7.0, 0));
+    assert_eq!(result, Value::number(-7.0, 0));
 }
 
 #[test]
@@ -598,7 +598,7 @@ fn test_timezone_offset_of_fractional() {
     let context = InterpreterContext::new(Value::Null);
     let expr = parse("@2012-01-01T12:30:00.000+08:45.timezoneOffsetOf()").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(8.75, 2));
+    assert_eq!(result, Value::number(8.75, 2));
 }
 
 #[test]

@@ -30,7 +30,9 @@ fn test_spec_3_2_paths() {
                     )))),
                     Invocation::Member("contained".to_string())
                 )),
-                Box::new(Expression::Term(Term::Literal(Literal::Number(0.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "0".to_string()
+                ))))
             )),
             Invocation::Member("value".to_string())
         ))
@@ -45,7 +47,9 @@ fn test_spec_3_2_paths() {
                     )))),
                     Invocation::Member("contained".to_string())
                 )),
-                Box::new(Expression::Term(Term::Literal(Literal::Number(0.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "0".to_string()
+                ))))
             )),
             TypeOp::Is,
             TypeSpecifier::QualifiedIdentifier(vec!["Observation".to_string()])
@@ -275,8 +279,7 @@ fn test_spec_4_1_literals() {
         parse("2 'mo'"),
         Ok(Expression::Term(Term::Literal(Literal::Quantity(
             Quantity {
-                value: 2.0,
-                precision: 0,
+                value: "2".to_string(),
                 unit: "mo".to_string()
             }
         ))))
@@ -285,8 +288,7 @@ fn test_spec_4_1_literals() {
         parse("2 years"),
         Ok(Expression::Term(Term::Literal(Literal::Quantity(
             Quantity {
-                value: 2.0,
-                precision: 0,
+                value: "2".to_string(),
                 unit: "years".to_string()
             }
         ))))
@@ -307,21 +309,27 @@ fn test_spec_4_1_literals() {
         parse("-7"),
         Ok(Expression::Polarity(
             PolarityOp::Minus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "7".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("+7"),
         Ok(Expression::Polarity(
             PolarityOp::Plus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "7".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("-7.3"),
         Ok(Expression::Polarity(
             PolarityOp::Minus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(7.3, 1))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "7.3".to_string()
+            ))))
         ))
     );
     assert_eq!(
@@ -330,12 +338,16 @@ fn test_spec_4_1_literals() {
             Box::new(Expression::Term(Term::Parenthesized(Box::new(
                 Expression::Polarity(
                     PolarityOp::Minus,
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "7".to_string()
+                    ))))
                 )
             )))),
             Invocation::Function(
                 "combine".to_string(),
-                vec![Expression::Term(Term::Literal(Literal::Number(3.0, 0)))]
+                vec![Expression::Term(Term::Literal(Literal::Number(
+                    "3".to_string()
+                )))]
             )
         ))
     );
@@ -418,8 +430,12 @@ fn test_spec_5_2_filtering_and_projection() {
         Ok(Expression::Invocation(
             Box::new(Expression::Term(Term::Parenthesized(Box::new(
                 Expression::Union(
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "1".to_string()
+                    )))),
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "2".to_string()
+                    ))))
                 )
             )))),
             Invocation::Function(
@@ -436,8 +452,7 @@ fn test_spec_5_2_filtering_and_projection() {
             Box::new(Expression::Invocation(
                 Box::new(Expression::Term(Term::Parenthesized(Box::new(
                     Expression::Term(Term::Literal(Literal::Quantity(Quantity {
-                        value: 1.0,
-                        precision: 0,
+                        value: "1".to_string(),
                         unit: "year".to_string()
                     })))
                 )))),
@@ -445,8 +460,7 @@ fn test_spec_5_2_filtering_and_projection() {
                     "combine".to_string(),
                     vec![Expression::Term(Term::Literal(Literal::Quantity(
                         Quantity {
-                            value: 12.0,
-                            precision: 0,
+                            value: "12".to_string(),
                             unit: "months".to_string()
                         }
                     )))]
@@ -464,8 +478,7 @@ fn test_spec_5_2_filtering_and_projection() {
             Box::new(Expression::Invocation(
                 Box::new(Expression::Term(Term::Parenthesized(Box::new(
                     Expression::Term(Term::Literal(Literal::Quantity(Quantity {
-                        value: 3.0,
-                        precision: 0,
+                        value: "3".to_string(),
                         unit: "min".to_string()
                     })))
                 )))),
@@ -473,8 +486,7 @@ fn test_spec_5_2_filtering_and_projection() {
                     "combine".to_string(),
                     vec![Expression::Term(Term::Literal(Literal::Quantity(
                         Quantity {
-                            value: 180.0,
-                            precision: 0,
+                            value: "180".to_string(),
                             unit: "seconds".to_string()
                         }
                     )))]
@@ -572,7 +584,9 @@ fn test_spec_5_3_subsetting() {
                             )))),
                             Invocation::Member("entry".to_string())
                         )),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(0.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "0".to_string()
+                        ))))
                     )),
                     Box::new(Expression::Indexer(
                         Box::new(Expression::Invocation(
@@ -581,7 +595,9 @@ fn test_spec_5_3_subsetting() {
                             )))),
                             Invocation::Member("entry".to_string())
                         )),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "2".to_string()
+                        ))))
                     ))
                 )
             ))))
@@ -593,8 +609,7 @@ fn test_spec_5_3_subsetting() {
             Box::new(Expression::Invocation(
                 Box::new(Expression::Term(Term::Parenthesized(Box::new(
                     Expression::Term(Term::Literal(Literal::Quantity(Quantity {
-                        value: 1.0,
-                        precision: 0,
+                        value: "1".to_string(),
                         unit: "year".to_string()
                     })))
                 )))),
@@ -602,8 +617,7 @@ fn test_spec_5_3_subsetting() {
                     "combine".to_string(),
                     vec![Expression::Term(Term::Literal(Literal::Quantity(
                         Quantity {
-                            value: 12.0,
-                            precision: 0,
+                            value: "12".to_string(),
                             unit: "months".to_string()
                         }
                     )))]
@@ -613,8 +627,7 @@ fn test_spec_5_3_subsetting() {
                 "intersect".to_string(),
                 vec![Expression::Term(Term::Literal(Literal::Quantity(
                     Quantity {
-                        value: 12.0,
-                        precision: 0,
+                        value: "12".to_string(),
                         unit: "months".to_string()
                     }
                 )))]
@@ -635,47 +648,41 @@ fn test_spec_5_3_subsetting() {
                                     Box::new(Expression::Union(
                                         Box::new(Expression::Term(Term::Literal(
                                             Literal::Quantity(Quantity {
-                                                value: 1.0,
-                                                precision: 0,
+                                                value: "1".to_string(),
                                                 unit: "year".to_string()
                                             })
                                         ))),
                                         Box::new(Expression::Term(Term::Literal(
                                             Literal::Quantity(Quantity {
-                                                value: 2.0,
-                                                precision: 0,
+                                                value: "2".to_string(),
                                                 unit: "year".to_string()
                                             })
                                         )))
                                     )),
                                     Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                                         Quantity {
-                                            value: 3.0,
-                                            precision: 0,
+                                            value: "3".to_string(),
                                             unit: "year".to_string()
                                         }
                                     ))))
                                 )),
                                 Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                                     Quantity {
-                                        value: 4.0,
-                                        precision: 0,
+                                        value: "4".to_string(),
                                         unit: "year".to_string()
                                     }
                                 ))))
                             )),
                             Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                                 Quantity {
-                                    value: 5.0,
-                                    precision: 0,
+                                    value: "5".to_string(),
                                     unit: "year".to_string()
                                 }
                             ))))
                         )),
                         Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                             Quantity {
-                                value: 6.0,
-                                precision: 0,
+                                value: "6".to_string(),
                                 unit: "year".to_string()
                             }
                         ))))
@@ -685,8 +692,7 @@ fn test_spec_5_3_subsetting() {
                     "combine".to_string(),
                     vec![Expression::Term(Term::Literal(Literal::Quantity(
                         Quantity {
-                            value: 12.0,
-                            precision: 0,
+                            value: "12".to_string(),
                             unit: "months".to_string()
                         }
                     )))]
@@ -696,8 +702,7 @@ fn test_spec_5_3_subsetting() {
                 "intersect".to_string(),
                 vec![Expression::Term(Term::Literal(Literal::Quantity(
                     Quantity {
-                        value: 12.0,
-                        precision: 0,
+                        value: "12".to_string(),
                         unit: "months".to_string()
                     }
                 )))]
@@ -715,28 +720,38 @@ fn test_spec_5_3_subsetting() {
                                 Box::new(Expression::Union(
                                     Box::new(Expression::Union(
                                         Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                            1.0, 0
+                                            "1".to_string()
                                         )))),
                                         Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                            2.0, 0
+                                            "2".to_string()
                                         ))))
                                     )),
                                     Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                        3.0, 0
+                                        "3".to_string()
                                     ))))
                                 )),
-                                Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
+                                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                    "5".to_string()
+                                ))))
                             )),
-                            Box::new(Expression::Term(Term::Literal(Literal::Number(6.0, 0))))
+                            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                "6".to_string()
+                            ))))
                         )),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "7".to_string()
+                        ))))
                     )
                 )))),
                 Invocation::Function(
                     "exclude".to_string(),
                     vec![Expression::Union(
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0)))),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "2".to_string()
+                        )))),
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "4".to_string()
+                        ))))
                     )]
                 )
             )),
@@ -745,14 +760,24 @@ fn test_spec_5_3_subsetting() {
                 Box::new(Expression::Union(
                     Box::new(Expression::Union(
                         Box::new(Expression::Union(
-                            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
-                            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+                            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                "1".to_string()
+                            )))),
+                            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                "3".to_string()
+                            ))))
                         )),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "5".to_string()
+                        ))))
                     )),
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(6.0, 0))))
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "6".to_string()
+                    ))))
                 )),
-                Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "7".to_string()
+                ))))
             ))
         ))
     );
@@ -768,25 +793,31 @@ fn test_spec_5_3_subsetting() {
                                     Box::new(Expression::Union(
                                         Box::new(Expression::Union(
                                             Box::new(Expression::Term(Term::Literal(
-                                                Literal::Number(1.0, 0)
+                                                Literal::Number("1".to_string())
                                             ))),
                                             Box::new(Expression::Term(Term::Literal(
-                                                Literal::Number(2.0, 0)
+                                                Literal::Number("2".to_string())
                                             )))
                                         )),
                                         Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                            3.0, 0
+                                            "3".to_string()
                                         ))))
                                     )),
                                     Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                        4.0, 0
+                                        "4".to_string()
                                     ))))
                                 )),
-                                Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
+                                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                    "5".to_string()
+                                ))))
                             )),
-                            Box::new(Expression::Term(Term::Literal(Literal::Number(6.0, 0))))
+                            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                "6".to_string()
+                            ))))
                         )),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "7".to_string()
+                        ))))
                     )
                 )))),
                 Invocation::Function(
@@ -802,21 +833,31 @@ fn test_spec_5_3_subsetting() {
                             Box::new(Expression::Union(
                                 Box::new(Expression::Union(
                                     Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                        1.0, 0
+                                        "1".to_string()
                                     )))),
                                     Box::new(Expression::Term(Term::Literal(Literal::Number(
-                                        2.0, 0
+                                        "2".to_string()
                                     ))))
                                 )),
-                                Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+                                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                    "3".to_string()
+                                ))))
                             )),
-                            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+                            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                "4".to_string()
+                            ))))
                         )),
-                        Box::new(Expression::Term(Term::Literal(Literal::Number(5.0, 0))))
+                        Box::new(Expression::Term(Term::Literal(Literal::Number(
+                            "5".to_string()
+                        ))))
                     )),
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(6.0, 0))))
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "6".to_string()
+                    ))))
                 )),
-                Box::new(Expression::Term(Term::Literal(Literal::Number(7.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "7".to_string()
+                ))))
             ))
         ))
     );
@@ -836,8 +877,7 @@ fn test_spec_5_5_conversion() {
             EqualityOp::Equal,
             Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                 Quantity {
-                    value: 7.0,
-                    precision: 0,
+                    value: "7".to_string(),
                     unit: "days".to_string()
                 }
             ))))
@@ -878,8 +918,7 @@ fn test_spec_5_5_conversion() {
             EqualityOp::Equivalent,
             Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                 Quantity {
-                    value: 1.0,
-                    precision: 0,
+                    value: "1".to_string(),
                     unit: "a".to_string()
                 }
             ))))

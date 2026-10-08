@@ -1,5 +1,6 @@
 use crate::InterpreterResult;
 use crate::context::InterpreterContext;
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
 use crate::value::Value;
 
@@ -16,14 +17,13 @@ pub fn exists(base: &Value, context: InterpreterContext) -> InterpreterResult {
     Ok((Value::Boolean(!base.is_null_or_empty()), context))
 }
 
-#[allow(clippy::cast_precision_loss)]
 pub fn count(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let value = Value::Number(
-        match base {
-            Value::Collection(v) => v.len() as f64,
-            Value::Null => 0.0,
-            _ => 1.0,
-        },
+        Decimal::from(match base {
+            Value::Collection(v) => v.len() as i64,
+            Value::Null => 0,
+            _ => 1,
+        }),
         0,
     );
     Ok((value, context))

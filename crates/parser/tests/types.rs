@@ -21,7 +21,9 @@ fn test_type_expressions() {
     assert_eq!(
         parse("1 is Integer"),
         Ok(Expression::Type(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             TypeOp::Is,
             TypeSpecifier::QualifiedIdentifier(vec!["Integer".to_string()])
         ))
@@ -29,7 +31,9 @@ fn test_type_expressions() {
     assert_eq!(
         parse("1 as String"),
         Ok(Expression::Type(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             TypeOp::As,
             TypeSpecifier::QualifiedIdentifier(vec!["String".to_string()])
         ))

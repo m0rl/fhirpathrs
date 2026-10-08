@@ -7,7 +7,7 @@ fn testcomment1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
+    assert_eq!(actual, vec![Value::number(4.0, 0)]);
 }
 
 #[test]
@@ -20,7 +20,7 @@ fn testcomment2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
+    assert_eq!(actual, vec![Value::number(4.0, 0)]);
 }
 
 #[test]
@@ -33,7 +33,7 @@ fn testcomment3() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
+    assert_eq!(actual, vec![Value::number(4.0, 0)]);
 }
 
 #[test]
@@ -46,7 +46,7 @@ fn testcomment4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(6.0, 0)]);
+    assert_eq!(actual, vec![Value::number(6.0, 0)]);
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn testcomment5() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
+    assert_eq!(actual, vec![Value::number(4.0, 0)]);
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn testcomment6() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.0_f64, 0)]);
+    assert_eq!(actual, vec![Value::number(1.0_f64, 0)]);
 }
 
 #[test]

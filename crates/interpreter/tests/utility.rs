@@ -36,7 +36,7 @@ fn test_iif_without_else() {
 
 #[test]
 fn test_iif_with_expression_condition() {
-    let context = InterpreterContext::new(Value::Number(5.0, 0));
+    let context = InterpreterContext::new(Value::number(5.0, 0));
     let expr = parse("iif($this > 3, 'first', 'second')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::String("first".to_string()));
@@ -60,7 +60,7 @@ fn test_iif_lazy_evaluation_false() {
 
 #[test]
 fn test_iif_nested() {
-    let context = InterpreterContext::new(Value::Number(15.0, 0));
+    let context = InterpreterContext::new(Value::number(15.0, 0));
     let expr = parse("iif($this < 10, 'first', iif($this < 20, 'second', 'third'))")
         .expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -70,9 +70,9 @@ fn test_iif_nested() {
 #[test]
 fn test_iif_multi_item_input_errors() {
     let data = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -83,9 +83,9 @@ fn test_iif_multi_item_input_errors() {
 #[test]
 fn test_iif_vs_select_iif_for_itemwise() {
     let data = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(5.0, 0),
-        Value::Number(10.0, 0),
+        Value::number(1.0, 0),
+        Value::number(5.0, 0),
+        Value::number(10.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -104,7 +104,7 @@ fn test_iif_vs_select_iif_for_itemwise() {
 
 #[test]
 fn test_trace_returns_input_unchanged() {
-    let data = Value::Number(42.0, 0);
+    let data = Value::number(42.0, 0);
     let context = InterpreterContext::new(data.clone());
     let expr = parse("trace('test')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -114,7 +114,7 @@ fn test_trace_returns_input_unchanged() {
 
 #[test]
 fn test_trace_returns_collection_unchanged() {
-    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
+    let data = Value::collection(vec![Value::number(1.0, 0), Value::number(2.0, 0)]);
     let context = InterpreterContext::new(data.clone());
     let expr = parse("trace('nums')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -124,7 +124,7 @@ fn test_trace_returns_collection_unchanged() {
 
 #[test]
 fn test_trace_with_projection_returns_input_unchanged() {
-    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
+    let data = Value::collection(vec![Value::number(1.0, 0), Value::number(2.0, 0)]);
     let context = InterpreterContext::new(data.clone());
     let expr = parse("trace('doubled', $this * 2)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -134,7 +134,7 @@ fn test_trace_with_projection_returns_input_unchanged() {
 
 #[test]
 fn test_trace_calls_handler() {
-    let data = Value::Number(42.0, 0);
+    let data = Value::number(42.0, 0);
     let handler = Rc::new(CollectingTraceHandler::new());
     let context = InterpreterContext::new(data.clone()).with_trace_handler(handler.clone());
 
@@ -144,15 +144,15 @@ fn test_trace_calls_handler() {
     let events = handler.events();
     assert_eq!(events.len(), 1);
     assert_eq!(events[0].name, "myTrace");
-    assert_eq!(events[0].value, Value::Number(42.0, 0));
+    assert_eq!(events[0].value, Value::number(42.0, 0));
 }
 
 #[test]
 fn test_trace_handler_receives_collection_items() {
     let data = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]);
     let handler = Rc::new(CollectingTraceHandler::new());
     let context = InterpreterContext::new(data).with_trace_handler(handler.clone());
@@ -162,14 +162,14 @@ fn test_trace_handler_receives_collection_items() {
 
     let events = handler.events();
     assert_eq!(events.len(), 3);
-    assert_eq!(events[0].value, Value::Number(1.0, 0));
-    assert_eq!(events[1].value, Value::Number(2.0, 0));
-    assert_eq!(events[2].value, Value::Number(3.0, 0));
+    assert_eq!(events[0].value, Value::number(1.0, 0));
+    assert_eq!(events[1].value, Value::number(2.0, 0));
+    assert_eq!(events[2].value, Value::number(3.0, 0));
 }
 
 #[test]
 fn test_trace_with_projection_traces_projected_values() {
-    let data = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
+    let data = Value::collection(vec![Value::number(1.0, 0), Value::number(2.0, 0)]);
     let handler = Rc::new(CollectingTraceHandler::new());
     let context = InterpreterContext::new(data).with_trace_handler(handler.clone());
 
@@ -179,16 +179,16 @@ fn test_trace_with_projection_traces_projected_values() {
     let events = handler.events();
     assert_eq!(events.len(), 2);
     assert_eq!(events[0].name, "doubled");
-    assert_eq!(events[0].value, Value::Number(2.0, 0));
-    assert_eq!(events[1].value, Value::Number(4.0, 0));
+    assert_eq!(events[0].value, Value::number(2.0, 0));
+    assert_eq!(events[1].value, Value::number(4.0, 0));
 }
 
 #[test]
 fn test_trace_with_total_in_projection() {
     let data = Value::collection(vec![
-        Value::Number(10.0, 0),
-        Value::Number(20.0, 0),
-        Value::Number(30.0, 0),
+        Value::number(10.0, 0),
+        Value::number(20.0, 0),
+        Value::number(30.0, 0),
     ]);
     let handler = Rc::new(CollectingTraceHandler::new());
     let context = InterpreterContext::new(data).with_trace_handler(handler.clone());
@@ -198,9 +198,9 @@ fn test_trace_with_total_in_projection() {
 
     let events = handler.events();
     assert_eq!(events.len(), 3);
-    assert_eq!(events[0].value, Value::Number(1.0, 0));
-    assert_eq!(events[1].value, Value::Number(2.0, 0));
-    assert_eq!(events[2].value, Value::Number(3.0, 0));
+    assert_eq!(events[0].value, Value::number(1.0, 0));
+    assert_eq!(events[1].value, Value::number(2.0, 0));
+    assert_eq!(events[2].value, Value::number(3.0, 0));
 
     handler.clear();
 
@@ -209,20 +209,20 @@ fn test_trace_with_total_in_projection() {
 
     let events = handler.events();
     assert_eq!(events.len(), 3);
-    assert_eq!(events[0].value, Value::Number(3.0, 0));
-    assert_eq!(events[1].value, Value::Number(3.0, 0));
-    assert_eq!(events[2].value, Value::Number(3.0, 0));
+    assert_eq!(events[0].value, Value::number(3.0, 0));
+    assert_eq!(events[1].value, Value::number(3.0, 0));
+    assert_eq!(events[2].value, Value::number(3.0, 0));
 }
 
 #[test]
 fn test_trace_chainable() {
-    let data = Value::Number(5.0, 0);
+    let data = Value::number(5.0, 0);
     let context = InterpreterContext::new(data);
 
     let expr = parse("trace('a').trace('b') + 10").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
 
-    assert_eq!(result, Value::Number(15.0, 0));
+    assert_eq!(result, Value::number(15.0, 0));
 }
 
 #[test]
@@ -397,38 +397,38 @@ fn test_time_of_day_from_now() {
 
 #[test]
 fn test_define_variable_basic() {
-    let data = Value::Number(42.0, 0);
+    let data = Value::number(42.0, 0);
     let context = InterpreterContext::new(data);
 
     let expr = parse("defineVariable('x')").expect("parse failed");
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
     assert_eq!(
         ctx.constants.get("x").map(ContextConstant::value),
-        Some(&Value::Number(42.0, 0))
+        Some(&Value::number(42.0, 0))
     );
 }
 
 #[test]
 fn test_define_variable_with_expression() {
-    let data = Value::Number(10.0, 0);
+    let data = Value::number(10.0, 0);
     let context = InterpreterContext::new(data);
 
     let expr = parse("defineVariable('doubled', $this * 2)").expect("parse failed");
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
     assert_eq!(
         ctx.constants.get("doubled").map(ContextConstant::value),
-        Some(&Value::Number(20.0, 0))
+        Some(&Value::number(20.0, 0))
     );
 }
 
 #[test]
 fn test_define_variable_accessible_downstream() {
     let data = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -438,9 +438,9 @@ fn test_define_variable_accessible_downstream() {
     assert_eq!(
         result,
         Value::collection(vec![
-            Value::Number(4.0, 0),
-            Value::Number(5.0, 0),
-            Value::Number(6.0, 0),
+            Value::number(4.0, 0),
+            Value::number(5.0, 0),
+            Value::number(6.0, 0),
         ])
     );
 }
@@ -448,11 +448,11 @@ fn test_define_variable_accessible_downstream() {
 #[test]
 fn test_define_variable_in_where() {
     let data = Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
-        Value::Number(4.0, 0),
-        Value::Number(5.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
+        Value::number(4.0, 0),
+        Value::number(5.0, 0),
     ]);
     let context = InterpreterContext::new(data);
 
@@ -461,7 +461,7 @@ fn test_define_variable_in_where() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(
         result,
-        Value::collection(vec![Value::Number(4.0, 0), Value::Number(5.0, 0)])
+        Value::collection(vec![Value::number(4.0, 0), Value::number(5.0, 0)])
     );
 }
 
@@ -477,7 +477,7 @@ fn test_define_variable_returns_base_unchanged() {
 
 #[test]
 fn test_define_variable_on_collection() {
-    let data = Value::collection(vec![Value::Number(10.0, 0), Value::Number(20.0, 0)]);
+    let data = Value::collection(vec![Value::number(10.0, 0), Value::number(20.0, 0)]);
     let context = InterpreterContext::new(data.clone());
 
     let expr = parse("defineVariable('items')").expect("parse failed");
@@ -491,14 +491,14 @@ fn test_define_variable_on_collection() {
 
 #[test]
 fn test_define_variable_overrides_existing_constant() {
-    let context = InterpreterContext::new(Value::Number(42.0, 0))
-        .with_constant("x".to_string(), Value::Number(1.0, 0));
+    let context = InterpreterContext::new(Value::number(42.0, 0))
+        .with_constant("x".to_string(), Value::number(1.0, 0));
 
     let expr = parse("defineVariable('x', 99)").expect("parse failed");
     let (_, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(
         ctx.constants.get("x").map(ContextConstant::value),
-        Some(&Value::Number(99.0, 0))
+        Some(&Value::number(99.0, 0))
     );
 }
 
@@ -513,26 +513,26 @@ fn test_define_variable_wrong_arg_count() {
 
 #[test]
 fn test_define_variable_chained() {
-    let data = Value::Number(5.0, 0);
+    let data = Value::number(5.0, 0);
     let context = InterpreterContext::new(data);
 
     let expr = parse("defineVariable('a', 10).defineVariable('b', 20)").expect("parse failed");
     let (result, ctx) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(5.0, 0));
+    assert_eq!(result, Value::number(5.0, 0));
     assert_eq!(
         ctx.constants.get("a").map(ContextConstant::value),
-        Some(&Value::Number(10.0, 0))
+        Some(&Value::number(10.0, 0))
     );
     assert_eq!(
         ctx.constants.get("b").map(ContextConstant::value),
-        Some(&Value::Number(20.0, 0))
+        Some(&Value::number(20.0, 0))
     );
 }
 
 #[test]
 fn test_define_variable_not_leaked_across_and() {
-    let context = InterpreterContext::new(Value::Number(5.0, 0))
-        .with_constant("x".to_string(), Value::Number(0.0, 0));
+    let context = InterpreterContext::new(Value::number(5.0, 0))
+        .with_constant("x".to_string(), Value::number(0.0, 0));
 
     let expr = parse("defineVariable('x', 99).exists() and (%x = 0)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -549,7 +549,7 @@ fn test_type_boolean() {
 
 #[test]
 fn test_type_integer() {
-    let context = InterpreterContext::new(Value::Number(1.0, 0));
+    let context = InterpreterContext::new(Value::number(1.0, 0));
     let expr = parse("type().name").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(result.to_vec(), vec![Value::String("Integer".to_string())]);
@@ -557,7 +557,7 @@ fn test_type_integer() {
 
 #[test]
 fn test_type_decimal() {
-    let context = InterpreterContext::new(Value::Number(1.5, 1));
+    let context = InterpreterContext::new(Value::number(1.5, 1));
     let expr = parse("type().name").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(result.to_vec(), vec![Value::String("Decimal".to_string())]);
@@ -573,7 +573,7 @@ fn test_type_string() {
 
 #[test]
 fn test_type_quantity() {
-    let context = InterpreterContext::new(Value::Quantity(1.0, 0, "kg".to_string(), None));
+    let context = InterpreterContext::new(Value::quantity(1.0, 0, "kg".to_string(), None));
     let expr = parse("type().name").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(result.to_vec(), vec![Value::String("Quantity".to_string())]);

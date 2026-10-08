@@ -1,8 +1,9 @@
-use crate::decimal;
-use crate::value::Value;
-use std::cmp::Ordering;
+use crate::decimal::Decimal;
+use crate::value::{Comparison, QuantityView, Value};
 use std::collections::HashMap;
 use std::sync::LazyLock;
+
+pub const UCUM_SYSTEM: &str = "http://unitsofmeasure.org";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnitCategory {
@@ -38,454 +39,80 @@ pub fn is_calendar_unit(u: &str) -> bool {
 
 #[derive(Debug, Clone, Copy)]
 struct UnitDef {
-    to_base: f64,
+    to_base: i64,
     category: UnitCategory,
 }
 
 static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
-    HashMap::from([
-        (
-            "kg",
-            UnitDef {
-                to_base: 1000.0,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "g",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "mg",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "ug",
-            UnitDef {
-                to_base: 1e-6,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "mcg",
-            UnitDef {
-                to_base: 1e-6,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "ng",
-            UnitDef {
-                to_base: 1e-9,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "pg",
-            UnitDef {
-                to_base: 1e-12,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "lb",
-            UnitDef {
-                to_base: 453.592,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "[lb_av]",
-            UnitDef {
-                to_base: 453.592,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "oz",
-            UnitDef {
-                to_base: 28.3495,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "[oz_av]",
-            UnitDef {
-                to_base: 28.3495,
-                category: UnitCategory::Mass,
-            },
-        ),
-        (
-            "L",
-            UnitDef {
-                to_base: 1000.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "l",
-            UnitDef {
-                to_base: 1000.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "dL",
-            UnitDef {
-                to_base: 100.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "dl",
-            UnitDef {
-                to_base: 100.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "cL",
-            UnitDef {
-                to_base: 10.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "cl",
-            UnitDef {
-                to_base: 10.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "mL",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "ml",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "uL",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "ul",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "nL",
-            UnitDef {
-                to_base: 1e-6,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "nl",
-            UnitDef {
-                to_base: 1e-6,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "cc",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Volume,
-            },
-        ),
-        (
-            "m",
-            UnitDef {
-                to_base: 100.0,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "dm",
-            UnitDef {
-                to_base: 10.0,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "cm",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "mm",
-            UnitDef {
-                to_base: 0.1,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "um",
-            UnitDef {
-                to_base: 1e-4,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "nm",
-            UnitDef {
-                to_base: 1e-7,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "in",
-            UnitDef {
-                to_base: 2.54,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "[in_i]",
-            UnitDef {
-                to_base: 2.54,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "ft",
-            UnitDef {
-                to_base: 30.48,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "[ft_i]",
-            UnitDef {
-                to_base: 30.48,
-                category: UnitCategory::Length,
-            },
-        ),
-        (
-            "a",
-            UnitDef {
-                to_base: 31_557_600.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "mo",
-            UnitDef {
-                to_base: 2_629_800.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "wk",
-            UnitDef {
-                to_base: 604_800.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "week",
-            UnitDef {
-                to_base: 604_800.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "weeks",
-            UnitDef {
-                to_base: 604_800.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "d",
-            UnitDef {
-                to_base: 86_400.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "day",
-            UnitDef {
-                to_base: 86_400.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "days",
-            UnitDef {
-                to_base: 86_400.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "h",
-            UnitDef {
-                to_base: 3_600.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "hour",
-            UnitDef {
-                to_base: 3_600.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "hours",
-            UnitDef {
-                to_base: 3_600.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "min",
-            UnitDef {
-                to_base: 60.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "minute",
-            UnitDef {
-                to_base: 60.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "minutes",
-            UnitDef {
-                to_base: 60.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "s",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "second",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "seconds",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "ms",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "millisecond",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "milliseconds",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "us",
-            UnitDef {
-                to_base: 1e-6,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "ns",
-            UnitDef {
-                to_base: 1e-9,
-                category: UnitCategory::Time,
-            },
-        ),
-        (
-            "mol",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Amount,
-            },
-        ),
-        (
-            "mmol",
-            UnitDef {
-                to_base: 0.001,
-                category: UnitCategory::Amount,
-            },
-        ),
-        (
-            "umol",
-            UnitDef {
-                to_base: 1e-6,
-                category: UnitCategory::Amount,
-            },
-        ),
-        (
-            "nmol",
-            UnitDef {
-                to_base: 1e-9,
-                category: UnitCategory::Amount,
-            },
-        ),
-        (
-            "pmol",
-            UnitDef {
-                to_base: 1e-12,
-                category: UnitCategory::Amount,
-            },
-        ),
-        (
-            "%",
-            UnitDef {
-                to_base: 0.01,
-                category: UnitCategory::Dimensionless,
-            },
-        ),
-        (
-            "1",
-            UnitDef {
-                to_base: 1.0,
-                category: UnitCategory::Dimensionless,
-            },
-        ),
-    ])
+    use UnitCategory::{Amount, Dimensionless, Length, Mass, Time, Volume};
+    [
+        ("kg", 1_000_000_000_000_000, Mass),
+        ("g", 1_000_000_000_000, Mass),
+        ("mg", 1_000_000_000, Mass),
+        ("ug", 1_000_000, Mass),
+        ("mcg", 1_000_000, Mass),
+        ("ng", 1_000, Mass),
+        ("pg", 1, Mass),
+        ("lb", 453_592_370_000_000, Mass),
+        ("[lb_av]", 453_592_370_000_000, Mass),
+        ("oz", 28_349_523_125_000, Mass),
+        ("[oz_av]", 28_349_523_125_000, Mass),
+        ("L", 1_000_000_000, Volume),
+        ("l", 1_000_000_000, Volume),
+        ("dL", 100_000_000, Volume),
+        ("dl", 100_000_000, Volume),
+        ("cL", 10_000_000, Volume),
+        ("cl", 10_000_000, Volume),
+        ("mL", 1_000_000, Volume),
+        ("ml", 1_000_000, Volume),
+        ("cc", 1_000_000, Volume),
+        ("uL", 1_000, Volume),
+        ("ul", 1_000, Volume),
+        ("nL", 1, Volume),
+        ("nl", 1, Volume),
+        ("m", 1_000_000_000, Length),
+        ("dm", 100_000_000, Length),
+        ("cm", 10_000_000, Length),
+        ("mm", 1_000_000, Length),
+        ("um", 1_000, Length),
+        ("nm", 1, Length),
+        ("in", 25_400_000, Length),
+        ("[in_i]", 25_400_000, Length),
+        ("ft", 304_800_000, Length),
+        ("[ft_i]", 304_800_000, Length),
+        ("a", 31_557_600_000_000_000, Time),
+        ("mo", 2_629_800_000_000_000, Time),
+        ("wk", 604_800_000_000_000, Time),
+        ("week", 604_800_000_000_000, Time),
+        ("weeks", 604_800_000_000_000, Time),
+        ("d", 86_400_000_000_000, Time),
+        ("day", 86_400_000_000_000, Time),
+        ("days", 86_400_000_000_000, Time),
+        ("h", 3_600_000_000_000, Time),
+        ("hour", 3_600_000_000_000, Time),
+        ("hours", 3_600_000_000_000, Time),
+        ("min", 60_000_000_000, Time),
+        ("minute", 60_000_000_000, Time),
+        ("minutes", 60_000_000_000, Time),
+        ("s", 1_000_000_000, Time),
+        ("second", 1_000_000_000, Time),
+        ("seconds", 1_000_000_000, Time),
+        ("ms", 1_000_000, Time),
+        ("millisecond", 1_000_000, Time),
+        ("milliseconds", 1_000_000, Time),
+        ("us", 1_000, Time),
+        ("ns", 1, Time),
+        ("mol", 1_000_000_000_000, Amount),
+        ("mmol", 1_000_000_000, Amount),
+        ("umol", 1_000_000, Amount),
+        ("nmol", 1_000, Amount),
+        ("pmol", 1, Amount),
+        ("1", 100, Dimensionless),
+        ("%", 1, Dimensionless),
+    ]
+    .into_iter()
+    .map(|(name, to_base, category)| (name, UnitDef { to_base, category }))
+    .collect()
 });
 
 #[derive(Debug, Clone)]
@@ -494,200 +121,173 @@ pub enum QuantityResult {
     Incompatible,
 }
 
-fn normalize(value: f64, unit: &str) -> Option<(f64, UnitCategory)> {
-    UNITS
-        .get(unit)
-        .map(|def| (value * def.to_base, def.category))
+struct Aligned<'a> {
+    left: Decimal,
+    right: Decimal,
+    unit: &'a str,
 }
 
-fn from_base(base_value: f64, unit: &str) -> Option<f64> {
-    UNITS.get(unit).map(|def| base_value / def.to_base)
+fn gcd(mut a: i64, mut b: i64) -> i64 {
+    while b != 0 {
+        (a, b) = (b, a % b);
+    }
+    a
+}
+
+fn reduced_ratio(coarse: i64, fine: i64) -> (Decimal, Decimal) {
+    let divisor = gcd(coarse, fine);
+    (
+        Decimal::from(coarse / divisor),
+        Decimal::from(fine / divisor),
+    )
+}
+
+fn into_finer(value: Decimal, coarse: i64, fine: i64) -> Option<Decimal> {
+    let (numerator, denominator) = reduced_ratio(coarse, fine);
+    value.checked_mul(numerator)?.checked_div(denominator)
+}
+
+fn align<'a>(a: &QuantityView<'a>, b: &QuantityView<'a>) -> Option<Aligned<'a>> {
+    let (code_a, code_b) = (a.ucum_code()?, b.ucum_code()?);
+    let (def_a, def_b) = (UNITS.get(code_a)?, UNITS.get(code_b)?);
+    if def_a.category != def_b.category {
+        return None;
+    }
+    if def_a.to_base <= def_b.to_base {
+        Some(Aligned {
+            left: a.value,
+            right: into_finer(b.value, def_b.to_base, def_a.to_base)?,
+            unit: code_a,
+        })
+    } else {
+        Some(Aligned {
+            left: into_finer(a.value, def_a.to_base, def_b.to_base)?,
+            right: b.value,
+            unit: code_b,
+        })
+    }
+}
+
+fn combine(
+    left: &Value,
+    right: &Value,
+    op: fn(Decimal, Decimal) -> Option<Decimal>,
+) -> QuantityResult {
+    let (Some(a), Some(b)) = (left.quantity_view(), right.quantity_view()) else {
+        return QuantityResult::Incompatible;
+    };
+    if a.quantity_type != b.quantity_type {
+        return QuantityResult::Incompatible;
+    }
+    let (l, r, unit) = if a.same_unit_as(&b) {
+        let Some(unit) = a.unit else {
+            return QuantityResult::Incompatible;
+        };
+        (a.value, b.value, unit)
+    } else {
+        let Some(aligned) = align(&a, &b) else {
+            return QuantityResult::Incompatible;
+        };
+        (aligned.left, aligned.right, aligned.unit)
+    };
+    match op(l, r) {
+        Some(value) => QuantityResult::Ok(Value::Quantity(
+            value,
+            value.precision(),
+            unit.to_string(),
+            a.quantity_type,
+        )),
+        None => QuantityResult::Incompatible,
+    }
 }
 
 pub fn quantity_add(left: &Value, right: &Value) -> QuantityResult {
-    let (v1, u1, t1) = match left {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return QuantityResult::Incompatible,
-    };
-    let (v2, u2, t2) = match right {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return QuantityResult::Incompatible,
-    };
-
-    if t1 != t2 {
-        return QuantityResult::Incompatible;
-    }
-
-    if u1 == u2 {
-        let result = v1 + v2;
-        return QuantityResult::Ok(Value::Quantity(
-            result,
-            Value::precision(result),
-            u1.to_string(),
-            *t1,
-        ));
-    }
-
-    let (base1, cat1) = match normalize(v1, u1) {
-        Some(n) => n,
-        None => return QuantityResult::Incompatible,
-    };
-    let (base2, cat2) = match normalize(v2, u2) {
-        Some(n) => n,
-        None => return QuantityResult::Incompatible,
-    };
-
-    if cat1 != cat2 {
-        return QuantityResult::Incompatible;
-    }
-
-    let result_base = base1 + base2;
-    match from_base(result_base, u1) {
-        Some(result) => QuantityResult::Ok(Value::Quantity(
-            result,
-            Value::precision(result),
-            u1.to_string(),
-            *t1,
-        )),
-        None => QuantityResult::Incompatible,
-    }
+    combine(left, right, Decimal::checked_add)
 }
 
 pub fn quantity_sub(left: &Value, right: &Value) -> QuantityResult {
-    let (v1, u1, t1) = match left {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return QuantityResult::Incompatible,
-    };
-    let (v2, u2, t2) = match right {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return QuantityResult::Incompatible,
-    };
+    combine(left, right, Decimal::checked_sub)
+}
 
-    if t1 != t2 {
-        return QuantityResult::Incompatible;
+pub fn quantity_cmp(left: &Value, right: &Value) -> Comparison {
+    let (Some(a), Some(b)) = (left.quantity_view(), right.quantity_view()) else {
+        return Comparison::Uncomparable;
+    };
+    if a.quantity_type != b.quantity_type {
+        return Comparison::Unequal;
     }
-
-    if u1 == u2 {
-        let result = v1 - v2;
-        return QuantityResult::Ok(Value::Quantity(
-            result,
-            Value::precision(result),
-            u1.to_string(),
-            *t1,
-        ));
+    if a.same_unit_as(&b) {
+        return a.value.cmp(&b.value).into();
     }
-
-    let (base1, cat1) = match normalize(v1, u1) {
-        Some(n) => n,
-        None => return QuantityResult::Incompatible,
-    };
-    let (base2, cat2) = match normalize(v2, u2) {
-        Some(n) => n,
-        None => return QuantityResult::Incompatible,
-    };
-
-    if cat1 != cat2 {
-        return QuantityResult::Incompatible;
-    }
-
-    let result_base = base1 - base2;
-    match from_base(result_base, u1) {
-        Some(result) => QuantityResult::Ok(Value::Quantity(
-            result,
-            Value::precision(result),
-            u1.to_string(),
-            *t1,
-        )),
-        None => QuantityResult::Incompatible,
+    match align(&a, &b) {
+        Some(aligned) => aligned.left.cmp(&aligned.right).into(),
+        None => Comparison::Uncomparable,
     }
 }
 
-pub fn quantity_cmp(left: &Value, right: &Value) -> Option<Ordering> {
-    let (v1, u1, t1) = match left {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return None,
-    };
-    let (v2, u2, t2) = match right {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return None,
-    };
-
-    if t1 != t2 {
-        return None;
+fn calendar_alias(unit: &str) -> String {
+    match unit.to_lowercase().as_str() {
+        "year" | "years" => "a".to_string(),
+        "month" | "months" => "mo".to_string(),
+        lower => lower.to_string(),
     }
+}
 
-    if u1 == u2 {
-        return v1.partial_cmp(&v2);
-    }
+fn rounded_to_min_precision(a: Decimal, b: Decimal, pa: u8, pb: u8) -> bool {
+    let places = i32::from(pa.min(pb));
+    matches!((a.round_dp(places), b.round_dp(places)), (Some(x), Some(y)) if x == y)
+}
 
-    let (base1, cat1) = normalize(v1, u1)?;
-    let (base2, cat2) = normalize(v2, u2)?;
-
-    if cat1 != cat2 {
-        return None;
-    }
-
-    base1.partial_cmp(&base2)
+fn in_finer_unit_with_grain(
+    value: Decimal,
+    precision: u8,
+    factor: i64,
+    finer: i64,
+) -> Option<(Decimal, Decimal)> {
+    let scaled = into_finer(value, factor, finer)?;
+    let (numerator, denominator) = reduced_ratio(factor, finer);
+    let grain = numerator
+        .checked_div(denominator)?
+        .checked_mul(Decimal::ten_pow(-i32::from(precision))?)?;
+    Some((scaled, grain))
 }
 
 pub fn quantity_equivalent(left: &Value, right: &Value) -> bool {
-    let (v1, p1, u1_raw, t1) = match left {
-        Value::Quantity(v, p, u, t) => (*v, *p, u.as_str(), t),
-        _ => return false,
+    let (Some(a), Some(b)) = (left.quantity_view(), right.quantity_view()) else {
+        return false;
     };
-    let (v2, p2, u2_raw, t2) = match right {
-        Value::Quantity(v, p, u, t) => (*v, *p, u.as_str(), t),
-        _ => return false,
-    };
-
-    if t1 != t2 {
+    if a.quantity_type != b.quantity_type {
         return false;
     }
-
-    // Equivalence rounds both operands to the lesser precision per the Decimal equivalence rule
-    // (3.0 spec): `4 'g' ~ 4040 'mg'` is true because both are integer-precision (p=0) and
-    // 4040 mg = 4.04 g rounds to 4 at 0 dp.
-    let round_eq = |a: f64, b: f64, pa: u8, pb: u8| {
-        let (ra, rb) = decimal::round_to_min_precision(a, b, pa, pb);
-        ra == rb
-    };
-
-    if u1_raw == u2_raw {
-        return round_eq(v1, v2, p1, p2);
+    if a.same_unit_as(&b) {
+        return rounded_to_min_precision(a.value, b.value, a.precision, b.precision);
     }
-
-    // Lowercase for case-insensitive unit match (`'cm' ~ 'CM'` is true per spec), then alias
-    // calendar year/month to UCUM `'a'`/`'mo'` so equivalence (~) treats them as equal per 3.0
-    // spec, even though equality (=) considers them uncomparable (year ≈ 365.25d vs UCUM `'a'`
-    // ≈ 365.2422d; same for `month` vs `'mo'`). Other calendar units (week/day/hour/...) are
-    // already in UNITS with exact UCUM factors.
-    let u1 = u1_raw.to_lowercase();
-    let u1 = match u1.as_str() {
-        "year" | "years" => "a",
-        "month" | "months" => "mo",
-        _ => u1.as_str(),
+    let (Some(code_a), Some(code_b)) = (a.ucum_code(), b.ucum_code()) else {
+        return false;
     };
-    let u2 = u2_raw.to_lowercase();
-    let u2 = match u2.as_str() {
-        "year" | "years" => "a",
-        "month" | "months" => "mo",
-        _ => u2.as_str(),
-    };
-
-    if u1 == u2 {
-        return round_eq(v1, v2, p1, p2);
+    let (alias_a, alias_b) = (calendar_alias(code_a), calendar_alias(code_b));
+    if alias_a == alias_b {
+        return rounded_to_min_precision(a.value, b.value, a.precision, b.precision);
     }
-
-    let (base1, cat1) = match normalize(v1, u1) {
-        Some(n) => n,
-        None => return false,
+    let (Some(def_a), Some(def_b)) = (UNITS.get(alias_a.as_str()), UNITS.get(alias_b.as_str()))
+    else {
+        return false;
     };
-    let (base2, cat2) = match normalize(v2, u2) {
-        Some(n) => n,
-        None => return false,
+    if def_a.category != def_b.category {
+        return false;
+    }
+    let finer = def_a.to_base.min(def_b.to_base);
+    let (Some((va, grain_a)), Some((vb, grain_b))) = (
+        in_finer_unit_with_grain(a.value, a.precision, def_a.to_base, finer),
+        in_finer_unit_with_grain(b.value, b.precision, def_b.to_base, finer),
+    ) else {
+        return false;
     };
-
-    cat1 == cat2 && round_eq(base1, base2, p1, p2)
+    let grain = grain_a.max(grain_b);
+    matches!(
+        (va.round_to_grain(grain), vb.round_to_grain(grain)),
+        (Some(x), Some(y)) if x == y
+    )
 }
 
 pub fn quantity_cmp_units(unit_a: &str, unit_b: &str) -> bool {
@@ -700,70 +300,60 @@ pub fn quantity_cmp_units(unit_a: &str, unit_b: &str) -> bool {
     }
 }
 
-pub fn quantity_div(left: &Value, right: &Value) -> Option<f64> {
-    let (v1, u1, t1) = match left {
-        Value::Quantity(v, _, u, t) => (*v, u.as_str(), t),
-        _ => return None,
-    };
-    let (v2, u2, t2) = match right {
-        Value::Quantity(v, _, u, t) if *v != 0.0 => (*v, u.as_str(), t),
-        _ => return None,
-    };
-
-    if t1 != t2 {
+pub fn quantity_div(left: &Value, right: &Value) -> Option<Decimal> {
+    let (a, b) = (left.quantity_view()?, right.quantity_view()?);
+    if a.quantity_type != b.quantity_type {
         return None;
     }
-
-    if u1 == u2 {
-        return Some(v1 / v2);
+    if a.same_unit_as(&b) {
+        return a.value.checked_div(b.value);
     }
-
-    let (base1, cat1) = normalize(v1, u1)?;
-    let (base2, cat2) = normalize(v2, u2)?;
-
-    if cat1 != cat2 {
-        return None;
-    }
-
-    Some(base1 / base2)
+    let aligned = align(&a, &b)?;
+    aligned.left.checked_div(aligned.right)
 }
 
 #[cfg(test)]
-#[allow(clippy::panic, clippy::expect_used)]
+#[allow(clippy::panic)]
 mod tests {
     use super::*;
+    use crate::value::QuantityType;
+
+    fn q(value: f64, precision: u8, unit: &str) -> Value {
+        Value::quantity(value, precision, unit.to_string(), None)
+    }
+
+    fn fhir_quantity(fields: &[(&str, Value)]) -> Value {
+        Value::object(
+            fields
+                .iter()
+                .map(|(k, v)| ((*k).to_string(), v.clone()))
+                .collect(),
+        )
+    }
 
     #[test]
     fn test_same_unit_add() {
-        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
-        let right = Value::Quantity(2.0, 0, "kg".to_string(), None);
-        match quantity_add(&left, &right) {
-            QuantityResult::Ok(Value::Quantity(value, _, ref unit, _)) => {
-                assert!((value - 3.0).abs() < f64::EPSILON);
-                assert_eq!(unit, "kg");
-            }
-            _ => panic!("Expected Ok"),
+        match quantity_add(&q(1.0, 0, "kg"), &q(2.0, 0, "kg")) {
+            QuantityResult::Ok(v) => assert_eq!(v, q(3.0, 0, "kg")),
+            QuantityResult::Incompatible => panic!("Expected Ok"),
         }
     }
 
     #[test]
-    fn test_compatible_unit_add() {
-        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
-        let right = Value::Quantity(500.0, 0, "g".to_string(), None);
-        match quantity_add(&left, &right) {
-            QuantityResult::Ok(Value::Quantity(value, _, ref unit, _)) => {
-                assert!((value - 1.5).abs() < f64::EPSILON);
-                assert_eq!(unit, "kg");
-            }
-            _ => panic!("Expected Ok"),
+    fn test_compatible_unit_add_yields_finer_unit() {
+        match quantity_add(&q(1.0, 0, "kg"), &q(500.0, 0, "g")) {
+            QuantityResult::Ok(v) => assert_eq!(v, q(1500.0, 0, "g")),
+            QuantityResult::Incompatible => panic!("Expected Ok"),
+        }
+        match quantity_sub(&q(1.0, 0, "m"), &q(1.0, 0, "cm")) {
+            QuantityResult::Ok(v) => assert_eq!(v, q(99.0, 0, "cm")),
+            QuantityResult::Incompatible => panic!("Expected Ok"),
         }
     }
 
     #[test]
     fn test_incompatible_units() {
-        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
-        let right = Value::Quantity(1.0, 0, "mL".to_string(), None);
-        match quantity_add(&left, &right) {
+        match quantity_add(&q(1.0, 0, "kg"), &q(1.0, 0, "mL")) {
             QuantityResult::Incompatible => {}
             QuantityResult::Ok(_) => panic!("Expected Incompatible"),
         }
@@ -771,64 +361,255 @@ mod tests {
 
     #[test]
     fn test_quantity_cmp_compatible() {
-        let kg1 = Value::Quantity(1.0, 0, "kg".to_string(), None);
-        let g500 = Value::Quantity(500.0, 0, "g".to_string(), None);
-        let g1000 = Value::Quantity(1000.0, 0, "g".to_string(), None);
-        assert_eq!(quantity_cmp(&kg1, &g500), Some(Ordering::Greater));
-        assert_eq!(quantity_cmp(&g500, &kg1), Some(Ordering::Less));
-        assert_eq!(quantity_cmp(&g1000, &kg1), Some(Ordering::Equal));
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "kg"), &q(500.0, 0, "g")),
+            Comparison::Greater
+        );
+        assert_eq!(
+            quantity_cmp(&q(500.0, 0, "g"), &q(1.0, 0, "kg")),
+            Comparison::Less
+        );
+        assert_eq!(
+            quantity_cmp(&q(1000.0, 0, "g"), &q(1.0, 0, "kg")),
+            Comparison::Equal
+        );
+        assert_eq!(
+            quantity_cmp(&q(7.0, 0, "cm"), &q(70.0, 0, "mm")),
+            Comparison::Equal
+        );
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "mg"), &q(1.0, 0, "g")),
+            Comparison::Less
+        );
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "[in_i]"), &q(2.54, 2, "cm")),
+            Comparison::Equal
+        );
+    }
+
+    #[test]
+    fn test_non_decimal_factors_are_exact() {
+        for (a, b) in [
+            (q(1.0, 0, "[lb_av]"), q(453.59237, 5, "g")),
+            (q(16.0, 0, "[oz_av]"), q(1.0, 0, "[lb_av]")),
+            (q(1.0, 0, "[ft_i]"), q(30.48, 2, "cm")),
+            (q(1.0, 0, "[ft_i]"), q(12.0, 0, "[in_i]")),
+            (q(1.0, 0, "a"), q(365.25, 2, "d")),
+            (q(12.0, 0, "mo"), q(1.0, 0, "a")),
+            (q(1.0, 0, "wk"), q(7.0, 0, "d")),
+        ] {
+            assert_eq!(quantity_cmp(&a, &b), Comparison::Equal, "{a:?} vs {b:?}");
+            assert_eq!(quantity_cmp(&b, &a), Comparison::Equal, "{b:?} vs {a:?}");
+        }
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "[lb_av]"), &q(453.592, 3, "g")),
+            Comparison::Greater
+        );
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "[oz_av]"), &q(28.3495, 4, "g")),
+            Comparison::Greater
+        );
+        match quantity_add(&q(1.0, 0, "[lb_av]"), &q(0.0, 0, "g")) {
+            QuantityResult::Ok(v) => assert_eq!(v, q(453.59237, 5, "g")),
+            QuantityResult::Incompatible => panic!("Expected Ok"),
+        }
+    }
+
+    #[test]
+    fn test_conversion_stays_within_range_for_large_values() {
+        assert_eq!(
+            quantity_cmp(&q(100000000.0, 0, "kg"), &q(100000000000.0, 0, "g")),
+            Comparison::Equal
+        );
+        assert_eq!(
+            quantity_cmp(&q(1e20, 0, "kg"), &q(1e20, 0, "g")),
+            Comparison::Greater
+        );
+        match quantity_add(&q(100000000.0, 0, "kg"), &q(0.0, 0, "g")) {
+            QuantityResult::Ok(v) => assert_eq!(v, q(100000000000.0, 0, "g")),
+            QuantityResult::Incompatible => panic!("Expected Ok"),
+        }
+        assert_eq!(
+            quantity_div(&q(100000000.0, 0, "kg"), &q(100000000000.0, 0, "g")),
+            Some(Decimal::ONE)
+        );
+        assert!(quantity_equivalent(
+            &q(100000000.0, 0, "kg"),
+            &q(100000000000.0, 0, "g")
+        ));
+        assert_eq!(
+            reduced_ratio(1_000_000_000_000_000, 1_000_000_000_000),
+            (Decimal::from(1000), Decimal::ONE)
+        );
+        assert_eq!(
+            gcd(604_800_000_000_000, 86_400_000_000_000),
+            86_400_000_000_000
+        );
     }
 
     #[test]
     fn test_quantity_cmp_incompatible() {
-        let kg = Value::Quantity(1.0, 0, "kg".to_string(), None);
-        let ml = Value::Quantity(1.0, 0, "mL".to_string(), None);
-        assert_eq!(quantity_cmp(&kg, &ml), None);
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "kg"), &q(1.0, 0, "mL")),
+            Comparison::Uncomparable
+        );
+        let age = Value::quantity(1.0, 0, "kg".to_string(), Some(QuantityType::Age));
+        assert_eq!(quantity_cmp(&q(1.0, 0, "kg"), &age), Comparison::Unequal);
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "year"), &q(1.0, 0, "a")),
+            Comparison::Uncomparable
+        );
     }
 
     #[test]
-    fn test_quantity_div_same_unit() {
-        let left = Value::Quantity(6.0, 0, "kg".to_string(), None);
-        let right = Value::Quantity(2.0, 0, "kg".to_string(), None);
-        assert!((quantity_div(&left, &right).expect("should work") - 3.0).abs() < f64::EPSILON);
+    fn test_quantity_cmp_number_as_dimensionless() {
+        assert_eq!(
+            quantity_cmp(&Value::number(2.0, 0), &q(1.0, 0, "1")),
+            Comparison::Greater
+        );
+        assert_eq!(
+            quantity_cmp(&q(1.0, 0, "1"), &Value::number(2.0, 0)),
+            Comparison::Less
+        );
+        assert_eq!(
+            quantity_cmp(&Value::number(2.0, 0), &q(1.0, 0, "mg")),
+            Comparison::Uncomparable
+        );
+        assert_eq!(
+            quantity_cmp(&Value::number(1.0, 0), &Value::number(1.0, 0)),
+            Comparison::Equal
+        );
     }
 
     #[test]
-    fn test_quantity_div_compatible() {
-        let left = Value::Quantity(1.0, 0, "kg".to_string(), None);
-        let right = Value::Quantity(500.0, 0, "g".to_string(), None);
-        assert!((quantity_div(&left, &right).expect("should work") - 2.0).abs() < f64::EPSILON);
+    fn test_quantity_cmp_fhir_objects() {
+        let coded = fhir_quantity(&[
+            ("value", Value::number(1.0, 0)),
+            ("code", Value::String("1".to_string())),
+            ("system", Value::String(UCUM_SYSTEM.to_string())),
+        ]);
+        assert_eq!(
+            quantity_cmp(&coded, &Value::number(1.0, 0)),
+            Comparison::Equal
+        );
+        assert_eq!(quantity_cmp(&coded, &q(2.0, 0, "1")), Comparison::Less);
+
+        let unit_only = fhir_quantity(&[
+            ("value", Value::number(1.0, 0)),
+            ("unit", Value::String("mg".to_string())),
+        ]);
+        assert_eq!(
+            quantity_cmp(&unit_only, &q(1.0, 0, "mg")),
+            Comparison::Equal
+        );
+        assert_eq!(
+            quantity_cmp(&unit_only, &q(1000.0, 0, "ug")),
+            Comparison::Uncomparable
+        );
+
+        let foreign = fhir_quantity(&[
+            ("value", Value::number(1.0, 0)),
+            ("code", Value::String("kg".to_string())),
+            (
+                "system",
+                Value::String("http://example.org/not-ucum".to_string()),
+            ),
+        ]);
+        assert_eq!(
+            quantity_cmp(&foreign, &q(1000.0, 0, "g")),
+            Comparison::Uncomparable
+        );
+        assert_eq!(
+            quantity_cmp(&foreign, &q(1.0, 0, "kg")),
+            Comparison::Uncomparable
+        );
+
+        let code_without_system = fhir_quantity(&[
+            ("value", Value::number(1.0, 0)),
+            ("code", Value::String("kg".to_string())),
+        ]);
+        assert_eq!(
+            quantity_cmp(&code_without_system, &q(1.0, 0, "kg")),
+            Comparison::Uncomparable
+        );
+
+        let unit_with_foreign_system = fhir_quantity(&[
+            ("value", Value::number(1.0, 0)),
+            ("unit", Value::String("kg".to_string())),
+            ("code", Value::String("KGM".to_string())),
+            (
+                "system",
+                Value::String("http://example.org/not-ucum".to_string()),
+            ),
+        ]);
+        assert_eq!(
+            quantity_cmp(&unit_with_foreign_system, &q(1.0, 0, "kg")),
+            Comparison::Equal
+        );
+        assert_eq!(
+            quantity_cmp(&unit_with_foreign_system, &q(1000.0, 0, "g")),
+            Comparison::Uncomparable
+        );
+
+        let display_unit_with_ucum_code = fhir_quantity(&[
+            ("value", Value::number(1.0, 0)),
+            ("unit", Value::String("kilogram".to_string())),
+            ("code", Value::String("kg".to_string())),
+            ("system", Value::String(UCUM_SYSTEM.to_string())),
+        ]);
+        assert_eq!(
+            quantity_cmp(&display_unit_with_ucum_code, &q(1000.0, 0, "g")),
+            Comparison::Equal
+        );
+
+        assert_eq!(
+            quantity_cmp(&coded, &Value::String("1".to_string())),
+            Comparison::Uncomparable
+        );
     }
 
     #[test]
-    fn test_quantity_equivalent_rounds_to_min_precision() {
-        // 4 'g' ~ 4040 'mg' : both p=0, 4040 mg = 4.04 g rounds to 4 at 0dp → equivalent
-        let left = Value::Quantity(4.0, 0, "g".to_string(), None);
-        let right = Value::Quantity(4040.0, 0, "mg".to_string(), None);
-        assert!(quantity_equivalent(&left, &right));
+    fn test_quantity_div() {
+        assert_eq!(
+            quantity_div(&q(6.0, 0, "kg"), &q(2.0, 0, "kg")),
+            Decimal::parse("3")
+        );
+        assert_eq!(
+            quantity_div(&q(1.0, 0, "kg"), &q(500.0, 0, "g")),
+            Decimal::parse("2")
+        );
+        assert_eq!(quantity_div(&q(1.0, 0, "kg"), &q(0.0, 0, "kg")), None);
+        assert_eq!(quantity_div(&q(1.0, 0, "kg"), &q(1.0, 0, "mL")), None);
     }
 
     #[test]
-    fn test_quantity_equivalent_precise_not_equivalent() {
-        // 4.000 'g' vs 4040 'mg' at min precision 3: 4.000 != 4.040 → not equivalent.
-        let left = Value::Quantity(4.0, 3, "g".to_string(), None);
-        let right = Value::Quantity(4040.0, 3, "mg".to_string(), None);
-        assert!(!quantity_equivalent(&left, &right));
+    fn test_quantity_equivalent_rounds_to_coarser_grain() {
+        assert!(quantity_equivalent(&q(4.0, 0, "g"), &q(4040.0, 0, "mg")));
+        assert!(quantity_equivalent(&q(4.0, 0, "kg"), &q(4040.0, 0, "g")));
+        assert!(!quantity_equivalent(&q(4.0, 3, "g"), &q(4040.0, 3, "mg")));
+        assert!(!quantity_equivalent(&q(1.0, 0, "kg"), &q(4040.0, 0, "g")));
+        assert!(quantity_equivalent(&q(1.0, 1, "m"), &q(104.0, 0, "cm")));
     }
 
     #[test]
     fn test_quantity_equivalent_same_unit_precision() {
-        // 1.0 'g' ~ 1.04 'g' : min precision 1 → round(1.0) == round(1.04) at 1dp → 1.0 == 1.0
-        let left = Value::Quantity(1.0, 1, "g".to_string(), None);
-        let right = Value::Quantity(1.04, 2, "g".to_string(), None);
-        assert!(quantity_equivalent(&left, &right));
+        assert!(quantity_equivalent(&q(1.0, 1, "g"), &q(1.04, 2, "g")));
+        assert!(!quantity_equivalent(&q(1.0, 2, "g"), &q(1.04, 2, "g")));
     }
 
     #[test]
-    fn test_quantity_equivalent_days_week() {
-        // 7 days ~ 1 week : 7 * 86400 = 604800 s, 1 * 604800 = 604800 s, p=0 → equivalent
-        let days = Value::Quantity(7.0, 0, "days".to_string(), None);
-        let week = Value::Quantity(1.0, 0, "week".to_string(), None);
-        assert!(quantity_equivalent(&days, &week));
+    fn test_quantity_equivalent_calendar_units() {
+        assert!(quantity_equivalent(&q(7.0, 0, "days"), &q(1.0, 0, "week")));
+        assert!(quantity_equivalent(&q(1.0, 0, "year"), &q(1.0, 0, "a")));
+        assert!(quantity_equivalent(&q(1.0, 0, "cm"), &q(1.0, 0, "CM")));
+    }
+
+    #[test]
+    fn test_quantity_equivalent_number_as_dimensionless() {
+        assert!(quantity_equivalent(&Value::number(1.0, 0), &q(1.0, 1, "1")));
+        assert!(!quantity_equivalent(
+            &Value::number(1.0, 0),
+            &q(1.0, 0, "mg")
+        ));
     }
 }

@@ -8,5 +8,5 @@ fn testindex() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(2.0, 0)]);
+    assert_eq!(actual, vec![Value::number(2.0, 0)]);
 }

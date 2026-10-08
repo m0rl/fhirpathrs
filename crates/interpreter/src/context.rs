@@ -1,3 +1,4 @@
+use crate::decimal::Decimal;
 use crate::trace::SharedTraceHandler;
 use crate::value::Value;
 use chrono::{DateTime, Utc};
@@ -91,9 +92,8 @@ impl InterpreterContext {
         self
     }
 
-    #[allow(clippy::cast_precision_loss)]
     pub fn with_total_count(self, count: usize) -> Self {
-        self.with_total(Value::Number(count as f64, 0))
+        self.with_total(Value::Number(Decimal::from(count as i64), 0))
     }
 
     pub fn with_constant(mut self, name: String, value: Value) -> Self {

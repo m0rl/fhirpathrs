@@ -1,5 +1,6 @@
 use crate::InterpreterResult;
 use crate::context::InterpreterContext;
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
 use crate::value::Value;
 use regex::Regex;
@@ -42,8 +43,8 @@ pub fn index_of(base: &Value, args: &[Value], context: InterpreterContext) -> In
     };
     let char_index = s
         .find(&substring)
-        .map_or(-1.0, |byte_idx| s[..byte_idx].chars().count() as f64);
-    Ok((Value::Number(char_index, 0), context))
+        .map_or(-1, |byte_idx| s[..byte_idx].chars().count() as i64);
+    Ok((Value::Number(Decimal::from(char_index), 0), context))
 }
 
 pub fn substring(base: &Value, args: &[Value], context: InterpreterContext) -> InterpreterResult {
@@ -56,17 +57,9 @@ pub fn substring(base: &Value, args: &[Value], context: InterpreterContext) -> I
             "substring() requires a start argument".to_string(),
         ));
     }
-    let start_f64 = match args[0].to_f64() {
-        Some(v) => v,
-        None => return Ok((Value::collection(vec![]), context)),
-    };
-
-    if start_f64 < 0.0 {
+    let Some(start) = args[0].to_usize() else {
         return Ok((Value::collection(vec![]), context));
-    }
-
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let start = start_f64.trunc() as usize;
+    };
 
     let chars: Vec<char> = s.chars().collect();
     if start >= chars.len() {
@@ -208,9 +201,10 @@ pub fn length(base: &Value, context: InterpreterContext) -> InterpreterResult {
         Some(s) => s,
         None => return Ok((Value::collection(vec![]), context)),
     };
-    #[allow(clippy::cast_precision_loss)]
-    let len = s.chars().count() as f64;
-    Ok((Value::Number(len, 0), context))
+    Ok((
+        Value::Number(Decimal::from(s.chars().count() as i64), 0),
+        context,
+    ))
 }
 
 pub fn to_chars(base: &Value, context: InterpreterContext) -> InterpreterResult {
@@ -281,8 +275,8 @@ pub fn last_index_of(
     let substring = args[0].to_str()?;
     let char_index = s
         .rfind(&substring)
-        .map_or(-1.0, |byte_idx| s[..byte_idx].chars().count() as f64);
-    Ok((Value::Number(char_index, 0), context))
+        .map_or(-1, |byte_idx| s[..byte_idx].chars().count() as i64);
+    Ok((Value::Number(Decimal::from(char_index), 0), context))
 }
 
 pub fn matches_full(

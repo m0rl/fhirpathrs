@@ -7,7 +7,7 @@ fn lowboundarydecimaldefault() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5865_f64, 8)]);
+    assert_eq!(actual, vec![Value::number(1.5865_f64, 8)]);
 }
 
 #[test]
@@ -17,7 +17,7 @@ fn lowboundarydecimal1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.5865_f64, 6)]);
+    assert_eq!(actual, vec![Value::number(1.5865_f64, 6)]);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn lowboundarydecimal2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.58_f64, 2)]);
+    assert_eq!(actual, vec![Value::number(1.58_f64, 2)]);
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn lowboundarydecimal4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(1.0_f64, 0)]);
+    assert_eq!(actual, vec![Value::number(1.0_f64, 0)]);
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn lowboundarynegdecimaldefault() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.5875_f64, 8)]);
+    assert_eq!(actual, vec![Value::number(-1.5875_f64, 8)]);
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn lowboundarynegdecimal1() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.5875_f64, 6)]);
+    assert_eq!(actual, vec![Value::number(-1.5875_f64, 6)]);
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn lowboundarynegdecimal2() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-1.59_f64, 2)]);
+    assert_eq!(actual, vec![Value::number(-1.59_f64, 2)]);
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn lowboundarynegdecimal4() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-2.0_f64, 0)]);
+    assert_eq!(actual, vec![Value::number(-2.0_f64, 0)]);
 }
 
 #[test]
@@ -137,7 +137,7 @@ fn lowboundarydecimal7() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.5_f64, 8)]);
+    assert_eq!(actual, vec![Value::number(0.5_f64, 8)]);
 }
 
 #[test]
@@ -147,7 +147,7 @@ fn lowboundarydecimal8() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0_f64, 0)]);
+    assert_eq!(actual, vec![Value::number(0.0_f64, 0)]);
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn lowboundarydecimal9() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.5_f64, 5)]);
+    assert_eq!(actual, vec![Value::number(0.5_f64, 5)]);
 }
 
 #[test]
@@ -167,7 +167,7 @@ fn lowboundarydecimal10() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(12.58_f64, 2)]);
+    assert_eq!(actual, vec![Value::number(12.58_f64, 2)]);
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn lowboundarydecimal11() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(12.4995_f64, 4)]);
+    assert_eq!(actual, vec![Value::number(12.4995_f64, 4)]);
 }
 
 #[test]
@@ -187,7 +187,7 @@ fn lowboundarydecimal12() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(119.5_f64, 2)]);
+    assert_eq!(actual, vec![Value::number(119.5_f64, 2)]);
 }
 
 #[test]
@@ -197,7 +197,7 @@ fn lowboundarydecimal13() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-120.5_f64, 2)]);
+    assert_eq!(actual, vec![Value::number(-120.5_f64, 2)]);
 }
 
 #[test]
@@ -207,7 +207,7 @@ fn lowboundarydecimal14() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(0.0_f64, 1)]);
+    assert_eq!(actual, vec![Value::number(0.0_f64, 1)]);
 }
 
 #[test]
@@ -217,7 +217,7 @@ fn lowboundarydecimal15() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(-0.0_f64, 1)]);
+    assert_eq!(actual, vec![Value::number(-0.0_f64, 1)]);
 }
 
 #[test]
@@ -229,7 +229,7 @@ fn lowboundaryquantity() {
     let actual = result.to_vec();
     assert_eq!(
         actual,
-        vec![Value::Quantity(1.5865_f64, 8, "cm".to_string(), None)]
+        vec![Value::quantity(1.5865_f64, 8, "cm".to_string(), None)]
     );
 }
 

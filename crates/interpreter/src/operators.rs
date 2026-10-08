@@ -1,8 +1,9 @@
 use crate::InterpreterResult;
 use crate::context::InterpreterContext;
 use crate::datetime::TimeInterval;
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
-use crate::units::{QuantityResult, quantity_add, quantity_cmp, quantity_div, quantity_sub};
+use crate::units::{QuantityResult, quantity_add, quantity_div, quantity_sub};
 use crate::value::{Comparison, Value};
 use chrono::{Months, NaiveTime, Timelike};
 use parser::{
@@ -52,8 +53,13 @@ pub(crate) fn interpret_polarity(
     let result = match op {
         PolarityOp::Plus => value.clone(),
         PolarityOp::Minus => match value {
-            Value::Number(n, p) => Value::Number(-n, *p),
-            Value::Quantity(v, qp, u, t) => Value::Quantity(-v, *qp, u.clone(), *t),
+            Value::Number(n, p) => n
+                .checked_neg()
+                .map_or_else(|| Value::collection(vec![]), |n| Value::Number(n, *p)),
+            Value::Quantity(v, qp, u, t) => v.checked_neg().map_or_else(
+                || Value::collection(vec![]),
+                |v| Value::Quantity(v, *qp, u.clone(), *t),
+            ),
             _ => {
                 return Err(InterpreterError::TypeMismatch(
                     "Cannot apply unary minus to this type".to_string(),
@@ -76,88 +82,45 @@ pub(crate) fn interpret_multiplicative(
 
     let value = match op {
         MultiplicativeOp::Multiply => {
-            if let (Value::Quantity(v, _, u, t), Value::Number(n, _)) = (left, right) {
-                let result = v * n;
-                return Ok((
-                    Value::Quantity(result, Value::precision(result), u.clone(), *t),
-                    context,
-                ));
+            if let (Value::Quantity(v, _, u, t), Value::Number(n, _))
+            | (Value::Number(n, _), Value::Quantity(v, _, u, t)) = (left, right)
+            {
+                return Ok((Value::quantity_or_empty(v.checked_mul(*n), u, *t), context));
             }
-            if let (Value::Number(n, _), Value::Quantity(v, _, u, t)) = (left, right) {
-                let result = n * v;
-                return Ok((
-                    Value::Quantity(result, Value::precision(result), u.clone(), *t),
-                    context,
-                ));
-            }
-            let left_num = left.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Left operand must be a number".to_string())
-            })?;
-            let right_num = right.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Right operand must be a number".to_string())
-            })?;
-            let result = left_num * right_num;
-            Value::Number(result, Value::precision(result))
+            let (l, r) = numeric_operands(left, right)?;
+            Value::decimal_or_empty(l.checked_mul(r))
         }
         MultiplicativeOp::Divide => {
             if let (Value::Quantity(v, _, u, t), Value::Number(n, _)) = (left, right) {
-                if *n == 0.0 {
-                    return Ok((Value::collection(vec![]), context));
-                }
-                let result = v / n;
-                return Ok((
-                    Value::Quantity(result, Value::precision(result), u.clone(), *t),
-                    context,
-                ));
+                return Ok((Value::quantity_or_empty(v.checked_div(*n), u, *t), context));
             }
-            if let (Value::Quantity(..), Value::Quantity(v2, _, _, _)) = (left, right) {
-                if *v2 == 0.0 {
-                    return Ok((Value::collection(vec![]), context));
-                }
-                return match quantity_div(left, right) {
-                    Some(ratio) => Ok((Value::Number(ratio, Value::precision(ratio)), context)),
-                    None => Ok((Value::collection(vec![]), context)),
-                };
+            if matches!((left, right), (Value::Quantity(..), Value::Quantity(..))) {
+                return Ok((Value::decimal_or_empty(quantity_div(left, right)), context));
             }
-            let left_num = left.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Left operand must be a number".to_string())
-            })?;
-            let right_num = right.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Right operand must be a number".to_string())
-            })?;
-            if right_num == 0.0 {
-                return Ok((Value::collection(vec![]), context));
-            }
-            let result = left_num / right_num;
-            Value::Number(result, Value::precision(result))
+            let (l, r) = numeric_operands(left, right)?;
+            Value::decimal_or_empty(l.checked_div(r))
         }
         MultiplicativeOp::Div => {
-            let left_num = left.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Left operand must be a number".to_string())
-            })?;
-            let right_num = right.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Right operand must be a number".to_string())
-            })?;
-            if right_num == 0.0 {
-                return Ok((Value::collection(vec![]), context));
-            }
-            Value::Number((left_num / right_num).trunc(), 0)
+            let (l, r) = numeric_operands(left, right)?;
+            l.div_trunc(r)
+                .map_or_else(|| Value::collection(vec![]), |n| Value::Number(n, 0))
         }
         MultiplicativeOp::Mod => {
-            let left_num = left.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Left operand must be a number".to_string())
-            })?;
-            let right_num = right.to_f64().ok_or_else(|| {
-                InterpreterError::TypeMismatch("Right operand must be a number".to_string())
-            })?;
-            if right_num == 0.0 {
-                return Ok((Value::collection(vec![]), context));
-            }
-            let result = left_num % right_num;
-            Value::Number(result, Value::precision(result))
+            let (l, r) = numeric_operands(left, right)?;
+            Value::decimal_or_empty(l.checked_rem(r))
         }
     };
     Ok((value, context))
+}
+
+fn numeric_operands(left: &Value, right: &Value) -> Result<(Decimal, Decimal), InterpreterError> {
+    let l = left.to_decimal().ok_or_else(|| {
+        InterpreterError::TypeMismatch("Left operand must be a number".to_string())
+    })?;
+    let r = right.to_decimal().ok_or_else(|| {
+        InterpreterError::TypeMismatch("Right operand must be a number".to_string())
+    })?;
+    Ok((l, r))
 }
 
 pub(crate) fn interpret_additive(
@@ -243,12 +206,11 @@ pub(crate) fn interpret_additive(
                     QuantityResult::Incompatible => Ok((Value::collection(vec![]), context)),
                 };
             }
-            if let (Some(l), Some(r)) = (left.to_f64(), right.to_f64()) {
-                let result = l + r;
-                return Ok((Value::Number(result, Value::precision(result)), context));
-            }
             if let (Some(l), Some(r)) = (left.as_string(), right.as_string()) {
                 return Ok((Value::String(format!("{}{}", l, r)), context));
+            }
+            if let (Some(l), Some(r)) = (left.to_decimal(), right.to_decimal()) {
+                return Ok((Value::decimal_or_empty(l.checked_add(r)), context));
             }
             return Ok((Value::collection(vec![]), context));
         }
@@ -320,9 +282,8 @@ pub(crate) fn interpret_additive(
                     QuantityResult::Incompatible => Ok((Value::collection(vec![]), context)),
                 };
             }
-            if let (Some(l), Some(r)) = (left.to_f64(), right.to_f64()) {
-                let result = l - r;
-                return Ok((Value::Number(result, Value::precision(result)), context));
+            if let (Some(l), Some(r)) = (left.to_decimal(), right.to_decimal()) {
+                return Ok((Value::decimal_or_empty(l.checked_sub(r)), context));
             }
             return Err(InterpreterError::TypeMismatch(
                 "Cannot subtract these types".to_string(),
@@ -423,19 +384,6 @@ pub(crate) fn interpret_inequality(
         return Ok((Value::collection(vec![]), context));
     }
 
-    if let (Some(lq), Some(rq)) = (left.as_quantity(), right.as_quantity()) {
-        if let Some(ordering) = quantity_cmp(&lq, &rq) {
-            let result = match op {
-                InequalityOp::Less => ordering == Ordering::Less,
-                InequalityOp::LessEqual => ordering != Ordering::Greater,
-                InequalityOp::Greater => ordering == Ordering::Greater,
-                InequalityOp::GreaterEqual => ordering != Ordering::Less,
-            };
-            return Ok((Value::Boolean(result), context));
-        }
-        return Ok((Value::collection(vec![]), context));
-    }
-
     let cmp = left.compare_equal(&right);
     match cmp.as_ordering() {
         Some(ordering) => {
@@ -447,10 +395,14 @@ pub(crate) fn interpret_inequality(
             };
             Ok((Value::Boolean(result), context))
         }
-        None if cmp == Comparison::Unequal => Err(InterpreterError::TypeMismatch(format!(
-            "Cannot compare {:?} with {:?}",
-            left, right
-        ))),
+        None if cmp == Comparison::Unequal
+            && (left.quantity_view().is_none() || right.quantity_view().is_none()) =>
+        {
+            Err(InterpreterError::TypeMismatch(format!(
+                "Cannot compare {:?} with {:?}",
+                left, right
+            )))
+        }
         None => Ok((Value::collection(vec![]), context)),
     }
 }
@@ -484,9 +436,6 @@ pub(crate) fn interpret_equality(
     {
         return Ok((Value::collection(vec![]), context));
     }
-
-    let left = left.as_quantity().unwrap_or(left);
-    let right = right.as_quantity().unwrap_or(right);
 
     let result: Option<bool> = match op {
         EqualityOp::Equal => match left.compare_equal(&right) {

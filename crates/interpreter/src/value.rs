@@ -1,7 +1,8 @@
 use crate::datetime;
 pub use crate::datetime::{DatePrecision, DateTimePrecision, TimeInterval, TimePrecision};
-use crate::decimal;
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
+use crate::units::UCUM_SYSTEM;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta};
 use parser::TypeSpecifier;
 use std::collections::HashMap;
@@ -90,18 +91,36 @@ impl QuantityType {
     }
 }
 
-pub const MAX_DECIMAL_PRECISION: u8 = 8;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct QuantityView<'a> {
+    pub value: Decimal,
+    pub precision: u8,
+    pub code: Option<&'a str>,
+    pub system: Option<&'a str>,
+    pub unit: Option<&'a str>,
+    pub quantity_type: Option<QuantityType>,
+}
+
+impl<'a> QuantityView<'a> {
+    pub fn ucum_code(&self) -> Option<&'a str> {
+        self.code.filter(|_| self.system == Some(UCUM_SYSTEM))
+    }
+
+    pub fn same_unit_as(&self, other: &QuantityView<'_>) -> bool {
+        self.unit.is_some() && self.unit == other.unit
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Null,
     Boolean(bool),
     String(String),
-    Number(f64, u8),
+    Number(Decimal, u8),
     Date(NaiveDate, DatePrecision),
     DateTime(NaiveDateTime, DateTimePrecision, Option<FixedOffset>),
     Time(NaiveTime, TimePrecision),
-    Quantity(f64, u8, String, Option<QuantityType>),
+    Quantity(Decimal, u8, String, Option<QuantityType>),
     Collection(std::mem::ManuallyDrop<Rc<Vec<Value>>>),
     Object(std::mem::ManuallyDrop<Rc<HashMap<String, Value>>>),
 }
@@ -158,19 +177,57 @@ impl Value {
         Value::Object(std::mem::ManuallyDrop::new(Rc::new(map)))
     }
 
-    #[allow(clippy::cast_possible_truncation, clippy::manual_range_contains)]
-    pub fn precision(v: f64) -> u8 {
-        let mut n = v.abs();
-        let mut p: u8 = 0;
-        while p < MAX_DECIMAL_PRECISION {
-            let frac = n.fract();
-            if frac < 1e-10 || frac > 1.0 - 1e-10 {
-                break;
-            }
-            n *= 10.0;
-            p += 1;
-        }
-        p
+    pub fn number(value: f64, precision: u8) -> Self {
+        Decimal::from_f64(value).map_or_else(
+            || Value::collection(vec![]),
+            |d| Value::Number(d, precision.min(Decimal::MAX_PRECISION)),
+        )
+    }
+
+    pub fn from_f64(value: f64) -> Self {
+        Value::decimal_or_empty(Decimal::from_f64(value))
+    }
+
+    pub fn from_f64_result(value: f64) -> Self {
+        Value::decimal_or_empty(Decimal::from_f64_result(value))
+    }
+
+    pub fn decimal(value: Decimal) -> Self {
+        Value::Number(value, value.precision())
+    }
+
+    pub fn decimal_or_empty(value: Option<Decimal>) -> Self {
+        value.map_or_else(|| Value::collection(vec![]), Value::decimal)
+    }
+
+    pub fn quantity_or_empty(
+        value: Option<Decimal>,
+        unit: &str,
+        quantity_type: Option<QuantityType>,
+    ) -> Self {
+        value.map_or_else(
+            || Value::collection(vec![]),
+            |v| Value::Quantity(v, v.precision(), unit.to_string(), quantity_type),
+        )
+    }
+
+    pub fn quantity(
+        value: f64,
+        precision: u8,
+        unit: String,
+        quantity_type: Option<QuantityType>,
+    ) -> Self {
+        Decimal::from_f64(value).map_or_else(
+            || Value::collection(vec![]),
+            |d| {
+                Value::Quantity(
+                    d,
+                    precision.min(Decimal::MAX_PRECISION),
+                    unit,
+                    quantity_type,
+                )
+            },
+        )
     }
 
     fn discriminant(&self) -> u8 {
@@ -201,10 +258,10 @@ impl Value {
         match self {
             Value::Null => false,
             Value::Boolean(b) => *b,
-            Value::Number(n, _) => *n != 0.0,
+            Value::Number(n, _) => !n.is_zero(),
             Value::String(s) => !s.is_empty(),
             Value::Date(..) | Value::DateTime(..) | Value::Time(..) => true,
-            Value::Quantity(v, ..) => *v != 0.0,
+            Value::Quantity(v, ..) => !v.is_zero(),
             Value::Collection(v) => !v.is_empty(),
             Value::Object(o) => !o.is_empty(),
         }
@@ -310,15 +367,13 @@ impl Value {
         let TypeSpecifier::QualifiedIdentifier(parts) = type_spec;
         match (self, parts.last().map(|s| s.as_str())) {
             (Value::Null, _) => Value::collection(vec![]),
-            (Value::String(s), Some("Integer")) => s.trim().parse::<f64>().ok().map_or_else(
+            (Value::String(s), Some("Integer")) => Decimal::parse(s).map_or_else(
                 || Value::collection(vec![]),
                 |n| Value::Number(n.trunc(), 0),
             ),
-            (Value::String(s), Some("Decimal")) => s
-                .trim()
-                .parse::<f64>()
-                .ok()
-                .map_or_else(|| Value::collection(vec![]), |n| Value::Number(n, 0)),
+            (Value::String(s), Some("Decimal")) => {
+                Decimal::parse(s).map_or_else(|| Value::collection(vec![]), Value::decimal)
+            }
             (Value::String(s), Some("Boolean")) => match s.to_lowercase().as_str() {
                 "true" | "t" | "yes" | "y" | "1" | "1.0" => Value::Boolean(true),
                 "false" | "f" | "no" | "n" | "0" | "0.0" => Value::Boolean(false),
@@ -327,9 +382,9 @@ impl Value {
             (Value::Number(n, _), Some("String")) => Value::String(n.to_string()),
             (Value::Number(n, _), Some("Integer")) => Value::Number(n.trunc(), 0),
             (Value::Number(n, _), Some("Boolean")) => {
-                if *n == 1.0 {
+                if *n == Decimal::ONE {
                     Value::Boolean(true)
-                } else if *n == 0.0 {
+                } else if n.is_zero() {
                     Value::Boolean(false)
                 } else {
                     Value::collection(vec![])
@@ -337,7 +392,7 @@ impl Value {
             }
             (Value::Boolean(b), Some("String")) => Value::String(b.to_string()),
             (Value::Boolean(b), Some("Integer" | "Decimal")) => {
-                Value::Number(if *b { 1.0 } else { 0.0 }, 0)
+                Value::Number(if *b { Decimal::ONE } else { Decimal::ZERO }, 0)
             }
             (Value::Date(d, p), Some("String")) => Value::String(datetime::format_date(*d, *p)),
             (Value::DateTime(dt, p, tz), Some("String")) => {
@@ -372,22 +427,40 @@ impl Value {
             }
         }
         match current {
-            Value::Number(n, _) => Some(*n),
-            Value::String(s) => s.parse().ok(),
+            Value::Number(n, _) => Some(n.to_f64()),
+            Value::String(s) => Decimal::parse(s).map(Decimal::to_f64),
             Value::Boolean(true) => Some(1.0),
             Value::Boolean(false) => Some(0.0),
             _ => None,
         }
     }
 
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    pub fn to_usize(&self) -> Option<usize> {
-        self.to_f64().map(|n| n.trunc() as usize)
+    pub fn to_decimal(&self) -> Option<Decimal> {
+        let mut current = self;
+        while let Value::Collection(items) = current {
+            if items.len() == 1 {
+                current = &items[0];
+            } else {
+                return None;
+            }
+        }
+        match current {
+            Value::Number(n, _) => Some(*n),
+            Value::String(s) => Decimal::parse(s),
+            Value::Boolean(true) => Some(Decimal::ONE),
+            Value::Boolean(false) => Some(Decimal::ZERO),
+            _ => None,
+        }
     }
 
-    #[allow(clippy::cast_possible_truncation)]
+    pub fn to_usize(&self) -> Option<usize> {
+        self.to_decimal()
+            .and_then(|n| usize::try_from(n.trunc_to_i128()).ok())
+    }
+
     pub fn to_i32(&self) -> Option<i32> {
-        self.to_f64().map(|n| n.trunc() as i32)
+        self.to_decimal()
+            .and_then(|n| i32::try_from(n.trunc_to_i128()).ok())
     }
 
     pub fn to_str(&self) -> Result<String, InterpreterError> {
@@ -423,29 +496,47 @@ impl Value {
         }
     }
 
-    pub fn as_quantity(&self) -> Option<Value> {
-        let mut val = self;
-        loop {
-            match val {
-                Value::Quantity(..) => return Some(val.clone()),
-                Value::Collection(items) if items.len() == 1 => val = &items[0],
-                Value::Object(obj) => {
-                    let v = match obj.get("value") {
-                        Some(Value::Number(n, _)) => *n,
-                        _ => return None,
-                    };
-                    let code = match obj.get("code") {
-                        Some(Value::String(s)) => s.clone(),
-                        _ => return None,
-                    };
-                    let qt = obj.get("resourceType").and_then(|rt| match rt {
-                        Value::String(s) => QuantityType::from_suffix(s),
-                        _ => None,
-                    });
-                    return Some(Value::Quantity(v, 0, code, qt));
+    pub fn quantity_view(&self) -> Option<QuantityView<'_>> {
+        match self {
+            Value::Quantity(value, precision, unit, quantity_type) => Some(QuantityView {
+                value: *value,
+                precision: *precision,
+                code: Some(unit.as_str()),
+                system: Some(UCUM_SYSTEM),
+                unit: Some(unit.as_str()),
+                quantity_type: *quantity_type,
+            }),
+            Value::Number(value, precision) => Some(QuantityView {
+                value: *value,
+                precision: *precision,
+                code: Some("1"),
+                system: Some(UCUM_SYSTEM),
+                unit: Some("1"),
+                quantity_type: None,
+            }),
+            Value::Object(obj) => {
+                let (value, precision) = match obj.get("value") {
+                    Some(Value::Number(n, p)) => (*n, *p),
+                    _ => return None,
+                };
+                let text = |key: &str| match obj.get(key) {
+                    Some(Value::String(s)) => Some(s.as_str()),
+                    _ => None,
+                };
+                let (code, unit) = (text("code"), text("unit"));
+                if code.is_none() && unit.is_none() {
+                    return None;
                 }
-                _ => return None,
+                Some(QuantityView {
+                    value,
+                    precision,
+                    code,
+                    system: text("system"),
+                    unit,
+                    quantity_type: text("resourceType").and_then(QuantityType::from_suffix),
+                })
             }
+            _ => None,
         }
     }
 
@@ -457,7 +548,6 @@ impl Value {
         }
     }
 
-    #[allow(clippy::cast_possible_truncation)]
     pub fn to_time_interval(&self) -> Option<TimeInterval> {
         let mut current = self;
         while let Value::Collection(items) = current {
@@ -467,41 +557,39 @@ impl Value {
                 return None;
             }
         }
-        match current {
-            Value::Quantity(value, _, unit, _) => {
-                let unit_lower = unit.to_lowercase();
-                match unit_lower.as_str() {
-                    "year" | "years" => i32::try_from((*value * 12.0).trunc() as i64)
-                        .ok()
-                        .map(TimeInterval::Months),
-                    "month" | "months" => i32::try_from(value.trunc() as i64)
-                        .ok()
-                        .map(TimeInterval::Months),
-                    "week" | "weeks" | "wk" => {
-                        TimeDelta::try_weeks(value.trunc() as i64).map(TimeInterval::Duration)
-                    }
-                    "day" | "days" | "d" => {
-                        TimeDelta::try_days(value.trunc() as i64).map(TimeInterval::Duration)
-                    }
-                    "hour" | "hours" | "h" => {
-                        TimeDelta::try_hours(value.trunc() as i64).map(TimeInterval::Duration)
-                    }
-                    "minute" | "minutes" | "min" => {
-                        TimeDelta::try_minutes(value.trunc() as i64).map(TimeInterval::Duration)
-                    }
-                    "second" | "seconds" | "s" =>
-                    {
-                        #[allow(clippy::cast_possible_truncation)]
-                        TimeDelta::try_milliseconds((*value * 1000.0).round() as i64)
-                            .map(TimeInterval::Duration)
-                    }
-                    "millisecond" | "milliseconds" | "ms" => {
-                        TimeDelta::try_milliseconds(value.trunc() as i64)
-                            .map(TimeInterval::Duration)
-                    }
-                    _ => None,
-                }
-            }
+        let Value::Quantity(value, _, unit, _) = current else {
+            return None;
+        };
+        let whole = i64::try_from(value.trunc_to_i128()).ok();
+        match unit.to_lowercase().as_str() {
+            "year" | "years" => value
+                .checked_mul(Decimal::from(12))
+                .and_then(|months| i32::try_from(months.trunc_to_i128()).ok())
+                .map(TimeInterval::Months),
+            "month" | "months" => i32::try_from(value.trunc_to_i128())
+                .ok()
+                .map(TimeInterval::Months),
+            "week" | "weeks" | "wk" => whole
+                .and_then(TimeDelta::try_weeks)
+                .map(TimeInterval::Duration),
+            "day" | "days" | "d" => whole
+                .and_then(TimeDelta::try_days)
+                .map(TimeInterval::Duration),
+            "hour" | "hours" | "h" => whole
+                .and_then(TimeDelta::try_hours)
+                .map(TimeInterval::Duration),
+            "minute" | "minutes" | "min" => whole
+                .and_then(TimeDelta::try_minutes)
+                .map(TimeInterval::Duration),
+            "second" | "seconds" | "s" => value
+                .checked_mul(Decimal::from(1000))
+                .and_then(|millis| millis.round_dp(0))
+                .and_then(|millis| i64::try_from(millis.trunc_to_i128()).ok())
+                .and_then(TimeDelta::try_milliseconds)
+                .map(TimeInterval::Duration),
+            "millisecond" | "milliseconds" | "ms" => whole
+                .and_then(TimeDelta::try_milliseconds)
+                .map(TimeInterval::Duration),
             _ => None,
         }
     }
@@ -619,8 +707,11 @@ impl Value {
                 (Value::Null, Value::Null) => Comparison::Equal,
                 (Value::Boolean(ba), Value::Boolean(bb)) => ba.cmp(bb).into(),
                 (Value::Number(na, pa), Value::Number(nb, pb)) => {
-                    let (ra, rb) = decimal::round_to_min_precision(*na, *nb, *pa, *pb);
-                    ra.total_cmp(&rb).into()
+                    let places = i32::from((*pa).min(*pb));
+                    match (na.round_dp(places), nb.round_dp(places)) {
+                        (Some(ra), Some(rb)) => ra.cmp(&rb).into(),
+                        _ => Comparison::Uncomparable,
+                    }
                 }
                 (Value::String(sa), Value::String(sb)) => {
                     sa.to_lowercase().cmp(&sb.to_lowercase()).into()
@@ -632,7 +723,7 @@ impl Value {
                     utc_a.cmp(&utc_b).into()
                 }
                 (Value::Time(ta, _), Value::Time(tb, _)) => ta.cmp(tb).into(),
-                (Value::Quantity(..), Value::Quantity(..)) => {
+                _ if a.quantity_view().is_some() && b.quantity_view().is_some() => {
                     if crate::units::quantity_equivalent(a, b) {
                         Comparison::Equal
                     } else {
@@ -729,19 +820,15 @@ impl Value {
         let mut result: Option<Comparison> = None;
         while let Some((a, b)) = stack.pop() {
             let pair: Comparison = match (a, b) {
+                _ if a.quantity_view().is_some() && b.quantity_view().is_some() => {
+                    crate::units::quantity_cmp(a, b)
+                }
                 (Value::Null, Value::Null) => Comparison::Equal,
                 (Value::Boolean(ba), Value::Boolean(bb)) => {
                     if ba == bb {
                         Comparison::Equal
                     } else {
                         Comparison::Unequal
-                    }
-                }
-                (Value::Number(na, _), Value::Number(nb, _)) => {
-                    if (na - nb).abs() < f64::EPSILON {
-                        Comparison::Equal
-                    } else {
-                        na.partial_cmp(nb).into()
                     }
                 }
                 (Value::String(sa), Value::String(sb)) => sa.cmp(sb).into(),
@@ -770,19 +857,6 @@ impl Value {
                         ta.cmp(tb).into()
                     } else {
                         Comparison::Uncomparable
-                    }
-                }
-                (Value::Quantity(v1, _, u1, qt1), Value::Quantity(v2, _, u2, qt2)) => {
-                    if qt1 != qt2 {
-                        Comparison::Unequal
-                    } else if u1 == u2 {
-                        if (v1 - v2).abs() < f64::EPSILON {
-                            Comparison::Equal
-                        } else {
-                            v1.partial_cmp(v2).into()
-                        }
-                    } else {
-                        crate::units::quantity_cmp(a, b).into()
                     }
                 }
                 (Value::DateTime(dt, _, _), Value::Date(d, _)) => match dt.date().cmp(d) {
@@ -892,17 +966,17 @@ impl std::fmt::Display for Value {
             Value::Null => write!(f, "{{}}"),
             Value::Boolean(b) => write!(f, "{}", b),
             Value::String(s) => write!(f, "{}", s),
-            Value::Number(n, p) => write!(f, "{:.*}", usize::from(*p), n),
+            Value::Number(n, p) => f.write_str(&n.format(*p)),
             Value::Date(d, p) => write!(f, "@{}", datetime::format_date(*d, *p)),
             Value::DateTime(dt, p, tz) => {
                 write!(f, "@{}", datetime::format_datetime(*dt, *p, tz))
             }
             Value::Time(t, p) => write!(f, "@T{}", datetime::format_time(*t, *p)),
-            Value::Quantity(v, _, u, _) => {
+            Value::Quantity(v, p, u, _) => {
                 if crate::units::is_calendar_unit(u) {
-                    write!(f, "{} {}", v, u)
+                    write!(f, "{} {}", v.format(*p), u)
                 } else {
-                    write!(f, "{} '{}'", v, u)
+                    write!(f, "{} '{}'", v.format(*p), u)
                 }
             }
             Value::Collection(items) => {
@@ -941,7 +1015,7 @@ mod tests {
 
     #[test]
     fn as_string_value_returns_none_for_non_string() {
-        assert_eq!(Value::Number(42.0, 0).as_string(), None);
+        assert_eq!(Value::number(42.0, 0).as_string(), None);
         assert_eq!(Value::Boolean(true).as_string(), None);
         assert_eq!(Value::Null.as_string(), None);
     }
@@ -954,19 +1028,162 @@ mod tests {
 
     #[test]
     fn is_multi_item_collection_true() {
-        let val = Value::collection(vec![Value::Number(1.0, 0), Value::Number(2.0, 0)]);
+        let val = Value::collection(vec![Value::number(1.0, 0), Value::number(2.0, 0)]);
         assert!(val.is_multi_item_collection());
     }
 
     #[test]
     fn is_multi_item_collection_false_for_singleton() {
-        let val = Value::collection(vec![Value::Number(1.0, 0)]);
+        let val = Value::collection(vec![Value::number(1.0, 0)]);
         assert!(!val.is_multi_item_collection());
     }
 
     #[test]
     fn is_multi_item_collection_false_for_non_collection() {
-        assert!(!Value::Number(1.0, 0).is_multi_item_collection());
+        assert!(!Value::number(1.0, 0).is_multi_item_collection());
         assert!(!Value::Null.is_multi_item_collection());
+    }
+
+    #[test]
+    fn constructors_keep_declared_precision_within_max() {
+        assert!(matches!(Value::number(1.5, 1), Value::Number(d, 1) if d.to_string() == "1.5"));
+        assert_eq!(Value::number(1.5, 20), Value::number(1.5, 8));
+        assert_eq!(Value::from_f64(0.1 + 0.2), Value::number(0.3, 1));
+        assert_eq!(Value::from_f64(1.0 / 3.0), Value::number(0.33333333, 8));
+        assert_eq!(Value::from_f64(f64::NAN), Value::collection(vec![]));
+        assert_eq!(Value::number(1e301, 0), Value::collection(vec![]));
+        assert_eq!(Value::decimal_or_empty(None), Value::collection(vec![]));
+        assert_eq!(
+            Value::quantity_or_empty(Decimal::parse("2.50"), "mg", None),
+            Value::quantity(2.5, 1, "mg".to_string(), None)
+        );
+        assert_eq!(
+            Value::quantity_or_empty(None, "mg", None),
+            Value::collection(vec![])
+        );
+    }
+
+    #[test]
+    fn compare_equal_is_exact() {
+        assert!(
+            Value::number(1.0, 0)
+                .compare_equal(&Value::number(1.0, 8))
+                .is_equal()
+        );
+        assert!(
+            !Value::number(1.00000001, 8)
+                .compare_equal(&Value::number(1.0, 0))
+                .is_equal()
+        );
+        assert_eq!(
+            Decimal::parse("1000000000.00000001")
+                .zip(Decimal::parse("1000000000.00000002"))
+                .map(|(a, b)| Value::Number(a, 8).compare_equal(&Value::Number(b, 8))),
+            Some(Comparison::Less)
+        );
+    }
+
+    #[test]
+    fn quantity_view_reads_fhir_quantity_objects() {
+        let obj = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1.5, 1)),
+            ("code".to_string(), Value::String("mg".to_string())),
+            ("unit".to_string(), Value::String("milligram".to_string())),
+            ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+            ("resourceType".to_string(), Value::String("Age".to_string())),
+        ]));
+        assert_eq!(
+            obj.quantity_view().map(|v| (
+                v.value.to_string(),
+                v.precision,
+                v.code,
+                v.unit,
+                v.ucum_code(),
+                v.quantity_type
+            )),
+            Some((
+                "1.5".to_string(),
+                1,
+                Some("mg"),
+                Some("milligram"),
+                Some("mg"),
+                Some(QuantityType::Age)
+            ))
+        );
+
+        assert_eq!(
+            Value::number(2.0, 0)
+                .quantity_view()
+                .map(|v| (v.code, v.ucum_code())),
+            Some((Some("1"), Some("1")))
+        );
+        assert_eq!(Value::String("mg".to_string()).quantity_view(), None);
+
+        let no_unit = Value::object(HashMap::from([(
+            "value".to_string(),
+            Value::number(1.0, 0),
+        )]));
+        assert_eq!(no_unit.quantity_view(), None);
+
+        let unit_only = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1.0, 0)),
+            ("unit".to_string(), Value::String("mg".to_string())),
+        ]));
+        assert_eq!(
+            unit_only.quantity_view().map(|v| (v.unit, v.ucum_code())),
+            Some((Some("mg"), None))
+        );
+        let literal = Value::quantity(1.0, 0, "mg".to_string(), None);
+        assert_eq!(
+            unit_only
+                .quantity_view()
+                .zip(literal.quantity_view())
+                .map(|(a, b)| a.same_unit_as(&b)),
+            Some(true)
+        );
+
+        let foreign = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1.0, 0)),
+            ("code".to_string(), Value::String("kg".to_string())),
+            (
+                "system".to_string(),
+                Value::String("http://example.org/not-ucum".to_string()),
+            ),
+        ]));
+        assert_eq!(foreign.quantity_view().map(|v| v.ucum_code()), Some(None));
+    }
+
+    #[test]
+    fn compare_equal_coerces_fhir_quantity_objects() {
+        let obj = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1.0, 0)),
+            ("code".to_string(), Value::String("1".to_string())),
+            ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+        ]));
+        assert!(obj.compare_equal(&Value::number(1.0, 0)).is_equal());
+        assert_eq!(
+            Value::number(2.0, 0).compare_equal(&obj),
+            Comparison::Greater
+        );
+        assert!(obj.compare_equivalent(&Value::number(1.0, 0)).is_equal());
+        let mg = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1000.0, 0)),
+            ("code".to_string(), Value::String("mg".to_string())),
+            ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+        ]));
+        assert!(
+            mg.compare_equal(&Value::quantity(1.0, 0, "g".to_string(), None))
+                .is_equal()
+        );
+        assert_eq!(obj.compare_equal(&mg), Comparison::Uncomparable);
+        let unit_only = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1.0, 0)),
+            ("unit".to_string(), Value::String("mg".to_string())),
+        ]));
+        assert!(
+            unit_only
+                .compare_equal(&Value::quantity(1.0, 0, "mg".to_string(), None))
+                .is_equal()
+        );
     }
 }

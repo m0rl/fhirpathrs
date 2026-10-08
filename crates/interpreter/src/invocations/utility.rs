@@ -1,9 +1,10 @@
 use crate::context::InterpreterContext;
 use crate::datetime;
 use crate::datetime::{DatePrecision, DateTimePrecision, TimePrecision};
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
 use crate::units::quantity_cmp_units;
-use crate::value::{MAX_DECIMAL_PRECISION, Value};
+use crate::value::Value;
 use crate::{InterpreterResult, QuantityType};
 use chrono::{Datelike, FixedOffset, NaiveDate, NaiveTime, Timelike};
 use std::collections::HashMap;
@@ -65,30 +66,26 @@ pub fn value_type(base: &Value, context: InterpreterContext) -> InterpreterResul
 pub fn precision(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
         Value::Date(_, p) => match p {
-            DatePrecision::Year => Value::Number(4.0, 0),
-            DatePrecision::Month => Value::Number(6.0, 0),
-            DatePrecision::Day => Value::Number(8.0, 0),
+            DatePrecision::Year => Value::Number(Decimal::from(4), 0),
+            DatePrecision::Month => Value::Number(Decimal::from(6), 0),
+            DatePrecision::Day => Value::Number(Decimal::from(8), 0),
         },
         Value::DateTime(_, p, _) => match p {
-            DateTimePrecision::Year => Value::Number(4.0, 0),
-            DateTimePrecision::Month => Value::Number(6.0, 0),
-            DateTimePrecision::Day => Value::Number(8.0, 0),
-            DateTimePrecision::Hour => Value::Number(10.0, 0),
-            DateTimePrecision::Minute => Value::Number(12.0, 0),
-            DateTimePrecision::Second => Value::Number(14.0, 0),
-            DateTimePrecision::Millisecond => Value::Number(17.0, 0),
+            DateTimePrecision::Year => Value::Number(Decimal::from(4), 0),
+            DateTimePrecision::Month => Value::Number(Decimal::from(6), 0),
+            DateTimePrecision::Day => Value::Number(Decimal::from(8), 0),
+            DateTimePrecision::Hour => Value::Number(Decimal::from(10), 0),
+            DateTimePrecision::Minute => Value::Number(Decimal::from(12), 0),
+            DateTimePrecision::Second => Value::Number(Decimal::from(14), 0),
+            DateTimePrecision::Millisecond => Value::Number(Decimal::from(17), 0),
         },
         Value::Time(_, p) => match p {
-            TimePrecision::Hour => Value::Number(2.0, 0),
-            TimePrecision::Minute => Value::Number(4.0, 0),
-            TimePrecision::Second => Value::Number(6.0, 0),
-            TimePrecision::Millisecond => Value::Number(9.0, 0),
+            TimePrecision::Hour => Value::Number(Decimal::from(2), 0),
+            TimePrecision::Minute => Value::Number(Decimal::from(4), 0),
+            TimePrecision::Second => Value::Number(Decimal::from(6), 0),
+            TimePrecision::Millisecond => Value::Number(Decimal::from(9), 0),
         },
-        Value::Number(_, p) =>
-        {
-            #[allow(clippy::cast_lossless)]
-            Value::Number(*p as f64, 0)
-        }
+        Value::Number(_, p) => Value::Number(Decimal::from(u32::from(*p)), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -103,29 +100,32 @@ pub fn low_boundary(
     let result = match base {
         Value::Number(n, vp) | Value::Quantity(n, vp, ..) => {
             let precision = if args.is_empty() {
-                MAX_DECIMAL_PRECISION
+                Decimal::MAX_PRECISION
             } else {
-                let arg_precision = args[0].to_f64().ok_or_else(|| {
+                let arg_precision = args[0].to_i32().ok_or_else(|| {
                     InterpreterError::TypeMismatch(
                         "boundary precision must be a number".to_string(),
                     )
-                })? as i32;
-                if !(0..=i32::from(MAX_DECIMAL_PRECISION)).contains(&arg_precision) {
+                })?;
+                let Ok(precision) = u8::try_from(arg_precision) else {
+                    return Ok((Value::collection(vec![]), context));
+                };
+                if precision > Decimal::MAX_PRECISION {
                     return Ok((Value::collection(vec![]), context));
                 }
-                arg_precision as u8
+                precision
             };
-            let result = if !args.is_empty() && precision <= *vp {
-                let half = 0.5 * 10.0_f64.powi(-i32::from(precision));
-                let boundary = *n - half;
-                let scale = 10.0_f64.powi(i32::from(precision));
-                (boundary * scale).trunc() / scale
+            let boundary = if !args.is_empty() && precision <= *vp {
+                n.low_boundary(precision).map(|b| b.trunc_dp(precision))
             } else {
-                *n - 0.5 * 10.0_f64.powi(-i32::from(*vp))
+                n.low_boundary(*vp)
             };
-            match base {
-                Value::Quantity(_, _, u, t) => Value::Quantity(result, precision, u.clone(), *t),
-                _ => Value::Number(result, precision),
+            match (boundary, base) {
+                (Some(b), Value::Quantity(_, _, u, t)) => {
+                    Value::Quantity(b, precision, u.clone(), *t)
+                }
+                (Some(b), _) => Value::Number(b, precision),
+                (None, _) => Value::collection(vec![]),
             }
         }
         Value::Date(d, p) => {
@@ -213,33 +213,36 @@ pub fn high_boundary(
     let result = match base {
         Value::Number(n, vp) | Value::Quantity(n, vp, ..) => {
             let precision = if args.is_empty() {
-                MAX_DECIMAL_PRECISION
+                Decimal::MAX_PRECISION
             } else {
-                let arg_precision = args[0].to_f64().ok_or_else(|| {
+                let arg_precision = args[0].to_i32().ok_or_else(|| {
                     InterpreterError::TypeMismatch(
                         "boundary precision must be a number".to_string(),
                     )
-                })? as i32;
-                if !(0..=i32::from(MAX_DECIMAL_PRECISION)).contains(&arg_precision) {
+                })?;
+                let Ok(precision) = u8::try_from(arg_precision) else {
+                    return Ok((Value::collection(vec![]), context));
+                };
+                if precision > Decimal::MAX_PRECISION {
                     return Ok((Value::collection(vec![]), context));
                 }
-                arg_precision as u8
+                precision
             };
-            let result = if !args.is_empty() && precision <= *vp {
-                let scale = 10.0_f64.powi(i32::from(precision));
-                let scaled = *n * scale;
-                if (scaled - scaled.round()).abs() < 1e-10 {
-                    scaled.round() / scale + 10.0_f64.powi(-i32::from(precision))
+            let boundary = if !args.is_empty() && precision <= *vp {
+                if n.trunc_dp(precision) == *n {
+                    Decimal::ten_pow(-i32::from(precision)).and_then(|unit| n.checked_add(unit))
                 } else {
-                    let half = 0.5 * 10.0_f64.powi(-i32::from(precision));
-                    ((n + half) * scale).trunc() / scale
+                    n.high_boundary(precision).map(|b| b.trunc_dp(precision))
                 }
             } else {
-                *n + 0.5 * 10.0_f64.powi(-i32::from(*vp))
+                n.high_boundary(*vp)
             };
-            match base {
-                Value::Quantity(_, _, u, t) => Value::Quantity(result, precision, u.clone(), *t),
-                _ => Value::Number(result, precision),
+            match (boundary, base) {
+                (Some(b), Value::Quantity(_, _, u, t)) => {
+                    Value::Quantity(b, precision, u.clone(), *t)
+                }
+                (Some(b), _) => Value::Number(b, precision),
+                (None, _) => Value::collection(vec![]),
             }
         }
         Value::Date(d, p) => {
@@ -319,8 +322,8 @@ pub fn high_boundary(
 
 pub fn year(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::Date(d, _) => Value::Number(f64::from(d.year()), 0),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().year()), 0),
+        Value::Date(d, _) => Value::Number(Decimal::from(d.year()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(Decimal::from(dt.date().year()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -332,8 +335,8 @@ pub fn month(base: &Value, context: InterpreterContext) -> InterpreterResult {
         Value::Date(_, DatePrecision::Year) | Value::DateTime(_, DateTimePrecision::Year, _) => {
             Value::collection(vec![])
         }
-        Value::Date(d, _) => Value::Number(f64::from(d.month()), 0),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().month()), 0),
+        Value::Date(d, _) => Value::Number(Decimal::from(d.month()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(Decimal::from(dt.date().month()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -345,8 +348,8 @@ pub fn day(base: &Value, context: InterpreterContext) -> InterpreterResult {
         | Value::DateTime(_, DateTimePrecision::Year | DateTimePrecision::Month, _) => {
             Value::collection(vec![])
         }
-        Value::Date(d, _) => Value::Number(f64::from(d.day()), 0),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.date().day()), 0),
+        Value::Date(d, _) => Value::Number(Decimal::from(d.day()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(Decimal::from(dt.date().day()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -359,8 +362,8 @@ pub fn hour(base: &Value, context: InterpreterContext) -> InterpreterResult {
             DateTimePrecision::Year | DateTimePrecision::Month | DateTimePrecision::Day,
             _,
         ) => Value::collection(vec![]),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().hour()), 0),
-        Value::Time(t, _) => Value::Number(f64::from(t.hour()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(Decimal::from(dt.time().hour()), 0),
+        Value::Time(t, _) => Value::Number(Decimal::from(t.hour()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -377,8 +380,8 @@ pub fn minute(base: &Value, context: InterpreterContext) -> InterpreterResult {
             _,
         )
         | Value::Time(_, TimePrecision::Hour) => Value::collection(vec![]),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().minute()), 0),
-        Value::Time(t, _) => Value::Number(f64::from(t.minute()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(Decimal::from(dt.time().minute()), 0),
+        Value::Time(t, _) => Value::Number(Decimal::from(t.minute()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -396,8 +399,8 @@ pub fn second(base: &Value, context: InterpreterContext) -> InterpreterResult {
             _,
         )
         | Value::Time(_, TimePrecision::Hour | TimePrecision::Minute) => Value::collection(vec![]),
-        Value::DateTime(dt, _, _) => Value::Number(f64::from(dt.time().second()), 0),
-        Value::Time(t, _) => Value::Number(f64::from(t.second()), 0),
+        Value::DateTime(dt, _, _) => Value::Number(Decimal::from(dt.time().second()), 0),
+        Value::Time(t, _) => Value::Number(Decimal::from(t.second()), 0),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))
@@ -405,11 +408,12 @@ pub fn second(base: &Value, context: InterpreterContext) -> InterpreterResult {
 
 pub fn millisecond(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::DateTime(dt, DateTimePrecision::Millisecond, _) => {
-            Value::Number(f64::from(dt.and_utc().timestamp_subsec_millis() % 1000), 0)
-        }
+        Value::DateTime(dt, DateTimePrecision::Millisecond, _) => Value::Number(
+            Decimal::from(dt.and_utc().timestamp_subsec_millis() % 1000),
+            0,
+        ),
         Value::Time(t, TimePrecision::Millisecond) => {
-            Value::Number(f64::from((t.nanosecond() / 1_000_000) % 1000), 0)
+            Value::Number(Decimal::from((t.nanosecond() / 1_000_000) % 1000), 0)
         }
         _ => Value::collection(vec![]),
     };
@@ -435,10 +439,9 @@ pub fn timezone(base: &Value, context: InterpreterContext) -> InterpreterResult 
 
 pub fn timezone_offset_of(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let result = match base {
-        Value::DateTime(_, _, Some(offset)) => {
-            let hours = f64::from(offset.local_minus_utc()) / 3600.0;
-            Value::Number(hours, Value::precision(hours))
-        }
+        Value::DateTime(_, _, Some(offset)) => Value::decimal_or_empty(
+            Decimal::from(offset.local_minus_utc()).checked_div(Decimal::from(3600)),
+        ),
         _ => Value::collection(vec![]),
     };
     Ok((result, context))

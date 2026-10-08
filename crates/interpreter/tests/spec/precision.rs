@@ -7,7 +7,7 @@ fn precisiondecimal() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(5.0, 0)]);
+    assert_eq!(actual, vec![Value::number(5.0, 0)]);
 }
 
 #[test]
@@ -17,7 +17,7 @@ fn precisionyear() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
+    assert_eq!(actual, vec![Value::number(4.0, 0)]);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn precisiondatetimemilliseconds() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(17.0, 0)]);
+    assert_eq!(actual, vec![Value::number(17.0, 0)]);
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn precisiontimeminutes() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(4.0, 0)]);
+    assert_eq!(actual, vec![Value::number(4.0, 0)]);
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn precisiontimemilliseconds() {
     let ctx = InterpreterContext::new(data);
     let (result, _) = interpret(&expr, ctx).expect("interpret");
     let actual = result.to_vec();
-    assert_eq!(actual, vec![Value::Number(9.0, 0)]);
+    assert_eq!(actual, vec![Value::number(9.0, 0)]);
 }
 
 #[test]

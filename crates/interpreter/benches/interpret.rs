@@ -13,7 +13,7 @@ fn make_patient_collection(n: usize) -> Value {
             .map(|i| {
                 Value::object(HashMap::from([
                     ("name".to_string(), Value::String(format!("patient_{i}"))),
-                    ("value".to_string(), Value::Number(i as f64, 0)),
+                    ("value".to_string(), Value::number(i as f64, 0)),
                     ("active".to_string(), Value::Boolean(i % 2 == 0)),
                 ]))
             })
@@ -34,7 +34,7 @@ mod path_navigation {
                     "c".to_string(),
                     Value::object(HashMap::from([(
                         "d".to_string(),
-                        Value::object(HashMap::from([("e".to_string(), Value::Number(42.0, 0))])),
+                        Value::object(HashMap::from([("e".to_string(), Value::number(42.0, 0))])),
                     )])),
                 )])),
             )])),
@@ -114,7 +114,7 @@ mod aggregation {
     use super::*;
 
     fn numbers_1000() -> Value {
-        Value::collection((0..1000).map(|i| Value::Number(i as f64, 0)).collect())
+        Value::collection((0..1000).map(|i| Value::number(i as f64, 0)).collect())
     }
 
     #[divan::bench]
@@ -194,7 +194,7 @@ mod type_conv {
 
     #[divan::bench]
     fn num_to_string(bencher: divan::Bencher) {
-        let num = Value::Number(42.5, 1);
+        let num = Value::number(42.5, 1);
         let expr = parse("toString()").unwrap();
         bencher
             .with_inputs(|| InterpreterContext::new(num.clone()))
@@ -260,7 +260,7 @@ mod pipeline {
                                     }),
                                 ),
                                 ("id".to_string(), Value::String(format!("r{i}"))),
-                                ("value".to_string(), Value::Number(i as f64, 0)),
+                                ("value".to_string(), Value::number(i as f64, 0)),
                             ])),
                         )]))
                     })

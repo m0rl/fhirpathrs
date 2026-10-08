@@ -21,25 +21,37 @@ fn test_logical_expressions() {
     assert_eq!(
         parse("1 > 2"),
         Ok(Expression::Inequality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             InequalityOp::Greater,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("3 = 3"),
         Ok(Expression::Equality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            )))),
             EqualityOp::Equal,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("4 >= 4"),
         Ok(Expression::Inequality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "4".to_string()
+            )))),
             InequalityOp::GreaterEqual,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(4.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "4".to_string()
+            ))))
         ))
     );
     assert_eq!(
@@ -72,17 +84,25 @@ fn test_membership_expressions() {
     assert_eq!(
         parse("1 in 2"),
         Ok(Expression::Membership(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             MembershipOp::In,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
     assert_eq!(
         parse("1 contains 2"),
         Ok(Expression::Membership(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             MembershipOp::Contains,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
 }
@@ -94,13 +114,19 @@ fn test_complex_expressions() {
         Ok(Expression::Multiplicative(
             Box::new(Expression::Term(Term::Parenthesized(Box::new(
                 Expression::Additive(
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "1".to_string()
+                    )))),
                     AdditiveOp::Plus,
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "2".to_string()
+                    ))))
                 )
             )))),
             MultiplicativeOp::Multiply,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(3.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "3".to_string()
+            ))))
         ))
     );
     assert_eq!(
@@ -112,7 +138,9 @@ fn test_complex_expressions() {
                 )))),
                 Invocation::Member("bar".to_string())
             )),
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            ))))
         ))
     );
     assert_eq!(
@@ -128,9 +156,13 @@ fn test_complex_expressions() {
                     )),
                     Invocation::Member("baz".to_string())
                 )),
-                Box::new(Expression::Term(Term::Literal(Literal::Number(0.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "0".to_string()
+                ))))
             )),
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            ))))
         ))
     );
 }
@@ -140,9 +172,13 @@ fn test_less_than() {
     assert_eq!(
         parse("1 < 2"),
         Ok(Expression::Inequality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             InequalityOp::Less,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
 }
@@ -152,9 +188,13 @@ fn test_less_equal() {
     assert_eq!(
         parse("1 <= 2"),
         Ok(Expression::Inequality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             InequalityOp::LessEqual,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
 }
@@ -164,9 +204,13 @@ fn test_not_equal() {
     assert_eq!(
         parse("1 != 2"),
         Ok(Expression::Equality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             EqualityOp::NotEqual,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
 }
@@ -181,9 +225,13 @@ fn test_not_equivalent() {
     assert_eq!(
         parse("1 !~ 2"),
         Ok(Expression::Equality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             EqualityOp::NotEquivalent,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
 }
@@ -193,9 +241,13 @@ fn test_equivalent() {
     assert_eq!(
         parse("1 ~ 2"),
         Ok(Expression::Equality(
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            )))),
             EqualityOp::Equivalent,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "2".to_string()
+            ))))
         ))
     );
 }
@@ -222,8 +274,8 @@ fn test_function_with_three_arguments() {
             "iif".to_string(),
             vec![
                 Expression::Term(Term::Literal(Literal::Boolean(true))),
-                Expression::Term(Term::Literal(Literal::Number(1.0, 0))),
-                Expression::Term(Term::Literal(Literal::Number(2.0, 0)))
+                Expression::Term(Term::Literal(Literal::Number("1".to_string()))),
+                Expression::Term(Term::Literal(Literal::Number("2".to_string())))
             ]
         ))))
     );
@@ -254,7 +306,9 @@ fn test_deeply_nested_function_args() {
                                     "b".to_string()
                                 )))),
                                 EqualityOp::Equal,
-                                Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0))))
+                                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                                    "1".to_string()
+                                ))))
                             )]
                         )
                     )),
@@ -275,9 +329,13 @@ fn test_expression_in_indexer() {
                 "a".to_string()
             )))),
             Box::new(Expression::Additive(
-                Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "1".to_string()
+                )))),
                 AdditiveOp::Plus,
-                Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "2".to_string()
+                ))))
             ))
         ))
     );
@@ -290,7 +348,9 @@ fn test_null_in_arithmetic() {
         Ok(Expression::Additive(
             Box::new(Expression::Term(Term::Literal(Literal::Null))),
             AdditiveOp::Plus,
-            Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0))))
+            Box::new(Expression::Term(Term::Literal(Literal::Number(
+                "1".to_string()
+            ))))
         ))
     );
 }
@@ -401,8 +461,12 @@ fn test_union_in_indexer() {
                 "a".to_string()
             )))),
             Box::new(Expression::Union(
-                Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
-                Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "1".to_string()
+                )))),
+                Box::new(Expression::Term(Term::Literal(Literal::Number(
+                    "2".to_string()
+                ))))
             ))
         ))
     );
@@ -416,8 +480,12 @@ fn test_polarity_on_parenthesized_union() {
             PolarityOp::Minus,
             Box::new(Expression::Term(Term::Parenthesized(Box::new(
                 Expression::Union(
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(1.0, 0)))),
-                    Box::new(Expression::Term(Term::Literal(Literal::Number(2.0, 0))))
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "1".to_string()
+                    )))),
+                    Box::new(Expression::Term(Term::Literal(Literal::Number(
+                        "2".to_string()
+                    ))))
                 )
             ))))
         ))
@@ -603,8 +671,7 @@ fn test_multipart_logic_expression() {
                         AdditiveOp::Minus,
                         Box::new(Expression::Term(Term::Literal(Literal::Quantity(
                             Quantity {
-                                value: 38.0,
-                                precision: 0,
+                                value: "38".to_string(),
                                 unit: "years".to_string()
                             }
                         ))))

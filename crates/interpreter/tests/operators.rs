@@ -15,7 +15,7 @@ fn test_literal_interpretation() {
 
     let expr = parse("42").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 
     let expr = parse("true").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -32,19 +32,19 @@ fn test_arithmetic_operations() {
 
     let expr = parse("1 + 2").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let expr = parse("10 - 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(7.0, 0));
+    assert_eq!(result, Value::number(7.0, 0));
 
     let expr = parse("4 * 5").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(20.0, 0));
+    assert_eq!(result, Value::number(20.0, 0));
 
     let expr = parse("15 / 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(5.0, 0));
+    assert_eq!(result, Value::number(5.0, 0));
 }
 
 #[test]
@@ -53,27 +53,27 @@ fn test_div_operator() {
 
     let expr = parse("10 div 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let expr = parse("9 div 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let expr = parse("(-10) div 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-3.0, 0));
+    assert_eq!(result, Value::number(-3.0, 0));
 
     let expr = parse("10 div (-3)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-3.0, 0));
+    assert_eq!(result, Value::number(-3.0, 0));
 
     let expr = parse("(-10) div (-3)").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let expr = parse("2 div 5").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0, 0));
+    assert_eq!(result, Value::number(0.0, 0));
 }
 
 #[test]
@@ -82,19 +82,19 @@ fn test_mod_operator() {
 
     let expr = parse("10 mod 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0, 0));
+    assert_eq!(result, Value::number(1.0, 0));
 
     let expr = parse("9 mod 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0, 0));
+    assert_eq!(result, Value::number(0.0, 0));
 
     let expr = parse("(-10) mod 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-1.0, 0));
+    assert_eq!(result, Value::number(-1.0, 0));
 
     let expr = parse("2 mod 5").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0, 0));
+    assert_eq!(result, Value::number(2.0, 0));
 }
 
 #[test]
@@ -252,17 +252,17 @@ fn test_string_concatenation() {
 #[test]
 fn test_collection_operations() {
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]));
 
     let expr = parse("1 | 2").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&Value::Number(1.0, 0)));
-        assert!(items.contains(&Value::Number(2.0, 0)));
+        assert!(items.contains(&Value::number(1.0, 0)));
+        assert!(items.contains(&Value::number(2.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -276,9 +276,9 @@ fn test_union_deduplication() {
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3, "Union should deduplicate: got {:?}", items);
-        assert!(items.contains(&Value::Number(1.0, 0)));
-        assert!(items.contains(&Value::Number(2.0, 0)));
-        assert!(items.contains(&Value::Number(3.0, 0)));
+        assert!(items.contains(&Value::number(1.0, 0)));
+        assert!(items.contains(&Value::number(2.0, 0)));
+        assert!(items.contains(&Value::number(3.0, 0)));
     } else {
         panic!("Expected collection");
     }
@@ -675,11 +675,11 @@ fn test_as_operator_string_to_integer() {
 
     let expr = parse("'123' as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(123.0, 0));
+    assert_eq!(result, Value::number(123.0, 0));
 
     let expr = parse("'12.7' as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(12.0, 0));
+    assert_eq!(result, Value::number(12.0, 0));
 
     let expr = parse("'abc' as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -687,7 +687,7 @@ fn test_as_operator_string_to_integer() {
 
     let expr = parse("'  42  ' as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 }
 
 #[test]
@@ -696,11 +696,11 @@ fn test_as_operator_string_to_decimal() {
 
     let expr = parse("'3.14' as Decimal").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.14, 0));
+    assert_eq!(result, Value::number(3.14, 2));
 
     let expr = parse("'42' as Decimal").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 
     let expr = parse("'invalid' as Decimal").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -751,15 +751,15 @@ fn test_as_operator_decimal_to_integer() {
 
     let expr = parse("3.7 as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let expr = parse("3.2 as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let expr = parse("(-3.7) as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-3.0, 0));
+    assert_eq!(result, Value::number(-3.0, 0));
 }
 
 #[test]
@@ -781,11 +781,11 @@ fn test_as_operator_boolean_to_integer() {
 
     let expr = parse("true as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0, 0));
+    assert_eq!(result, Value::number(1.0, 0));
 
     let expr = parse("false as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0, 0));
+    assert_eq!(result, Value::number(0.0, 0));
 }
 
 #[test]
@@ -798,7 +798,7 @@ fn test_as_operator_same_type() {
 
     let expr = parse("42 as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 
     let expr = parse("true as Boolean").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -815,11 +815,11 @@ fn test_as_operator_quantity_conversions() {
 
     let expr = parse("10 'kg' as Decimal").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
 
     let expr = parse("10.5 'kg' as Integer").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
 }
 
 #[test]
@@ -841,15 +841,15 @@ fn test_indexer_valid_index() {
 
     let expr = parse("(10 | 20 | 30)[0]").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(10.0, 0));
+    assert_eq!(result, Value::number(10.0, 0));
 
     let expr = parse("(10 | 20 | 30)[1]").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(20.0, 0));
+    assert_eq!(result, Value::number(20.0, 0));
 
     let expr = parse("(10 | 20 | 30)[2]").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(30.0, 0));
+    assert_eq!(result, Value::number(30.0, 0));
 }
 
 #[test]
@@ -880,7 +880,7 @@ fn test_indexer_on_singleton() {
 
     let expr = parse("42[0]").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 
     let expr = parse("42[1]").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -1084,7 +1084,7 @@ fn test_object_without_resource_type() {
 
     let obj = HashMap::from([
         ("name".to_string(), Value::String("John".to_string())),
-        ("age".to_string(), Value::Number(30.0, 0)),
+        ("age".to_string(), Value::number(30.0, 0)),
     ]);
     let context = InterpreterContext::new(Value::object(obj));
 
@@ -1160,7 +1160,7 @@ fn test_deeply_nested_expression() {
     let input = "(".repeat(depth) + "1 + 2" + &")".repeat(depth);
     let expr = parse(&input).expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 }
 
 #[test]
@@ -1217,9 +1217,9 @@ fn test_numeric_greater_equal() {
 #[test]
 fn test_membership_in() {
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]));
 
     let expr = parse("2 in $this").expect("parse failed");
@@ -1234,9 +1234,9 @@ fn test_membership_in() {
 #[test]
 fn test_membership_contains() {
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]));
 
     let expr = parse("$this contains 2").expect("parse failed");
@@ -1267,7 +1267,7 @@ fn test_unary_plus() {
 
     let expr = parse("+42").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 }
 
 #[test]
@@ -1276,11 +1276,11 @@ fn test_unary_minus() {
 
     let expr = parse("-42").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-42.0, 0));
+    assert_eq!(result, Value::number(-42.0, 0));
 
     let expr = parse("-3.14").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(-3.14, 2));
+    assert_eq!(result, Value::number(-3.14, 2));
 }
 
 #[test]
@@ -1289,7 +1289,7 @@ fn test_unary_minus_quantity() {
 
     let expr = parse("-(5 'mg')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(-5.0, 0, "mg".to_string(), None));
+    assert_eq!(result, Value::quantity(-5.0, 0, "mg".to_string(), None));
 }
 
 #[test]
@@ -1320,7 +1320,7 @@ fn test_division_by_zero() {
 
 #[test]
 fn test_unknown_function_error() {
-    let context = InterpreterContext::new(Value::Number(1.0, 0));
+    let context = InterpreterContext::new(Value::number(1.0, 0));
 
     let expr = parse("$this.nonExistentFunc()").expect("parse failed");
     let result = interpret(&expr, context);
@@ -1339,17 +1339,17 @@ fn test_unknown_constant_error() {
 #[test]
 fn test_external_constant() {
     let context = InterpreterContext::new(Value::Null)
-        .with_constant("myConst".to_string(), Value::Number(42.0, 0));
+        .with_constant("myConst".to_string(), Value::number(42.0, 0));
 
     let expr = parse("%myConst").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(42.0, 0));
+    assert_eq!(result, Value::number(42.0, 0));
 }
 
 #[test]
 fn test_external_constant_in_expression() {
     let context = InterpreterContext::new(Value::Null)
-        .with_constant("threshold".to_string(), Value::Number(100.0, 0));
+        .with_constant("threshold".to_string(), Value::number(100.0, 0));
 
     let expr = parse("50 < %threshold").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
@@ -1394,11 +1394,11 @@ fn test_quantity_multiply_by_scalar() {
 
     let expr = parse("(5 'mg') * 3").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(15.0, 0, "mg".to_string(), None));
+    assert_eq!(result, Value::quantity(15.0, 0, "mg".to_string(), None));
 
     let expr = parse("3 * (5 'mg')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(15.0, 0, "mg".to_string(), None));
+    assert_eq!(result, Value::quantity(15.0, 0, "mg".to_string(), None));
 }
 
 #[test]
@@ -1407,7 +1407,7 @@ fn test_quantity_divide_by_scalar() {
 
     let expr = parse("(10 'mg') / 2").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Quantity(5.0, 0, "mg".to_string(), None));
+    assert_eq!(result, Value::quantity(5.0, 0, "mg".to_string(), None));
 }
 
 #[test]
@@ -1524,20 +1524,20 @@ fn test_empty_and_exists() {
 #[test]
 fn test_count_function() {
     let context = InterpreterContext::new(Value::collection(vec![
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-        Value::Number(3.0, 0),
+        Value::number(1.0, 0),
+        Value::number(2.0, 0),
+        Value::number(3.0, 0),
     ]));
 
     let expr = parse("$this.count()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(3.0, 0));
+    assert_eq!(result, Value::number(3.0, 0));
 
     let context = InterpreterContext::new(Value::Null);
 
     let expr = parse("{}.count()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(0.0, 0));
+    assert_eq!(result, Value::number(0.0, 0));
 }
 
 #[test]
@@ -1553,57 +1553,57 @@ fn test_clinical_age_check() {
 fn test_clinical_where_filter_on_fhir_data() {
     let obs1 = Value::object(HashMap::from([
         ("code".to_string(), Value::String("glucose".to_string())),
-        ("value".to_string(), Value::Number(120.0, 0)),
+        ("value".to_string(), Value::number(120.0, 0)),
     ]));
     let obs2 = Value::object(HashMap::from([
         ("code".to_string(), Value::String("cholesterol".to_string())),
-        ("value".to_string(), Value::Number(200.0, 0)),
+        ("value".to_string(), Value::number(200.0, 0)),
     ]));
     let obs3 = Value::object(HashMap::from([
         ("code".to_string(), Value::String("glucose".to_string())),
-        ("value".to_string(), Value::Number(95.0, 0)),
+        ("value".to_string(), Value::number(95.0, 0)),
     ]));
     let context = InterpreterContext::new(Value::collection(vec![obs1, obs2, obs3]));
 
     let expr = parse("$this.where(code = 'glucose').count()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0, 0));
+    assert_eq!(result, Value::number(2.0, 0));
 }
 
 #[test]
 fn test_clinical_where_filter_value_range() {
     let obs1 = Value::object(HashMap::from([
         ("code".to_string(), Value::String("glucose".to_string())),
-        ("value".to_string(), Value::Number(120.0, 0)),
+        ("value".to_string(), Value::number(120.0, 0)),
     ]));
     let obs2 = Value::object(HashMap::from([
         ("code".to_string(), Value::String("glucose".to_string())),
-        ("value".to_string(), Value::Number(95.0, 0)),
+        ("value".to_string(), Value::number(95.0, 0)),
     ]));
     let obs3 = Value::object(HashMap::from([
         ("code".to_string(), Value::String("glucose".to_string())),
-        ("value".to_string(), Value::Number(250.0, 0)),
+        ("value".to_string(), Value::number(250.0, 0)),
     ]));
     let context = InterpreterContext::new(Value::collection(vec![obs1, obs2, obs3]));
 
     let expr = parse("$this.where(value > 100).count()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(2.0, 0));
+    assert_eq!(result, Value::number(2.0, 0));
 
     let expr = parse("$this.where(value >= 100 and value <= 200).count()").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0, 0));
+    assert_eq!(result, Value::number(1.0, 0));
 }
 
 #[test]
 fn test_clinical_iif_expression() {
-    let context = InterpreterContext::new(Value::Number(250.0, 0));
+    let context = InterpreterContext::new(Value::number(250.0, 0));
 
     let expr = parse("iif($this > 200, 'high', 'normal')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::String("high".to_string()));
 
-    let context = InterpreterContext::new(Value::Number(150.0, 0));
+    let context = InterpreterContext::new(Value::number(150.0, 0));
     let expr = parse("iif($this > 200, 'high', 'normal')").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
     assert_eq!(result, Value::String("normal".to_string()));
@@ -1615,11 +1615,11 @@ fn test_parenthesized_expression() {
 
     let expr = parse("(2 + 3) * 4").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(20.0, 0));
+    assert_eq!(result, Value::number(20.0, 0));
 
     let expr = parse("2 + 3 * 4").expect("parse failed");
     let (result, _) = interpret(&expr, context.clone()).expect("interpret failed");
-    assert_eq!(result, Value::Number(14.0, 0));
+    assert_eq!(result, Value::number(14.0, 0));
 }
 
 #[test]

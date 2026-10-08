@@ -1,5 +1,5 @@
-use interpreter::Value;
 use interpreter::datetime::{format_date, format_datetime, format_time};
+use interpreter::{Decimal, Value};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
 use std::collections::HashMap;
@@ -22,9 +22,25 @@ pub fn py_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
                     results.push(Value::Null);
                 } else if let Ok(b) = obj.cast::<PyBool>() {
                     results.push(Value::Boolean(b.is_true()));
-                } else if obj.is_instance_of::<PyInt>() || obj.is_instance_of::<PyFloat>() {
+                } else if obj.is_instance_of::<PyInt>() {
+                    let decimal = obj
+                        .extract::<i128>()
+                        .ok()
+                        .and_then(Decimal::from_i128)
+                        .ok_or_else(|| {
+                            PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                                "integer is outside the supported Decimal range",
+                            )
+                        })?;
+                    results.push(Value::Number(decimal, 0));
+                } else if obj.is_instance_of::<PyFloat>() {
                     let n: f64 = obj.extract()?;
-                    results.push(Value::Number(n, 0));
+                    let decimal = Decimal::from_f64(n).ok_or_else(|| {
+                        PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                            "float is not a finite number inside the supported Decimal range",
+                        )
+                    })?;
+                    results.push(Value::decimal(decimal));
                 } else if let Ok(s) = obj.cast::<PyString>() {
                     let rust_str = s.to_str().map_err(|e| {
                         PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())
@@ -117,12 +133,10 @@ pub fn value_to_py(py: Python<'_>, value: &Value) -> PyResult<Py<PyAny>> {
                     results.push(s.as_str().into_pyobject(py)?.into_any().unbind());
                 }
                 Value::Number(n, _) => {
-                    if n.fract() == 0.0 {
-                        #[allow(clippy::cast_possible_truncation)]
-                        let i = *n as i64;
-                        results.push(i.into_pyobject(py)?.into_any().unbind());
+                    if n.is_integer() {
+                        results.push(n.trunc_to_i128().into_pyobject(py)?.into_any().unbind());
                     } else {
-                        results.push((*n).into_pyobject(py)?.into_any().unbind());
+                        results.push(n.to_f64().into_pyobject(py)?.into_any().unbind());
                     }
                 }
                 Value::Date(d, p) => {
@@ -139,7 +153,7 @@ pub fn value_to_py(py: Python<'_>, value: &Value) -> PyResult<Py<PyAny>> {
                 }
                 Value::Quantity(v, _, u, _) => {
                     let dict = PyDict::new(py);
-                    dict.set_item("value", v)?;
+                    dict.set_item("value", v.to_f64())?;
                     dict.set_item("unit", u)?;
                     results.push(dict.unbind().into_any());
                 }

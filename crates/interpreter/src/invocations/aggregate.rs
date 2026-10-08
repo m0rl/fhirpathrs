@@ -1,5 +1,6 @@
 use crate::InterpreterResult;
 use crate::context::InterpreterContext;
+use crate::decimal::Decimal;
 use crate::error::InterpreterError;
 use crate::units::{QuantityResult, quantity_add, quantity_cmp};
 use crate::value::Value;
@@ -77,7 +78,7 @@ pub fn any_false(base: &Value, context: InterpreterContext) -> InterpreterResult
 pub fn sum(base: &Value, context: InterpreterContext) -> InterpreterResult {
     let items = base.to_vec();
     if items.is_empty() {
-        return Ok((Value::Number(0.0, 0), context));
+        return Ok((Value::Number(Decimal::ZERO, 0), context));
     }
 
     let first_quantity = items
@@ -117,12 +118,13 @@ pub fn sum(base: &Value, context: InterpreterContext) -> InterpreterResult {
             Ok((acc, context))
         }
         None => {
-            let mut total = 0.0;
+            let mut total = Decimal::ZERO;
             for item in items {
                 match item {
-                    Value::Number(n, _) => {
-                        total += n;
-                    }
+                    Value::Number(n, _) => match total.checked_add(n) {
+                        Some(sum) => total = sum,
+                        None => return Ok((Value::collection(vec![]), context)),
+                    },
                     Value::Null => {}
                     _ => {
                         return Err(InterpreterError::TypeMismatch(
@@ -131,7 +133,7 @@ pub fn sum(base: &Value, context: InterpreterContext) -> InterpreterResult {
                     }
                 }
             }
-            Ok((Value::Number(total, Value::precision(total)), context))
+            Ok((Value::decimal(total), context))
         }
     }
 }
@@ -149,7 +151,7 @@ pub fn avg(base: &Value, context: InterpreterContext) -> InterpreterResult {
     match first_quantity {
         Some(quantity) => {
             let mut acc = quantity.clone();
-            let mut count = 1;
+            let mut count: i64 = 1;
             let mut found_first = false;
 
             for item in &items {
@@ -179,20 +181,24 @@ pub fn avg(base: &Value, context: InterpreterContext) -> InterpreterResult {
                 }
             }
             if let Value::Quantity(v, _, ref u, t) = acc {
-                let result = v / count as f64;
-                let p = Value::precision(result);
-                Ok((Value::Quantity(result, p, u.clone(), t), context))
+                Ok((
+                    Value::quantity_or_empty(v.checked_div(Decimal::from(count)), u, t),
+                    context,
+                ))
             } else {
                 Ok((Value::Null, context))
             }
         }
         None => {
-            let mut total = 0.0;
-            let mut count = 0;
+            let mut total = Decimal::ZERO;
+            let mut count: i64 = 0;
             for item in items {
                 match item {
                     Value::Number(n, _) => {
-                        total += n;
+                        match total.checked_add(n) {
+                            Some(sum) => total = sum,
+                            None => return Ok((Value::collection(vec![]), context)),
+                        }
                         count += 1;
                     }
                     Value::Null => {}
@@ -206,9 +212,10 @@ pub fn avg(base: &Value, context: InterpreterContext) -> InterpreterResult {
             if count == 0 {
                 return Ok((Value::Null, context));
             }
-            let result = total / count as f64;
-            let p = Value::precision(result);
-            Ok((Value::Number(result, p), context))
+            Ok((
+                Value::decimal_or_empty(total.checked_div(Decimal::from(count))),
+                context,
+            ))
         }
     }
 }
@@ -235,7 +242,7 @@ pub fn min(base: &Value, context: InterpreterContext) -> InterpreterResult {
                             found_first = true;
                             continue;
                         }
-                        match quantity_cmp(item, &min_q) {
+                        match quantity_cmp(item, &min_q).as_ordering() {
                             Some(std::cmp::Ordering::Less) => {
                                 min_q = item.clone();
                             }
@@ -257,7 +264,7 @@ pub fn min(base: &Value, context: InterpreterContext) -> InterpreterResult {
             Ok((min_q, context))
         }
         None => {
-            let mut min_val: Option<(f64, u8)> = None;
+            let mut min_val: Option<(Decimal, u8)> = None;
             for item in items {
                 let n = match &item {
                     Value::Number(n, p) => Some((*n, *p)),
@@ -307,7 +314,7 @@ pub fn max(base: &Value, context: InterpreterContext) -> InterpreterResult {
                             found_first = true;
                             continue;
                         }
-                        match quantity_cmp(item, &max_q) {
+                        match quantity_cmp(item, &max_q).as_ordering() {
                             Some(std::cmp::Ordering::Greater) => {
                                 max_q = item.clone();
                             }
@@ -329,7 +336,7 @@ pub fn max(base: &Value, context: InterpreterContext) -> InterpreterResult {
             Ok((max_q, context))
         }
         None => {
-            let mut max_val: Option<(f64, u8)> = None;
+            let mut max_val: Option<(Decimal, u8)> = None;
             for item in items {
                 let n = match &item {
                     Value::Number(n, p) => Some((*n, *p)),
