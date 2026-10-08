@@ -23,6 +23,13 @@ classifiers = [
 Repository = "https://github.com/m0rl/fhirpathrs"
 Issues = "https://github.com/m0rl/fhirpathrs/issues"
 
+[dependency-groups]
+dev = [
+    "pydantic>=2",
+    "pytest>=8.4.2,<9; python_version < '3.10'",
+    "pytest>=9.1.1; python_version >= '3.10'",
+]
+
 [tool.maturin]
 module-name = "fhirpathrs"
 manifest-path = "crates/python/Cargo.toml"
