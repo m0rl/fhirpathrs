@@ -1208,25 +1208,10 @@ fn test_sort_with_criteria() {
 }
 
 #[test]
-fn test_coalesce_returns_first_nonempty() {
-    let data = Value::collection(vec![
-        Value::Null,
-        Value::Number(1.0, 0),
-        Value::Number(2.0, 0),
-    ]);
-    let context = InterpreterContext::new(data);
+fn test_coalesce_no_args_is_error() {
+    let context = InterpreterContext::new(Value::Null);
     let expr = parse("coalesce()").expect("parse failed");
-    let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::Number(1.0, 0));
-}
-
-#[test]
-fn test_coalesce_all_empty() {
-    let data = Value::collection(vec![Value::Null]);
-    let context = InterpreterContext::new(data);
-    let expr = parse("coalesce()").expect("parse failed");
-    let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::collection(vec![]));
+    assert!(interpret(&expr, context).is_err());
 }
 
 #[test]
@@ -1238,15 +1223,92 @@ fn test_coalesce_with_default() {
 }
 
 #[test]
-fn test_coalesce_skips_empty_collections() {
-    let data = Value::collection(vec![
-        Value::collection(vec![]),
-        Value::String("found".to_string()),
-    ]);
-    let context = InterpreterContext::new(data);
-    let expr = parse("coalesce()").expect("parse failed");
+fn test_coalesce_multi_arg_returns_first_nonempty_arg() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce({}, 'first', 'second', 'third')").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
-    assert_eq!(result, Value::String("found".to_string()));
+    assert_eq!(result, Value::String("first".to_string()));
+}
+
+#[test]
+fn test_coalesce_multi_arg_falls_through_to_last() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce({}, {}, {}, 'last')").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::String("last".to_string()));
+}
+
+#[test]
+fn test_coalesce_all_args_empty_returns_empty() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce({}, {}, {})").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
+fn test_coalesce_input_is_not_a_candidate() {
+    let context = InterpreterContext::new(Value::String("from-input".to_string()));
+    let expr = parse("coalesce('arg-fallback', 'arg-second')").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::String("arg-fallback".to_string()));
+}
+
+#[test]
+fn test_coalesce_args_picks_middle_when_first_empty_and_third_present() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce({}, 'middle', 'third')").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::String("middle".to_string()));
+}
+
+#[test]
+fn test_coalesce_spec_example_selects_name_by_use() {
+    let official = Value::object(HashMap::from([
+        ("use".to_string(), Value::String("official".to_string())),
+        ("family".to_string(), Value::String("Chalmers".to_string())),
+    ]));
+    let usual = Value::object(HashMap::from([
+        ("use".to_string(), Value::String("usual".to_string())),
+        ("family".to_string(), Value::String("Windsor".to_string())),
+    ]));
+    let patient = Value::object(HashMap::from([
+        (
+            "resourceType".to_string(),
+            Value::String("Patient".to_string()),
+        ),
+        ("name".to_string(), Value::collection(vec![official, usual])),
+    ]));
+    let context = InterpreterContext::new(patient);
+    let expr =
+        parse("Patient.coalesce(name.where(use = 'official'), name.where(use = 'usual')).family")
+            .expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result.to_vec(), vec![Value::String("Chalmers".to_string())]);
+}
+
+#[test]
+fn test_coalesce_lazy_skips_args_after_first_nonempty_arg() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce(42, 1 / 0, 'never')").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(42.0, 0));
+}
+
+#[test]
+fn test_coalesce_lazy_skips_only_args_after_chosen() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce({}, 'chosen', 1 / 0)").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::String("chosen".to_string()));
+}
+
+#[test]
+fn test_coalesce_evaluates_until_nonempty_then_stops() {
+    let context = InterpreterContext::new(Value::collection(vec![]));
+    let expr = parse("coalesce({}, {}, 7, 1 / 0)").expect("parse failed");
+    let (result, _) = interpret(&expr, context).expect("interpret failed");
+    assert_eq!(result, Value::Number(7.0, 0));
 }
 
 #[test]

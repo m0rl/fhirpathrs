@@ -500,14 +500,10 @@ pub(crate) fn dispatch_function<'a>(
             ))
         }
         "coalesce" => {
-            let items = base.to_vec();
-            for item in items {
-                if !item.is_null_or_empty() {
-                    return Ok(Continuation::Resolved(item, ctx));
-                }
-            }
             if args.is_empty() {
-                return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
+                return Err(InterpreterError::InvalidOperation(
+                    "coalesce() requires at least one argument".to_string(),
+                ));
             }
             Ok(Continuation::Chain(
                 &args[0],
