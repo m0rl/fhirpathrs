@@ -757,8 +757,8 @@ impl Value {
                                 .as_ordering()
                                 .unwrap_or_else(|| x.discriminant().cmp(&y.discriminant()))
                         };
-                        flat_a.sort_by(sort_key);
-                        flat_b.sort_by(sort_key);
+                        crate::sort::sort_by(&mut flat_a, sort_key);
+                        crate::sort::sort_by(&mut flat_b, sort_key);
                         for (x, y) in flat_a.into_iter().zip(flat_b) {
                             stack.push((x, y));
                         }
@@ -919,6 +919,24 @@ impl Value {
         }
     }
 
+    pub fn order(
+        &self,
+        other: &Value,
+        descending: bool,
+    ) -> Result<std::cmp::Ordering, InterpreterError> {
+        let ord = match (self.is_null_or_empty(), other.is_null_or_empty()) {
+            (true, true) => std::cmp::Ordering::Equal,
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            (false, false) => self.compare_equal(other).as_ordering().ok_or_else(|| {
+                InterpreterError::InvalidOperation(
+                    "sort() cannot order values of incompatible types".to_string(),
+                )
+            })?,
+        };
+        Ok(if descending { ord.reverse() } else { ord })
+    }
+
     pub fn compare_precision(&self, other: &Value) -> Option<std::cmp::Ordering> {
         let mut left = self;
         while let Value::Collection(items) = left {
@@ -1042,6 +1060,68 @@ mod tests {
     fn is_multi_item_collection_false_for_non_collection() {
         assert!(!Value::number(1.0, 0).is_multi_item_collection());
         assert!(!Value::Null.is_multi_item_collection());
+    }
+
+    #[test]
+    fn compare_for_sort_orders_values() {
+        let one = Value::number(1.0, 0);
+        let two = Value::number(2.0, 0);
+        assert_eq!(one.order(&two, false).ok(), Some(std::cmp::Ordering::Less));
+        assert_eq!(
+            one.order(&two, true).ok(),
+            Some(std::cmp::Ordering::Greater)
+        );
+    }
+
+    #[test]
+    fn compare_for_sort_empty_is_lowest_and_reverses() {
+        let empty = Value::collection(vec![]);
+        let one = Value::number(1.0, 0);
+        assert_eq!(
+            empty.order(&one, false).ok(),
+            Some(std::cmp::Ordering::Less)
+        );
+        assert_eq!(
+            empty.order(&one, true).ok(),
+            Some(std::cmp::Ordering::Greater)
+        );
+        assert_eq!(
+            empty.order(&Value::Null, false).ok(),
+            Some(std::cmp::Ordering::Equal)
+        );
+    }
+
+    #[test]
+    fn compare_for_sort_incompatible_types_error() {
+        let one = Value::number(1.0, 0);
+        assert!(one.order(&Value::Boolean(true), false).is_err());
+        assert!(
+            Value::Boolean(true)
+                .order(&Value::Boolean(false), false)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn order_number_and_dimensionless_quantity() {
+        let two = Value::number(2.0, 0);
+        let one = Value::quantity(1.0, 0, "1".to_string(), None);
+        assert_eq!(
+            two.order(&one, false).ok(),
+            Some(std::cmp::Ordering::Greater)
+        );
+        assert_eq!(one.order(&two, false).ok(), Some(std::cmp::Ordering::Less));
+        assert!(
+            two.order(&Value::quantity(1.0, 0, "mg".to_string(), None), false)
+                .is_err()
+        );
+        assert!(
+            two.order(
+                &Value::quantity(2.0, 0, "1".to_string(), Some(QuantityType::Count)),
+                false
+            )
+            .is_err()
+        );
     }
 
     #[test]

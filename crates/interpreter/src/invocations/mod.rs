@@ -1,9 +1,10 @@
 use crate::InterpreterResult;
 use crate::context::{ContextConstant, InterpreterContext};
 use crate::error::InterpreterError;
+use crate::sort::try_sort_by;
 use crate::stack::Frame;
 use crate::value::Value;
-use parser::{Expression, Invocation, Literal, PolarityOp, Term, TypeSpecifier};
+use parser::{Expression, Invocation, Literal, SortDirection, Term, TypeSpecifier};
 
 mod aggregate;
 mod collection;
@@ -447,53 +448,53 @@ pub(crate) fn dispatch_function<'a>(
             Ok(Continuation::Resolved(base.as_type(&type_spec), ctx))
         }
         "sort" => {
-            let (criteria_args, descending) = match args.last().and_then(|e| {
-                if let Expression::Term(Term::Invocation(Invocation::Member(n))) = e {
-                    match n.as_str() {
-                        "asc" => Some(false),
-                        "desc" => Some(true),
-                        _ => None,
-                    }
-                } else {
-                    None
-                }
-            }) {
-                Some(desc) => (&args[..args.len() - 1], desc),
-                None => (args, false),
-            };
-            if criteria_args.len() > 1 {
-                return Err(InterpreterError::InvalidOperation(
-                    "sort() requires zero or one criteria expression".to_string(),
-                ));
-            }
             let items = base.to_vec();
             if items.is_empty() {
                 return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
             }
-            if criteria_args.is_empty() {
-                let mut sorted = items;
-                sorted.sort_by(|a, b| {
-                    let ord = a
-                        .compare_equal(b)
-                        .as_ordering()
-                        .unwrap_or(std::cmp::Ordering::Equal);
-                    if descending { ord.reverse() } else { ord }
-                });
-                return Ok(Continuation::Resolved(Value::collection(sorted), ctx));
+            if args.is_empty() {
+                let mut order: Vec<usize> = (0..items.len()).collect();
+                try_sort_by(&mut order, |&a, &b| items[a].order(&items[b], false))?;
+                let mut slots: Vec<Option<Value>> = items.into_iter().map(Some).collect();
+                return Ok(Continuation::Resolved(
+                    Value::collection(
+                        order
+                            .into_iter()
+                            .map(|i| slots[i].take().unwrap_or(Value::Null))
+                            .collect(),
+                    ),
+                    ctx,
+                ));
             }
-            let (criteria, descending) = match &criteria_args[0] {
-                Expression::Polarity(PolarityOp::Minus, inner) => (inner.as_ref(), !descending),
-                other => (other, descending),
-            };
+            let mut criteria: Vec<&Expression> = Vec::with_capacity(args.len());
+            let mut descending: Vec<bool> = Vec::with_capacity(args.len());
+            for arg in args {
+                let (key, desc) = match arg {
+                    Expression::OrderedBy(inner, dir) => {
+                        (inner.as_ref(), matches!(dir, SortDirection::Desc))
+                    }
+                    other => (other, false),
+                };
+                criteria.push(key);
+                descending.push(desc);
+            }
             let item_ctx = ctx.clone().with_this(items[0].clone());
+            let first_criteria = criteria[0];
+            let sorted_indices: Vec<usize> = (0..items.len()).collect();
+            let ranges = vec![(0, items.len())];
+            let keys = vec![Value::Null; items.len()];
             Ok(Continuation::Chain(
-                criteria,
+                first_criteria,
                 Frame::SortEval {
                     items,
                     criteria,
-                    index: 0,
-                    keyed: Vec::new(),
                     descending,
+                    selector_index: 0,
+                    range_index: 0,
+                    offset: 0,
+                    sorted_indices,
+                    ranges,
+                    keys,
                     saved_ctx: ctx.clone(),
                 },
                 item_ctx,

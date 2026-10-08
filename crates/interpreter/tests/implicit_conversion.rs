@@ -106,6 +106,10 @@ fn fhir_quantity_object_is_coerced_by_every_consumer() {
             Value::Boolean(true),
         ),
         ("($this | 2 | 0.5).sort()[1] = 1", Value::Boolean(true)),
+        (
+            "($this | 2 | 0.5).sort($this desc).last() = 0.5",
+            Value::Boolean(true),
+        ),
         ("(2 | $this).sort($this).first() = 1", Value::Boolean(true)),
         ("$this = 1 'mg'", Value::collection(vec![])),
     ] {
@@ -288,6 +292,8 @@ fn fhir_quantity_code_is_only_trusted_with_a_recognized_system() {
                 .expect("interpret failed");
             assert_eq!(result, expected, "{expr_str}");
         }
+        let expr = parse("($this | 1 'kg').sort()").expect("parse failed");
+        assert!(interpret(&expr, InterpreterContext::new(quantity.clone())).is_err());
     }
 }
 

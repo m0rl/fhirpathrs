@@ -26,6 +26,7 @@ pub enum Expression {
     And(Box<Expression>, Box<Expression>),
     Or(Box<Expression>, OrOp, Box<Expression>),
     Implies(Box<Expression>, Box<Expression>),
+    OrderedBy(Box<Expression>, SortDirection),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -77,6 +78,12 @@ pub enum TypeSpecifier {
 pub enum PolarityOp {
     Plus,
     Minus,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SortDirection {
+    Asc,
+    Desc,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -716,7 +723,21 @@ fn expression(input: &str) -> IResult<&str, Expression> {
                     polarity_ops,
                     min_bp: saved_bp,
                 }) => {
-                    args.push(lhs);
+                    let arg_expr = if name == "sort" {
+                        let trimmed = input.trim_start();
+                        if let Ok((r, _)) = keyword("desc")(trimmed) {
+                            input = r;
+                            Expression::OrderedBy(Box::new(lhs), SortDirection::Desc)
+                        } else if let Ok((r, _)) = keyword("asc")(trimmed) {
+                            input = r;
+                            Expression::OrderedBy(Box::new(lhs), SortDirection::Asc)
+                        } else {
+                            lhs
+                        }
+                    } else {
+                        lhs
+                    };
+                    args.push(arg_expr);
 
                     if let Some(rest) = input.trim_start().strip_prefix(',') {
                         input = rest;

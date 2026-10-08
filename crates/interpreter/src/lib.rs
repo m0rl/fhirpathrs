@@ -4,6 +4,7 @@ mod decimal;
 mod error;
 mod invocations;
 mod operators;
+mod sort;
 mod stack;
 mod trace;
 mod units;
@@ -26,6 +27,7 @@ use crate::operators::{
     interpret_membership, interpret_multiplicative, interpret_or, interpret_polarity,
     interpret_type, interpret_union,
 };
+use crate::sort::try_sort_by;
 use crate::stack::{BinOp, Frame};
 use parser::{Expression, Invocation, Literal, Term};
 
@@ -116,6 +118,11 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 stack.push(Frame::ImpliesAfterLeft(right, ctx.clone()));
                 current = left;
                 continue 'dispatch;
+            }
+            Expression::OrderedBy(..) => {
+                return Err(InterpreterError::InvalidOperation(
+                    "asc/desc is only allowed on sort() arguments".to_string(),
+                ));
             }
         };
 
@@ -642,35 +649,108 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 Some(Frame::SortEval {
                     items,
                     criteria,
-                    index,
-                    mut keyed,
                     descending,
+                    selector_index,
+                    range_index,
+                    offset,
+                    mut sorted_indices,
+                    ranges,
+                    mut keys,
                     saved_ctx,
                 }) => {
-                    keyed.push((items[index].clone(), val));
-                    let next = index + 1;
-                    if next < items.len() {
-                        let item_ctx = saved_ctx.clone().with_this(items[next].clone());
+                    if val.is_multi_item_collection() {
+                        return Err(InterpreterError::InvalidOperation(
+                            "sort() key selector evaluated to more than one item".to_string(),
+                        ));
+                    }
+                    let (start, end) = ranges[range_index];
+                    keys[sorted_indices[start + offset]] = val;
+                    let (next_range, next_offset) = if start + offset + 1 < end {
+                        (range_index, offset + 1)
+                    } else {
+                        (range_index + 1, 0)
+                    };
+                    if next_range < ranges.len() {
+                        let next_item = sorted_indices[ranges[next_range].0 + next_offset];
+                        let item_ctx = saved_ctx.clone().with_this(items[next_item].clone());
+                        let next_expr = criteria[selector_index];
                         stack.push(Frame::SortEval {
                             items,
                             criteria,
-                            index: next,
-                            keyed,
                             descending,
+                            selector_index,
+                            range_index: next_range,
+                            offset: next_offset,
+                            sorted_indices,
+                            ranges,
+                            keys,
                             saved_ctx,
                         });
                         ctx = item_ctx;
-                        current = criteria;
+                        current = next_expr;
                         continue 'dispatch;
                     }
-                    keyed.sort_by(|(_, a_key), (_, b_key)| {
-                        let ord = a_key
-                            .compare_equal(b_key)
-                            .as_ordering()
-                            .unwrap_or(std::cmp::Ordering::Equal);
-                        if descending { ord.reverse() } else { ord }
-                    });
-                    val = Value::collection(keyed.into_iter().map(|(item, _)| item).collect());
+
+                    for &(start, end) in &ranges {
+                        try_sort_by(&mut sorted_indices[start..end], |&a, &b| {
+                            keys[a].order(&keys[b], descending[selector_index])
+                        })?;
+                    }
+
+                    let next_selector = selector_index + 1;
+                    if next_selector < criteria.len() {
+                        let mut next_ranges = Vec::new();
+                        for &(start, end) in &ranges {
+                            let mut tie_start = start;
+                            while tie_start < end {
+                                let mut tie_end = tie_start + 1;
+                                while tie_end < end {
+                                    let first_key = &keys[sorted_indices[tie_start]];
+                                    let next_key = &keys[sorted_indices[tie_end]];
+                                    if first_key.is_null_or_empty()
+                                        || next_key.is_null_or_empty()
+                                        || !first_key.compare_equal(next_key).is_equal()
+                                    {
+                                        break;
+                                    }
+                                    tie_end += 1;
+                                }
+                                if tie_end - tie_start > 1 {
+                                    next_ranges.push((tie_start, tie_end));
+                                }
+                                tie_start = tie_end;
+                            }
+                        }
+
+                        if !next_ranges.is_empty() {
+                            let next_item = sorted_indices[next_ranges[0].0];
+                            keys.fill(Value::Null);
+                            let item_ctx = saved_ctx.clone().with_this(items[next_item].clone());
+                            let next_expr = criteria[next_selector];
+                            stack.push(Frame::SortEval {
+                                items,
+                                criteria,
+                                descending,
+                                selector_index: next_selector,
+                                range_index: 0,
+                                offset: 0,
+                                sorted_indices,
+                                ranges: next_ranges,
+                                keys,
+                                saved_ctx,
+                            });
+                            ctx = item_ctx;
+                            current = next_expr;
+                            continue 'dispatch;
+                        }
+                    }
+
+                    let mut slots: Vec<Option<Value>> = items.into_iter().map(Some).collect();
+                    let sorted: Vec<Value> = sorted_indices
+                        .into_iter()
+                        .map(|i| slots[i].take().unwrap_or(Value::Null))
+                        .collect();
+                    val = Value::collection(sorted);
                     ctx = saved_ctx;
                 }
                 Some(Frame::DefineVarEvalName {

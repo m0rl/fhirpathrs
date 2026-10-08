@@ -1364,7 +1364,7 @@ fn test_sort_asc_numbers() {
         Value::number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
-    let expr = parse("sort(asc)").expect("parse failed");
+    let expr = parse("sort($this asc)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(
         result,
@@ -1384,7 +1384,7 @@ fn test_sort_desc_numbers() {
         Value::number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
-    let expr = parse("sort(desc)").expect("parse failed");
+    let expr = parse("sort($this desc)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(
         result,
@@ -1404,7 +1404,7 @@ fn test_sort_desc_strings() {
         Value::String("b".to_string()),
     ]);
     let context = InterpreterContext::new(data);
-    let expr = parse("sort(desc)").expect("parse failed");
+    let expr = parse("sort($this desc)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(
         result,
@@ -1433,7 +1433,7 @@ fn test_sort_with_criteria_desc() {
         ])),
     ]);
     let context = InterpreterContext::new(data);
-    let expr = parse("sort(age, desc)").expect("parse failed");
+    let expr = parse("sort(age desc)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
@@ -1469,7 +1469,7 @@ fn test_sort_with_criteria_asc() {
         ])),
     ]);
     let context = InterpreterContext::new(data);
-    let expr = parse("sort(age, asc)").expect("parse failed");
+    let expr = parse("sort(age asc)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     if let Value::Collection(ref items) = result {
         assert_eq!(items.len(), 3);
@@ -1496,7 +1496,7 @@ fn test_sort_with_this_desc() {
         Value::number(2.0, 0),
     ]);
     let context = InterpreterContext::new(data);
-    let expr = parse("sort($this, desc)").expect("parse failed");
+    let expr = parse("sort($this desc)").expect("parse failed");
     let (result, _) = interpret(&expr, context).expect("interpret failed");
     assert_eq!(
         result,
