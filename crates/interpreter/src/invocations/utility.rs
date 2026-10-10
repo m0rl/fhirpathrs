@@ -4,7 +4,7 @@ use crate::datetime::{DatePrecision, DateTimePrecision, TimePrecision};
 use crate::decimal::Decimal;
 use crate::error::InterpreterError;
 use crate::units::quantity_cmp_units;
-use crate::value::Value;
+use crate::value::{Object, Value};
 use crate::{InterpreterResult, QuantityType};
 use chrono::{Datelike, FixedOffset, NaiveDate, NaiveTime, Timelike};
 use std::collections::HashMap;
@@ -43,8 +43,8 @@ pub fn value_type(base: &Value, context: InterpreterContext) -> InterpreterResul
     for item in &items {
         let (namespace, name) = match item {
             Value::Quantity(_, _, _, Some(qt)) => ("FHIR", qt.as_str().to_string()),
-            Value::Object(obj) => match obj.get("resourceType") {
-                Some(Value::String(rt)) => ("FHIR", rt.clone()),
+            Value::Object(obj) => match obj.field("resourceType") {
+                Some(Value::String(ref rt)) => ("FHIR", rt.clone()),
                 _ => continue,
             },
             _ => match item.type_name() {
@@ -551,9 +551,8 @@ pub fn difference(base: &Value, args: &[Value], context: InterpreterContext) -> 
     Ok((result, context))
 }
 
-pub fn resolve_field(obj: &HashMap<String, Value>, member: &str) -> Option<Value> {
-    obj.get(member)
-        .cloned()
+pub fn resolve_field(obj: &Object, member: &str) -> Option<Value> {
+    obj.field(member)
         .or_else(|| resolve_polymorphic(obj, member))
 }
 

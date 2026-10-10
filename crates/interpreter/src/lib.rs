@@ -14,7 +14,7 @@ pub use crate::context::{ContextConstant, InterpreterContext};
 pub use crate::decimal::Decimal;
 pub use crate::error::InterpreterError;
 pub use crate::trace::{CollectingTraceHandler, SharedTraceHandler, TraceEvent, TraceHandler};
-pub use crate::value::{Comparison, QuantityType, Value};
+pub use crate::value::{Comparison, Object, ObjectSource, QuantityType, Value};
 pub use datetime::DatePrecision;
 pub use datetime::DateTimePrecision;
 pub use datetime::TimePrecision;
@@ -864,7 +864,7 @@ fn interpret_term(term: &Term, context: InterpreterContext) -> InterpreterResult
                 .map(|c| c.value().clone())
                 .or_else(|| {
                     if let Value::Object(ref map) = context.root_resource {
-                        map.get(name).cloned()
+                        map.field(name)
                     } else {
                         None
                     }

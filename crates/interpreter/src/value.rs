@@ -111,6 +111,87 @@ impl<'a> QuantityView<'a> {
     }
 }
 
+pub trait ObjectSource: std::any::Any {
+    fn field(&self, key: &str) -> Option<Value>;
+    fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value>;
+}
+
+pub struct Object {
+    fields: std::cell::OnceCell<HashMap<String, Value>>,
+    partial: std::cell::RefCell<HashMap<String, Value>>,
+    source: Option<Box<dyn ObjectSource>>,
+}
+
+impl Object {
+    fn new(fields: HashMap<String, Value>) -> Self {
+        Object {
+            fields: std::cell::OnceCell::from(fields),
+            partial: std::cell::RefCell::default(),
+            source: None,
+        }
+    }
+
+    fn lazy(source: Box<dyn ObjectSource>) -> Self {
+        Object {
+            fields: std::cell::OnceCell::new(),
+            partial: std::cell::RefCell::default(),
+            source: Some(source),
+        }
+    }
+
+    pub fn source(&self) -> Option<&dyn ObjectSource> {
+        self.source.as_deref()
+    }
+
+    pub fn field(&self, key: &str) -> Option<Value> {
+        if let Some(fields) = self.fields.get() {
+            return fields.get(key).cloned();
+        }
+        if let Some(value) = self.partial.borrow().get(key) {
+            return Some(value.clone());
+        }
+        let value = self.source.as_ref()?.field(key)?;
+        self.partial
+            .borrow_mut()
+            .insert(key.to_owned(), value.clone());
+        Some(value)
+    }
+
+    fn into_values(self) -> impl Iterator<Item = Value> {
+        self.fields
+            .into_inner()
+            .into_iter()
+            .flat_map(HashMap::into_values)
+            .chain(self.partial.into_inner().into_values())
+    }
+}
+
+impl std::ops::Deref for Object {
+    type Target = HashMap<String, Value>;
+
+    fn deref(&self) -> &Self::Target {
+        self.fields.get_or_init(|| {
+            let loaded = self.partial.take();
+            match &self.source {
+                Some(source) => source.fields(loaded),
+                None => loaded,
+            }
+        })
+    }
+}
+
+impl std::fmt::Debug for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&**self, f)
+    }
+}
+
+impl PartialEq for Object {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Null,
@@ -122,7 +203,7 @@ pub enum Value {
     Time(NaiveTime, TimePrecision),
     Quantity(Decimal, u8, String, Option<QuantityType>),
     Collection(std::mem::ManuallyDrop<Rc<Vec<Value>>>),
-    Object(std::mem::ManuallyDrop<Rc<HashMap<String, Value>>>),
+    Object(std::mem::ManuallyDrop<Rc<Object>>),
 }
 
 impl Drop for Value {
@@ -138,7 +219,7 @@ impl Drop for Value {
             Value::Object(md) => {
                 let rc = unsafe { std::mem::ManuallyDrop::take(md) };
                 match Rc::try_unwrap(rc) {
-                    Ok(map) => map.into_values().collect(),
+                    Ok(object) => object.into_values().collect(),
                     Err(_) => return,
                 }
             }
@@ -155,11 +236,13 @@ impl Drop for Value {
                     }
                 }
                 Value::Object(md) => {
-                    let old_md =
-                        std::mem::replace(md, std::mem::ManuallyDrop::new(Rc::new(HashMap::new())));
+                    let old_md = std::mem::replace(
+                        md,
+                        std::mem::ManuallyDrop::new(Rc::new(Object::new(HashMap::new()))),
+                    );
                     let rc = std::mem::ManuallyDrop::into_inner(old_md);
-                    if let Ok(map) = Rc::try_unwrap(rc) {
-                        stack.extend(map.into_values());
+                    if let Ok(object) = Rc::try_unwrap(rc) {
+                        stack.extend(object.into_values());
                     }
                 }
                 _ => {}
@@ -174,7 +257,11 @@ impl Value {
     }
 
     pub fn object(map: HashMap<String, Value>) -> Self {
-        Value::Object(std::mem::ManuallyDrop::new(Rc::new(map)))
+        Value::Object(std::mem::ManuallyDrop::new(Rc::new(Object::new(map))))
+    }
+
+    pub fn lazy_object(source: Box<dyn ObjectSource>) -> Self {
+        Value::Object(std::mem::ManuallyDrop::new(Rc::new(Object::lazy(source))))
     }
 
     pub fn number(value: f64, precision: u8) -> Self {
@@ -329,12 +416,11 @@ impl Value {
             }
             (Value::Time(..), Some("time")) => namespace.is_none() || namespace == Some("FHIR"),
             (Value::Object(obj), Some(expected_type)) => {
-                if (namespace.is_none() || namespace == Some("FHIR"))
-                    && let Some(Value::String(resource_type)) = obj.get("resourceType")
-                {
-                    return resource_type == expected_type;
-                }
-                false
+                (namespace.is_none() || namespace == Some("FHIR"))
+                    && matches!(
+                        obj.field("resourceType"),
+                        Some(Value::String(ref resource_type)) if resource_type == expected_type
+                    )
             }
             _ => false,
         }
@@ -1265,5 +1351,113 @@ mod tests {
                 .compare_equal(&Value::quantity(1.0, 0, "mg".to_string(), None))
                 .is_equal()
         );
+    }
+
+    struct CountingSource {
+        loads: Rc<std::cell::Cell<usize>>,
+    }
+
+    impl CountingSource {
+        fn load(&self, key: &str) -> Option<Value> {
+            let value = match key {
+                "a" => Value::Boolean(true),
+                "b" => Value::String("two".to_string()),
+                _ => return None,
+            };
+            self.loads.set(self.loads.get() + 1);
+            Some(value)
+        }
+    }
+
+    impl ObjectSource for CountingSource {
+        fn field(&self, key: &str) -> Option<Value> {
+            self.load(key)
+        }
+
+        fn fields(&self, mut loaded: HashMap<String, Value>) -> HashMap<String, Value> {
+            for key in ["a", "b"] {
+                if !loaded.contains_key(key)
+                    && let Some(value) = self.load(key)
+                {
+                    loaded.insert(key.to_string(), value);
+                }
+            }
+            loaded
+        }
+    }
+
+    fn counting_object() -> (Value, Rc<std::cell::Cell<usize>>) {
+        let loads = Rc::new(std::cell::Cell::new(0));
+        let source = CountingSource {
+            loads: loads.clone(),
+        };
+        (Value::lazy_object(Box::new(source)), loads)
+    }
+
+    fn as_object(value: &Value) -> Option<&Object> {
+        match value {
+            Value::Object(obj) => Some(obj),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn lazy_object_field_loads_only_the_requested_key_once() {
+        let (value, loads) = counting_object();
+        let object = as_object(&value);
+        assert_eq!(
+            object.and_then(|o| o.field("a")),
+            Some(Value::Boolean(true))
+        );
+        assert_eq!(
+            object.and_then(|o| o.field("a")),
+            Some(Value::Boolean(true))
+        );
+        assert_eq!(object.and_then(|o| o.field("missing")), None);
+        assert_eq!(loads.get(), 1);
+    }
+
+    #[test]
+    fn lazy_object_full_load_reuses_loaded_fields() {
+        let (value, loads) = counting_object();
+        let object = as_object(&value);
+        assert_eq!(
+            object.and_then(|o| o.field("a")),
+            Some(Value::Boolean(true))
+        );
+        assert_eq!(object.map(|o| o.len()), Some(2));
+        assert_eq!(loads.get(), 2);
+        assert_eq!(
+            object.and_then(|o| o.field("b")),
+            Some(Value::String("two".to_string()))
+        );
+        assert_eq!(loads.get(), 2);
+    }
+
+    #[test]
+    fn lazy_object_loads_all_fields_on_first_map_access() {
+        let (value, loads) = counting_object();
+        assert_eq!(loads.get(), 0);
+        assert!(value.is_truthy());
+        assert_eq!(loads.get(), 2);
+        let eager = Value::object(HashMap::from([
+            ("a".to_string(), Value::Boolean(true)),
+            ("b".to_string(), Value::String("two".to_string())),
+        ]));
+        assert!(value.compare_equal(&eager).is_equal());
+        assert_eq!(value, eager);
+        assert_eq!(loads.get(), 2);
+    }
+
+    #[test]
+    fn eager_object_field_reads_its_map() {
+        let value = Value::object(HashMap::from([("a".to_string(), Value::Boolean(false))]));
+        let object = as_object(&value);
+        assert_eq!(
+            object.and_then(|o| o.field("a")),
+            Some(Value::Boolean(false))
+        );
+        assert_eq!(object.and_then(|o| o.field("b")), None);
+        assert!(object.is_some_and(|o| o.source().is_none()));
     }
 }

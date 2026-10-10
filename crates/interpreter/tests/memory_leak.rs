@@ -1,6 +1,8 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+mod nested_node;
 
 use interpreter::Value;
+use nested_node::NestedNodeSource;
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -160,6 +162,26 @@ fn no_leak_empty_containers() {
     assert_no_leak(|| {
         Value::collection(vec![]);
         Value::object(HashMap::new());
+    });
+}
+
+#[test]
+fn no_leak_lazy_objects_partially_and_fully_loaded() {
+    assert_no_leak(|| {
+        let (node, _) = NestedNodeSource::nested(5_000);
+        let mut current = node.clone();
+        let mut level = 0;
+        while let Value::Object(obj) = &current {
+            let next = if level % 2 == 0 {
+                obj.field("item")
+            } else {
+                obj.get("item").cloned()
+            };
+            let Some(next) = next else { break };
+            current = next;
+            level += 1;
+        }
+        assert_eq!(level, 5_000);
     });
 }
 
