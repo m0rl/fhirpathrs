@@ -40,6 +40,14 @@ fn equal_lazy_objects_compare_equal() {
 }
 
 #[test]
+fn incompatible_comparison_on_deep_lazy_object_errors_without_loading_descendants() {
+    let (node, field_loads) = NestedNodeSource::nested(100_000);
+    let expr = parse("$this < 5").expect("parse failed");
+    assert!(interpret(&expr, InterpreterContext::new(node)).is_err());
+    assert_eq!(field_loads.get(), 3);
+}
+
+#[test]
 fn deep_lazy_chain_traverses_and_drops_without_stack_overflow() {
     let depth = 100_000;
     let (node, _) = NestedNodeSource::nested(depth);

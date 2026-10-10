@@ -398,10 +398,9 @@ pub(crate) fn interpret_inequality(
         None if cmp == Comparison::Unequal
             && (left.quantity_view().is_none() || right.quantity_view().is_none()) =>
         {
-            Err(InterpreterError::TypeMismatch(format!(
-                "Cannot compare {:?} with {:?}",
-                left, right
-            )))
+            Err(InterpreterError::TypeMismatch(
+                "Cannot compare values of incompatible types".to_string(),
+            ))
         }
         None => Ok((Value::collection(vec![]), context)),
     }
