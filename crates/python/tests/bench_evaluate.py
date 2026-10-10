@@ -1,13 +1,3 @@
-"""Benchmarks for fhirpathrs Python-Rust interop performance analysis.
-
-Measures overhead of PyO3 conversions and FFI boundary by benchmarking
-the full evaluate() call from Python. Compare results against Rust
-benchmarks in crates/interpreter/benches/interpret.rs.
-
-Run with:
-    uv run pytest crates/python/tests/bench_evaluate.py -v --benchmark-sort=mean
-"""
-
 import pytest
 from fhirpathrs import evaluate
 
@@ -50,6 +40,69 @@ def make_fhir_bundle(n_entries):
                     "id": f"r{i}",
                     "value": i * 10,
                 }
+            }
+            for i in range(n_entries)
+        ],
+    }
+
+
+def make_observation_bundle(n_entries):
+    narrative = "Heart rate recorded during routine vital signs check. " * 20
+    return {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "entry": [
+            {
+                "fullUrl": f"urn:uuid:obs-{i}",
+                "resource": {
+                    "resourceType": "Observation",
+                    "id": f"obs-{i}",
+                    "meta": {
+                        "versionId": "1",
+                        "lastUpdated": "2026-01-01T00:00:00Z",
+                        "profile": [
+                            "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+                        ],
+                    },
+                    "text": {
+                        "status": "generated",
+                        "div": f'<div xmlns="http://www.w3.org/1999/xhtml">{narrative}</div>',
+                    },
+                    "status": "amended" if i % 4 == 0 else "final",
+                    "category": [
+                        {
+                            "coding": [
+                                {
+                                    "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                    "code": "vital-signs",
+                                    "display": "Vital Signs",
+                                }
+                            ]
+                        }
+                    ],
+                    "code": {
+                        "coding": [
+                            {
+                                "system": "http://loinc.org",
+                                "code": "8867-4",
+                                "display": "Heart rate",
+                            }
+                        ],
+                        "text": "Heart rate",
+                    },
+                    "subject": {
+                        "reference": f"Patient/p{i % 50}",
+                        "display": f"Patient {i % 50}",
+                    },
+                    "effectiveDateTime": "2026-01-01T10:00:00Z",
+                    "valueQuantity": {
+                        "value": 60 + i % 40,
+                        "unit": "beats/minute",
+                        "system": "http://unitsofmeasure.org",
+                        "code": "/min",
+                    },
+                },
+                "search": {"mode": "match"},
             }
             for i in range(n_entries)
         ],
@@ -230,3 +283,31 @@ class TestFHIRWorkloads:
             "entry.resource.where(resourceType = 'Observation').select(value).distinct()",
             bundle,
         )
+
+
+OBSERVATION_BUNDLE = make_observation_bundle(1000)
+
+
+class TestObservationBundle:
+    def test_status_filter_ids(self, benchmark):
+        benchmark(
+            evaluate,
+            "entry.resource.where(status = 'final').id.count()",
+            OBSERVATION_BUNDLE,
+        )
+
+    def test_value_threshold_subjects(self, benchmark):
+        benchmark(
+            evaluate,
+            "entry.resource.where(valueQuantity.value > 90).subject.reference",
+            OBSERVATION_BUNDLE,
+        )
+
+    def test_return_resources(self, benchmark):
+        benchmark(evaluate, "entry.resource", OBSERVATION_BUNDLE)
+
+    def test_first_resource(self, benchmark):
+        benchmark(evaluate, "entry.first().resource", OBSERVATION_BUNDLE)
+
+    def test_descendants_count(self, benchmark):
+        benchmark(evaluate, "descendants().count()", OBSERVATION_BUNDLE)
