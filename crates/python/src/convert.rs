@@ -1,114 +1,155 @@
 use interpreter::datetime::{format_date, format_datetime, format_time};
-use interpreter::{Decimal, Value};
+use interpreter::{Decimal, InterpreterError, ObjectSource, Value};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
+
+#[derive(Clone, Default)]
+pub struct Converter {
+    error: Rc<RefCell<Option<PyErr>>>,
+}
+
+struct PyDictSource {
+    dict: Py<PyDict>,
+    converter: Converter,
+}
 
 enum PyToValueWork<'py> {
     Convert(Bound<'py, PyAny>),
     BuildList(usize),
-    BuildDict(Vec<String>),
 }
 
-pub fn py_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
-    let mut stack: Vec<PyToValueWork<'_>> = Vec::with_capacity(32);
-    stack.push(PyToValueWork::Convert(obj.clone()));
-    let mut results: Vec<Value> = Vec::with_capacity(32);
+impl Converter {
+    pub fn shallow(&self, obj: &Bound<'_, PyAny>) -> PyResult<Value> {
+        let Ok(list) = obj.cast::<PyList>() else {
+            return self.leaf(obj);
+        };
+        let mut stack: Vec<PyToValueWork<'_>> = Vec::with_capacity(list.len() + 1);
+        stack.push(PyToValueWork::Convert(obj.clone()));
+        let mut results: Vec<Value> = Vec::with_capacity(list.len() + 1);
 
-    while let Some(work) = stack.pop() {
-        match work {
-            PyToValueWork::Convert(obj) => {
-                if obj.is_none() {
-                    results.push(Value::Null);
-                } else if let Ok(b) = obj.cast::<PyBool>() {
-                    results.push(Value::Boolean(b.is_true()));
-                } else if obj.is_instance_of::<PyInt>() {
-                    let decimal = obj
-                        .extract::<i128>()
-                        .ok()
-                        .and_then(Decimal::from_i128)
-                        .ok_or_else(|| {
-                            PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                                "integer is outside the supported Decimal range",
-                            )
-                        })?;
-                    results.push(Value::Number(decimal, 0));
-                } else if obj.is_instance_of::<PyFloat>() {
-                    let n: f64 = obj.extract()?;
-                    let decimal = Decimal::from_f64(n).ok_or_else(|| {
-                        PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            "float is not a finite number inside the supported Decimal range",
-                        )
-                    })?;
-                    results.push(Value::decimal(decimal));
-                } else if let Ok(s) = obj.cast::<PyString>() {
-                    let rust_str = s.to_str().map_err(|e| {
-                        PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())
-                    })?;
-                    results.push(Value::String(rust_str.to_owned()));
-                } else if let Ok(list) = obj.cast::<PyList>() {
-                    let len = list.len();
-                    stack.push(PyToValueWork::BuildList(len));
-                    for i in (0..len).rev() {
-                        let item = list.get_item(i).map_err(|e| {
-                            PyErr::new::<pyo3::exceptions::PyIndexError, _>(e.to_string())
-                        })?;
-                        stack.push(PyToValueWork::Convert(item));
+        while let Some(work) = stack.pop() {
+            match work {
+                PyToValueWork::Convert(obj) => match obj.cast::<PyList>() {
+                    Ok(list) => {
+                        let len = list.len();
+                        stack.push(PyToValueWork::BuildList(len));
+                        for i in (0..len).rev() {
+                            let item = list.get_item(i).map_err(|e| {
+                                PyErr::new::<pyo3::exceptions::PyIndexError, _>(e.to_string())
+                            })?;
+                            stack.push(PyToValueWork::Convert(item));
+                        }
                     }
-                } else if let Ok(dict) = obj.cast::<PyDict>() {
-                    let len = dict.len();
-                    let mut keys = Vec::with_capacity(len);
-                    stack.reserve(len + 1);
-                    // Collect keys first, then push values in reverse order.
-                    // We need two passes because dict.iter() yields items in
-                    // forward order but the stack needs reverse order.
-                    let items: Vec<(Bound<'_, PyAny>, Bound<'_, PyAny>)> = dict.iter().collect();
-                    for (key, _) in &items {
-                        let key_str = key
-                            .cast::<PyString>()
-                            .map_err(|_| {
-                                PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                                    "Dict keys must be strings",
-                                )
-                            })?
-                            .to_str()
-                            .map_err(|e| {
-                                PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())
-                            })?
-                            .to_owned();
-                        keys.push(key_str);
-                    }
-                    stack.push(PyToValueWork::BuildDict(keys));
-                    for (_, value) in items.into_iter().rev() {
-                        stack.push(PyToValueWork::Convert(value));
-                    }
-                } else {
-                    return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                        "Unsupported type: {}",
-                        obj.get_type().name()?
-                    )));
+                    Err(_) => results.push(self.leaf(&obj)?),
+                },
+                PyToValueWork::BuildList(len) => {
+                    let start = results.len() - len;
+                    let items: Vec<Value> = results.drain(start..).collect();
+                    results.push(Value::collection(items));
                 }
             }
-            PyToValueWork::BuildList(len) => {
-                let start = results.len() - len;
-                let items: Vec<Value> = results.drain(start..).collect();
-                results.push(Value::collection(items));
-            }
-            PyToValueWork::BuildDict(keys) => {
-                let start = results.len() - keys.len();
-                let values: Vec<Value> = results.drain(start..).collect();
-                let mut map = HashMap::with_capacity(keys.len());
-                for (k, v) in keys.into_iter().zip(values) {
-                    map.insert(k, v);
-                }
-                results.push(Value::object(map));
-            }
+        }
+
+        results
+            .pop()
+            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Conversion failed"))
+    }
+
+    fn leaf(&self, obj: &Bound<'_, PyAny>) -> PyResult<Value> {
+        if obj.is_none() {
+            Ok(Value::Null)
+        } else if let Ok(b) = obj.cast::<PyBool>() {
+            Ok(Value::Boolean(b.is_true()))
+        } else if obj.is_instance_of::<PyInt>() {
+            obj.extract::<i128>()
+                .ok()
+                .and_then(Decimal::from_i128)
+                .map(|decimal| Value::Number(decimal, 0))
+                .ok_or_else(|| {
+                    PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        "integer is outside the supported Decimal range",
+                    )
+                })
+        } else if obj.is_instance_of::<PyFloat>() {
+            Decimal::from_f64(obj.extract()?)
+                .map(Value::decimal)
+                .ok_or_else(|| {
+                    PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                        "float is not a finite number inside the supported Decimal range",
+                    )
+                })
+        } else if let Ok(s) = obj.cast::<PyString>() {
+            s.to_str()
+                .map(|s| Value::String(s.to_owned()))
+                .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
+        } else if let Ok(dict) = obj.cast::<PyDict>() {
+            Ok(Value::lazy_object(Box::new(PyDictSource {
+                dict: dict.clone().unbind(),
+                converter: self.clone(),
+            })))
+        } else {
+            Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                "Unsupported type: {}",
+                obj.get_type().name()?
+            )))
         }
     }
 
-    results
-        .pop()
-        .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Conversion failed"))
+    pub fn finish<T>(&self, outcome: Result<T, InterpreterError>) -> PyResult<T> {
+        if let Some(err) = self.error.take() {
+            return Err(err);
+        }
+        outcome.map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Evaluation error: {e}"))
+        })
+    }
+
+    fn record(&self, err: PyErr) {
+        self.error.borrow_mut().get_or_insert(err);
+    }
+}
+
+impl ObjectSource for PyDictSource {
+    fn field(&self, key: &str) -> Option<Value> {
+        Python::attach(|py| {
+            self.dict
+                .bind(py)
+                .get_item(key)?
+                .map(|value| self.converter.shallow(&value))
+                .transpose()
+        })
+        .unwrap_or_else(|err| {
+            self.converter.record(err);
+            None
+        })
+    }
+
+    fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value> {
+        let fields = RefCell::new(loaded);
+        Python::attach(|py| {
+            let dict = self.dict.bind(py);
+            fields.borrow_mut().reserve(dict.len());
+            dict.locked_for_each(|key, value| {
+                let key = key
+                    .cast::<PyString>()
+                    .map_err(|_| {
+                        PyErr::new::<pyo3::exceptions::PyTypeError, _>("Dict keys must be strings")
+                    })?
+                    .to_str()
+                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+                if !fields.borrow().contains_key(key) {
+                    let value = self.converter.shallow(&value)?;
+                    fields.borrow_mut().insert(key.to_owned(), value);
+                }
+                Ok(())
+            })
+        })
+        .unwrap_or_else(|err| self.converter.record(err));
+        fields.into_inner()
+    }
 }
 
 enum ValueToPyWork<'a> {
@@ -165,12 +206,18 @@ pub fn value_to_py(py: Python<'_>, value: &Value) -> PyResult<Py<PyAny>> {
                     }
                 }
                 Value::Object(map) => {
-                    let entries: Vec<(&str, &Value)> =
-                        map.iter().map(|(k, v)| (k.as_str(), v)).collect();
-                    let keys: Vec<&str> = entries.iter().map(|(k, _)| *k).collect();
-                    stack.push(ValueToPyWork::BuildDict(keys));
-                    for (_, value) in entries.into_iter().rev() {
-                        stack.push(ValueToPyWork::Convert(value));
+                    if let Some(source) = map.source().and_then(|source| {
+                        (source as &dyn std::any::Any).downcast_ref::<PyDictSource>()
+                    }) {
+                        results.push(source.dict.clone_ref(py).into_any());
+                    } else {
+                        let entries: Vec<(&str, &Value)> =
+                            map.iter().map(|(k, v)| (k.as_str(), v)).collect();
+                        let keys: Vec<&str> = entries.iter().map(|(k, _)| *k).collect();
+                        stack.push(ValueToPyWork::BuildDict(keys));
+                        for (_, value) in entries.into_iter().rev() {
+                            stack.push(ValueToPyWork::Convert(value));
+                        }
                     }
                 }
             },

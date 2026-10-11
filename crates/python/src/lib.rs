@@ -1,6 +1,6 @@
 mod convert;
 
-use convert::{py_to_value, value_to_py};
+use convert::{Converter, value_to_py};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -16,8 +16,9 @@ fn evaluate(
         PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Parse error: {e}"))
     })?;
 
+    let converter = Converter::default();
     let data_value = match data {
-        Some(obj) => py_to_value(obj)?,
+        Some(obj) => converter.shallow(obj)?,
         None => interpreter::Value::Null,
     };
     let mut context = interpreter::InterpreterContext::new(data_value);
@@ -27,14 +28,12 @@ fn evaluate(
             let key_str: String = key.extract().map_err(|_| {
                 PyErr::new::<pyo3::exceptions::PyTypeError, _>("Constant keys must be strings")
             })?;
-            let val = py_to_value(&value)?;
+            let val = converter.shallow(&value)?;
             context = context.with_constant(key_str, val);
         }
     }
 
-    let (result, _) = interpreter::interpret(&parsed, context).map_err(|e| {
-        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Evaluation error: {e}"))
-    })?;
+    let (result, _) = converter.finish(interpreter::interpret(&parsed, context))?;
 
     value_to_py(py, &result)
 }
