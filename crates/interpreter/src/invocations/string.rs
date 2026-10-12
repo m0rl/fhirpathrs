@@ -8,21 +8,49 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 thread_local! {
-    static REGEX_CACHE: RefCell<HashMap<String, Regex>> = RefCell::new(HashMap::new());
+    static REGEX_CACHE: RefCell<RegexCache> = RefCell::new(RegexCache::default());
+}
+
+#[derive(Default)]
+struct RegexCache {
+    entries: HashMap<String, (Regex, u64)>,
+    tick: u64,
+}
+
+impl RegexCache {
+    const CAPACITY: usize = 32;
+    const MAX_PATTERN_LEN: usize = 4096;
+
+    fn get_or_compile(&mut self, key: String) -> Result<Regex, InterpreterError> {
+        self.tick += 1;
+        if let Some((regex, last_used)) = self.entries.get_mut(&key) {
+            *last_used = self.tick;
+            return Ok(regex.clone());
+        }
+        let regex = Regex::new(&key).map_err(|e| InterpreterError::InvalidRegex(e.to_string()))?;
+        if key.len() > Self::MAX_PATTERN_LEN {
+            return Ok(regex);
+        }
+        if self.entries.len() >= Self::CAPACITY
+            && let Some(oldest) = self
+                .entries
+                .iter()
+                .min_by_key(|(_, (_, last_used))| *last_used)
+                .map(|(oldest, _)| oldest.clone())
+        {
+            self.entries.remove(&oldest);
+        }
+        self.entries.insert(key, (regex.clone(), self.tick));
+        Ok(regex)
+    }
 }
 
 fn get_cached_regex(pattern: &str, flags: Option<String>) -> Result<Regex, InterpreterError> {
     let flags = flags.unwrap_or_else(|| "s".to_string());
-    let pattern_with_flags = format!("(?{flags}){pattern}");
     REGEX_CACHE.with(|cache| {
-        let mut cache = cache.borrow_mut();
-        if let Some(regex) = cache.get(&pattern_with_flags) {
-            return Ok(regex.clone());
-        }
-        let regex = Regex::new(&pattern_with_flags)
-            .map_err(|e| InterpreterError::InvalidRegex(e.to_string()))?;
-        cache.insert(pattern_with_flags, regex.clone());
-        Ok(regex)
+        cache
+            .borrow_mut()
+            .get_or_compile(format!("(?{flags}){pattern}"))
     })
 }
 
@@ -567,4 +595,67 @@ pub fn decode(base: &Value, args: &[Value], context: InterpreterContext) -> Inte
         ))
     })?;
     Ok((Value::String(decoded), context))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn regex_cache_stays_within_capacity() {
+        let mut cache = RegexCache::default();
+        for i in 0..=RegexCache::CAPACITY {
+            assert!(cache.get_or_compile(format!("a{{{i}}}")).is_ok());
+        }
+        assert_eq!(cache.entries.len(), RegexCache::CAPACITY);
+    }
+
+    #[test]
+    fn regex_cache_evicts_least_recently_used() {
+        let mut cache = RegexCache::default();
+        for i in 0..RegexCache::CAPACITY {
+            assert!(cache.get_or_compile(format!("a{{{i}}}")).is_ok());
+        }
+        assert!(cache.get_or_compile("a{0}".to_string()).is_ok());
+        assert!(cache.get_or_compile("b".to_string()).is_ok());
+        assert!(cache.entries.contains_key("a{0}"));
+        assert!(!cache.entries.contains_key("a{1}"));
+        assert!(cache.entries.contains_key("b"));
+        assert_eq!(cache.entries.len(), RegexCache::CAPACITY);
+    }
+
+    #[test]
+    fn regex_cache_reuses_compiled_entries() {
+        let mut cache = RegexCache::default();
+        assert!(cache.get_or_compile("a+".to_string()).is_ok());
+        assert!(cache.get_or_compile("a+".to_string()).is_ok());
+        assert_eq!(cache.entries.len(), 1);
+    }
+
+    #[test]
+    fn regex_cache_does_not_store_oversized_patterns() {
+        let mut cache = RegexCache::default();
+        let key = format!("(?x)a#{}", "x".repeat(RegexCache::MAX_PATTERN_LEN));
+        assert!(
+            cache
+                .get_or_compile(key)
+                .is_ok_and(|regex| regex.is_match("a"))
+        );
+        assert!(cache.entries.is_empty());
+    }
+
+    #[test]
+    fn regex_cache_stores_patterns_at_the_length_limit() {
+        let mut cache = RegexCache::default();
+        let key = format!("a{}", "b".repeat(RegexCache::MAX_PATTERN_LEN - 1));
+        assert!(cache.get_or_compile(key).is_ok());
+        assert_eq!(cache.entries.len(), 1);
+    }
+
+    #[test]
+    fn regex_cache_does_not_store_invalid_patterns() {
+        let mut cache = RegexCache::default();
+        assert!(cache.get_or_compile("(".to_string()).is_err());
+        assert!(cache.entries.is_empty());
+    }
 }

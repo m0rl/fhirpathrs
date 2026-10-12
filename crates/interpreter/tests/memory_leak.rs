@@ -1,8 +1,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 mod nested_node;
 
-use interpreter::Value;
+use interpreter::{InterpreterContext, Value, interpret};
 use nested_node::NestedNodeSource;
+use parser::parse;
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -182,6 +183,20 @@ fn no_leak_lazy_objects_partially_and_fully_loaded() {
             level += 1;
         }
         assert_eq!(level, 5_000);
+    });
+}
+
+#[test]
+fn no_leak_large_regex_pattern_after_evaluation() {
+    let warm_up = parse("'a'.matches('a')").unwrap();
+    interpret(&warm_up, InterpreterContext::new(Value::Null)).unwrap();
+    assert_no_leak(|| {
+        let expression = parse("'a'.matches(%p)").unwrap();
+        let pattern = format!("(?x)a#{}", "x".repeat(1 << 20));
+        let context = InterpreterContext::new(Value::Null)
+            .with_constant("p".to_string(), Value::String(pattern));
+        let (result, _) = interpret(&expression, context).unwrap();
+        assert_eq!(result, Value::Boolean(true));
     });
 }
 
