@@ -5,7 +5,7 @@ use std::sync::LazyLock;
 
 pub const UCUM_SYSTEM: &str = "http://unitsofmeasure.org";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UnitCategory {
     Mass,
     Volume,
@@ -38,12 +38,12 @@ pub fn is_calendar_unit(u: &str) -> bool {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct UnitDef {
-    to_base: i64,
-    category: UnitCategory,
+pub(crate) struct UnitDef {
+    pub(crate) to_base: i64,
+    pub(crate) category: UnitCategory,
 }
 
-static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
+pub(crate) static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
     use UnitCategory::{Amount, Dimensionless, Length, Mass, Time, Volume};
     [
         ("kg", 1_000_000_000_000_000, Mass),
@@ -114,6 +114,12 @@ static UNITS: LazyLock<HashMap<&'static str, UnitDef>> = LazyLock::new(|| {
     .map(|(name, to_base, category)| (name, UnitDef { to_base, category }))
     .collect()
 });
+
+// Units whose conversion to another unit of the same category divides with rounding (into_finer),
+// so `=` can hold between values that differ; quantities in them are left unfingerprinted.
+pub(crate) const ROUNDED_UNITS: &[&str] = &[
+    "lb", "[lb_av]", "oz", "[oz_av]", "in", "[in_i]", "ft", "[ft_i]", "mo", "a",
+];
 
 #[derive(Debug, Clone)]
 pub enum QuantityResult {
@@ -329,6 +335,35 @@ mod tests {
                 .map(|(k, v)| ((*k).to_string(), v.clone()))
                 .collect(),
         )
+    }
+
+    #[test]
+    fn units_outside_rounded_units_convert_exactly() {
+        assert!(ROUNDED_UNITS.iter().all(|unit| UNITS.contains_key(*unit)));
+        let exact: Vec<&UnitDef> = UNITS
+            .iter()
+            .filter(|(name, _)| !ROUNDED_UNITS.contains(name))
+            .map(|(_, def)| def)
+            .collect();
+        assert!(exact.iter().all(|a| exact.iter().all(|b| {
+            a.category != b.category
+                || a.to_base
+                    .max(b.to_base)
+                    .checked_rem(a.to_base.min(b.to_base))
+                    == Some(0)
+        })));
+        assert!(ROUNDED_UNITS.iter().all(|unit| {
+            UNITS.get(*unit).is_some_and(|rounded| {
+                exact.iter().any(|def| {
+                    def.category == rounded.category
+                        && def
+                            .to_base
+                            .max(rounded.to_base)
+                            .checked_rem(def.to_base.min(rounded.to_base))
+                            != Some(0)
+                })
+            })
+        }));
     }
 
     #[test]

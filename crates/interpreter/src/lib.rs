@@ -1,6 +1,7 @@
 mod context;
 pub mod datetime;
 mod decimal;
+mod distinct_set;
 mod error;
 mod invocations;
 mod operators;
@@ -424,7 +425,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     ctx = c;
                 }
                 Some(Frame::RepeatApply {
-                    dedup,
+                    mut seen,
                     to_process,
                     index,
                     expr: projection,
@@ -434,15 +435,10 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 }) => {
                     let projected = val.to_vec();
                     for proj_item in projected {
-                        if dedup {
-                            if !result
-                                .iter()
-                                .any(|existing| existing.compare_equal(&proj_item).is_equal())
-                            {
-                                result.push(proj_item.clone());
-                                new_items.push(proj_item);
-                            }
-                        } else {
+                        if seen
+                            .as_mut()
+                            .is_none_or(|seen| seen.insert(proj_item.clone()))
+                        {
                             result.push(proj_item.clone());
                             new_items.push(proj_item);
                         }
@@ -451,7 +447,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     if next < to_process.len() {
                         let item_ctx = saved_ctx.clone().with_this(to_process[next].clone());
                         stack.push(Frame::RepeatApply {
-                            dedup,
+                            seen,
                             to_process,
                             index: next,
                             expr: projection,
@@ -469,7 +465,7 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                     } else {
                         let item_ctx = saved_ctx.clone().with_this(new_items[0].clone());
                         stack.push(Frame::RepeatApply {
-                            dedup,
+                            seen,
                             to_process: new_items,
                             index: 0,
                             expr: projection,

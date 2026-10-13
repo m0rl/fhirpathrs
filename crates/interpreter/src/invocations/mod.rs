@@ -1,5 +1,6 @@
 use crate::InterpreterResult;
 use crate::context::{ContextConstant, InterpreterContext};
+use crate::distinct_set::DistinctSet;
 use crate::error::InterpreterError;
 use crate::sort::try_sort_by;
 use crate::stack::Frame;
@@ -255,7 +256,6 @@ pub(crate) fn dispatch_function<'a>(
                     name
                 )));
             }
-            let dedup = name == "repeat";
             let to_process = base.to_vec();
             if to_process.is_empty() {
                 return Ok(Continuation::Resolved(Value::collection(vec![]), ctx));
@@ -264,7 +264,7 @@ pub(crate) fn dispatch_function<'a>(
             Ok(Continuation::Chain(
                 &args[0],
                 Frame::RepeatApply {
-                    dedup,
+                    seen: (name == "repeat").then(DistinctSet::default),
                     to_process,
                     index: 0,
                     expr: &args[0],

@@ -48,4 +48,8 @@ impl ObjectSource for NestedNodeSource {
         }
         loaded
     }
+
+    fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>> {
+        Some(self.fields(loaded.clone()))
+    }
 }

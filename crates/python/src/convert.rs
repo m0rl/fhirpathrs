@@ -3,7 +3,7 @@ use interpreter::{Decimal, InterpreterError, ObjectSource, Value};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 #[derive(Clone, Default)]
@@ -18,7 +18,7 @@ struct PyDictSource {
 
 enum PyToValueWork<'py> {
     Convert(Bound<'py, PyAny>),
-    BuildList(usize),
+    BuildList(usize, usize),
 }
 
 impl Converter {
@@ -29,13 +29,20 @@ impl Converter {
         let mut stack: Vec<PyToValueWork<'_>> = Vec::with_capacity(list.len() + 1);
         stack.push(PyToValueWork::Convert(obj.clone()));
         let mut results: Vec<Value> = Vec::with_capacity(list.len() + 1);
+        let mut expanding: HashSet<usize> = HashSet::new();
 
         while let Some(work) = stack.pop() {
             match work {
                 PyToValueWork::Convert(obj) => match obj.cast::<PyList>() {
                     Ok(list) => {
+                        let address = list.as_ptr().addr();
+                        if !expanding.insert(address) {
+                            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                                "Circular reference detected",
+                            ));
+                        }
                         let len = list.len();
-                        stack.push(PyToValueWork::BuildList(len));
+                        stack.push(PyToValueWork::BuildList(len, address));
                         for i in (0..len).rev() {
                             let item = list.get_item(i).map_err(|e| {
                                 PyErr::new::<pyo3::exceptions::PyIndexError, _>(e.to_string())
@@ -45,7 +52,8 @@ impl Converter {
                     }
                     Err(_) => results.push(self.leaf(&obj)?),
                 },
-                PyToValueWork::BuildList(len) => {
+                PyToValueWork::BuildList(len, address) => {
+                    expanding.remove(&address);
                     let start = results.len() - len;
                     let items: Vec<Value> = results.drain(start..).collect();
                     results.push(Value::collection(items));
@@ -112,23 +120,8 @@ impl Converter {
     }
 }
 
-impl ObjectSource for PyDictSource {
-    fn field(&self, key: &str) -> Option<Value> {
-        Python::attach(|py| {
-            self.dict
-                .bind(py)
-                .get_item(key)?
-                .map(|value| self.converter.shallow(&value))
-                .transpose()
-        })
-        .unwrap_or_else(|err| {
-            self.converter.record(err);
-            None
-        })
-    }
-
-    fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value> {
-        let fields = RefCell::new(loaded);
+impl PyDictSource {
+    fn convert_fields(&self, fields: &RefCell<HashMap<String, Value>>) -> PyResult<()> {
         Python::attach(|py| {
             let dict = self.dict.bind(py);
             fields.borrow_mut().reserve(dict.len());
@@ -147,8 +140,35 @@ impl ObjectSource for PyDictSource {
                 Ok(())
             })
         })
-        .unwrap_or_else(|err| self.converter.record(err));
+    }
+}
+
+impl ObjectSource for PyDictSource {
+    fn field(&self, key: &str) -> Option<Value> {
+        Python::attach(|py| {
+            self.dict
+                .bind(py)
+                .get_item(key)?
+                .map(|value| self.converter.shallow(&value))
+                .transpose()
+        })
+        .unwrap_or_else(|err| {
+            self.converter.record(err);
+            None
+        })
+    }
+
+    fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value> {
+        let fields = RefCell::new(loaded);
+        self.convert_fields(&fields)
+            .unwrap_or_else(|err| self.converter.record(err));
         fields.into_inner()
+    }
+
+    fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>> {
+        let fields = RefCell::new(loaded.clone());
+        self.convert_fields(&fields).ok()?;
+        Some(fields.into_inner())
     }
 }
 

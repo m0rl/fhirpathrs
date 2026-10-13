@@ -1,6 +1,7 @@
 pub use crate::context::InterpreterContext;
 pub use crate::value::Value;
 
+use crate::distinct_set::DistinctSet;
 use parser::{Expression, Invocation};
 
 pub(crate) enum BinOp<'a> {
@@ -60,7 +61,7 @@ pub(crate) enum Frame<'a> {
         saved_ctx: InterpreterContext,
     },
     RepeatApply {
-        dedup: bool,
+        seen: Option<DistinctSet>,
         to_process: Vec<Value>,
         index: usize,
         expr: &'a Expression,

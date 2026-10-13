@@ -1349,6 +1349,66 @@ fn test_repeat_all_allows_duplicates() {
 }
 
 #[test]
+fn test_repeat_dedups_quantities_equal_across_units() {
+    let grams = Value::object(HashMap::from([
+        ("value".to_string(), Value::number(1.0, 0)),
+        ("unit".to_string(), Value::String("g".to_string())),
+        (
+            "system".to_string(),
+            Value::String("http://unitsofmeasure.org".to_string()),
+        ),
+        ("code".to_string(), Value::String("g".to_string())),
+    ]));
+    let milligrams = Value::object(HashMap::from([
+        ("value".to_string(), Value::number(1000.0, 0)),
+        ("unit".to_string(), Value::String("mg".to_string())),
+        (
+            "system".to_string(),
+            Value::String("http://unitsofmeasure.org".to_string()),
+        ),
+        ("code".to_string(), Value::String("mg".to_string())),
+    ]));
+    let pound = Value::object(HashMap::from([
+        ("value".to_string(), Value::number(1.0, 0)),
+        ("unit".to_string(), Value::String("[lb_av]".to_string())),
+        (
+            "system".to_string(),
+            Value::String("http://unitsofmeasure.org".to_string()),
+        ),
+        ("code".to_string(), Value::String("[lb_av]".to_string())),
+    ]));
+    let pound_in_grams = Value::object(HashMap::from([
+        ("value".to_string(), Value::number(453.59237, 5)),
+        ("unit".to_string(), Value::String("g".to_string())),
+        (
+            "system".to_string(),
+            Value::String("http://unitsofmeasure.org".to_string()),
+        ),
+        ("code".to_string(), Value::String("g".to_string())),
+    ]));
+    let root = Value::object(HashMap::from([(
+        "item".to_string(),
+        Value::collection(vec![
+            grams.clone(),
+            milligrams,
+            pound.clone(),
+            pound_in_grams,
+        ]),
+    )]));
+    let expr = parse("repeat(item)").expect("parse failed");
+    let (result, _) = interpret(&expr, InterpreterContext::new(root)).expect("interpret failed");
+    assert_eq!(result, Value::collection(vec![grams, pound]));
+}
+
+#[test]
+fn test_repeat_terminates_long_cycle_by_dedup() {
+    let expr = parse("0.repeat(($this + 1) mod 5000).count()").expect("parse failed");
+    let (result, _) = interpret(&expr, InterpreterContext::new(Value::collection(vec![])))
+        .expect("interpret failed");
+    assert_eq!(result, Value::number(5000.0, 0));
+}
+
+#[test]
 fn test_repeat_all_empty() {
     let context = InterpreterContext::new(Value::collection(vec![]));
     let expr = parse("repeatAll(item)").expect("parse failed");

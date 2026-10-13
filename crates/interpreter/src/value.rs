@@ -2,7 +2,7 @@ use crate::datetime;
 pub use crate::datetime::{DatePrecision, DateTimePrecision, TimeInterval, TimePrecision};
 use crate::decimal::Decimal;
 use crate::error::InterpreterError;
-use crate::units::UCUM_SYSTEM;
+use crate::units::{ROUNDED_UNITS, UCUM_SYSTEM, UNITS, UnitCategory};
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta};
 use parser::TypeSpecifier;
 use std::collections::HashMap;
@@ -109,11 +109,41 @@ impl<'a> QuantityView<'a> {
     pub fn same_unit_as(&self, other: &QuantityView<'_>) -> bool {
         self.unit.is_some() && self.unit == other.unit
     }
+
+    pub(crate) fn hash_key(&self) -> Option<QuantityKey<'a>> {
+        let unit = match (
+            self.ucum_code().filter(|code| UNITS.contains_key(*code)),
+            self.unit,
+        ) {
+            (Some(code), unit)
+                if unit.is_none_or(|unit| unit == code) && !ROUNDED_UNITS.contains(&code) =>
+            {
+                code
+            }
+            (Some(_), _) | (None, None) => return None,
+            (None, Some(unit)) => unit,
+        };
+        Some(match UNITS.get(unit) {
+            Some(def) => QuantityKey::Canonical(
+                self.quantity_type,
+                def.category,
+                self.value.checked_mul(Decimal::from(def.to_base)),
+            ),
+            None => QuantityKey::Unit(self.quantity_type, unit, self.value),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Hash)]
+pub(crate) enum QuantityKey<'a> {
+    Canonical(Option<QuantityType>, UnitCategory, Option<Decimal>),
+    Unit(Option<QuantityType>, &'a str, Decimal),
 }
 
 pub trait ObjectSource: std::any::Any {
     fn field(&self, key: &str) -> Option<Value>;
     fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value>;
+    fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>>;
 }
 
 pub struct Object {
@@ -155,6 +185,15 @@ impl Object {
             .borrow_mut()
             .insert(key.to_owned(), value.clone());
         Some(value)
+    }
+
+    pub(crate) fn try_load(&self) -> Option<&HashMap<String, Value>> {
+        if let Some(fields) = self.fields.get() {
+            return Some(fields);
+        }
+        let fields = self.source.as_ref()?.try_fields(&self.partial.borrow())?;
+        self.partial.take();
+        Some(self.fields.get_or_init(|| fields))
     }
 
     fn into_values(self) -> impl Iterator<Item = Value> {
@@ -1005,6 +1044,75 @@ impl Value {
         }
     }
 
+    // fingerprint() only narrows the candidates for compare_equal, which still decides at full
+    // depth. repeat() items are often nested subtrees of each other, so hashing whole subtrees
+    // would be quadratic and force lazy loads; values differing only below this depth collide
+    // and are told apart by compare_equal.
+    pub(crate) const FINGERPRINT_DEPTH: usize = 3;
+
+    pub(crate) fn fingerprint(&self, state: &impl std::hash::BuildHasher) -> Option<u64> {
+        use std::hash::{Hash, Hasher};
+        let mut root = self;
+        while let Value::Collection(items) = root
+            && let [only] = items.as_slice()
+        {
+            root = only;
+        }
+        let mut fingerprint: u64 = 0;
+        let mut stack: Vec<(&Value, u64, usize)> = vec![(root, 0, 0)];
+        while let Some((value, path, depth)) = stack.pop() {
+            if let Value::Object(object) = value
+                && object.try_load().is_none()
+            {
+                return None;
+            }
+            let mut hasher = state.build_hasher();
+            path.hash(&mut hasher);
+            match (value, value.quantity_view()) {
+                (_, Some(view)) => view.hash_key()?.hash(&mut hasher),
+                (Value::Number(..) | Value::Quantity(..), None) => return None,
+                (Value::Object(object), None) => {
+                    if object.contains_key("value")
+                        && (object.contains_key("code") || object.contains_key("unit"))
+                    {
+                        return None;
+                    }
+                    (value.discriminant(), object.len()).hash(&mut hasher);
+                    if depth < Self::FINGERPRINT_DEPTH {
+                        stack.extend(
+                            object.iter().map(|(key, field)| {
+                                (field, state.hash_one((path, key)), depth + 1)
+                            }),
+                        );
+                    }
+                }
+                (Value::Collection(items), None) => {
+                    (value.discriminant(), items.len()).hash(&mut hasher);
+                    if depth < Self::FINGERPRINT_DEPTH {
+                        stack.extend(
+                            items.iter().enumerate().map(|(index, item)| {
+                                (item, state.hash_one((path, index)), depth + 1)
+                            }),
+                        );
+                    }
+                }
+                (Value::Null, None) => value.discriminant().hash(&mut hasher),
+                (Value::Boolean(b), None) => (value.discriminant(), b).hash(&mut hasher),
+                (Value::String(s), None) => (value.discriminant(), s).hash(&mut hasher),
+                (Value::Date(date, _), None) => (value.discriminant(), date).hash(&mut hasher),
+                (Value::DateTime(date_time, _, offset), None) => (
+                    value.discriminant(),
+                    offset.is_some(),
+                    offset.map_or(*date_time, |o| datetime::to_utc_naive(*date_time, &o)),
+                )
+                    .hash(&mut hasher),
+                (Value::Time(time, _), None) => (value.discriminant(), time).hash(&mut hasher),
+            }
+            fingerprint = fingerprint.wrapping_add(hasher.finish());
+        }
+        Some(fingerprint)
+    }
+
     pub fn order(
         &self,
         other: &Value,
@@ -1250,6 +1358,276 @@ mod tests {
     }
 
     #[test]
+    fn fingerprint_matches_for_equal_values() {
+        let state = std::hash::RandomState::new();
+        let mut equal = vec![
+            (Value::number(1.0, 0), Value::number(1.0, 1)),
+            (
+                Value::number(1.0, 0),
+                Value::quantity(100.0, 0, "%".to_string(), None),
+            ),
+            (
+                Value::number(1.0, 0),
+                Value::quantity(1.0, 0, "1".to_string(), None),
+            ),
+            (
+                Value::quantity(1.0, 0, "g".to_string(), None),
+                Value::quantity(1000.0, 0, "mg".to_string(), None),
+            ),
+            (
+                Value::quantity(1000.0, 0, "mg".to_string(), None),
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(1000.0, 0)),
+                    ("unit".to_string(), Value::String("mg".to_string())),
+                    ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+                    ("code".to_string(), Value::String("mg".to_string())),
+                    ("id".to_string(), Value::String("x".to_string())),
+                ])),
+            ),
+            (
+                Value::quantity(1000.0, 0, "mg".to_string(), None),
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(1000.0, 0)),
+                    ("unit".to_string(), Value::String("mg".to_string())),
+                ])),
+            ),
+            (
+                Value::quantity(1.0, 0, "g".to_string(), None),
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(1_000_000.0, 0)),
+                    ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+                    ("code".to_string(), Value::String("ug".to_string())),
+                ])),
+            ),
+            (
+                Value::quantity(1.0, 0, "wk".to_string(), None),
+                Value::quantity(7.0, 0, "d".to_string(), None),
+            ),
+            (
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(120.0, 0)),
+                    ("unit".to_string(), Value::String("mmHg".to_string())),
+                    ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+                    ("code".to_string(), Value::String("mm[Hg]".to_string())),
+                ])),
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(120.0, 0)),
+                    ("unit".to_string(), Value::String("mmHg".to_string())),
+                ])),
+            ),
+            (
+                Value::object(HashMap::from([
+                    ("a".to_string(), Value::number(1.0, 0)),
+                    ("b".to_string(), Value::String("x".to_string())),
+                ])),
+                Value::object(HashMap::from([
+                    ("b".to_string(), Value::String("x".to_string())),
+                    ("a".to_string(), Value::number(1.0, 1)),
+                ])),
+            ),
+            (
+                Value::collection(vec![Value::String("a".to_string())]),
+                Value::String("a".to_string()),
+            ),
+            (
+                Value::collection(vec![Value::number(1.0, 0), Value::number(2.0, 0)]),
+                Value::collection(vec![Value::number(1.0, 1), Value::number(2.0, 1)]),
+            ),
+        ];
+        let instants = Value::from_datetime_str("2020-01-01T11:00:00+01:00")
+            .zip(Value::from_datetime_str("2020-01-01T10:00:00Z"))
+            .zip(Value::from_datetime_str("2020-01-01T10:00:00.000Z"));
+        assert!(instants.is_some());
+        equal.extend(
+            instants
+                .into_iter()
+                .flat_map(|((plus_one, utc), utc_millis)| {
+                    [(plus_one, utc.clone()), (utc, utc_millis)]
+                }),
+        );
+        for (a, b) in &equal {
+            assert!(a.compare_equal(b).is_equal(), "{a:?} = {b:?}");
+            let (fa, fb) = (a.fingerprint(&state), b.fingerprint(&state));
+            assert!(fa.is_some() && fa == fb, "{a:?} and {b:?} fingerprints");
+        }
+    }
+
+    #[test]
+    fn fingerprint_differs_for_unequal_values() {
+        let state = std::hash::RandomState::new();
+        let unequal = [
+            (Value::number(1.0, 0), Value::number(2.0, 0)),
+            (
+                Value::quantity(1.0, 0, "g".to_string(), None),
+                Value::quantity(1.0, 0, "mg".to_string(), None),
+            ),
+            (
+                Value::number(1.0, 0),
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(1.0, 0)),
+                    ("unit".to_string(), Value::String("mg".to_string())),
+                ])),
+            ),
+            (
+                Value::String("a".to_string()),
+                Value::String("A".to_string()),
+            ),
+            (
+                Value::collection(vec![Value::number(1.0, 0), Value::number(2.0, 0)]),
+                Value::collection(vec![Value::number(2.0, 0), Value::number(1.0, 0)]),
+            ),
+            (
+                Value::object(HashMap::from([("a".to_string(), Value::number(1.0, 0))])),
+                Value::object(HashMap::from([("a".to_string(), Value::number(2.0, 0))])),
+            ),
+            (Value::Boolean(true), Value::Boolean(false)),
+        ];
+        for (a, b) in &unequal {
+            assert!(!a.compare_equal(b).is_equal(), "{a:?} != {b:?}");
+            let (fa, fb) = (a.fingerprint(&state), b.fingerprint(&state));
+            assert!(
+                fa.is_some() && fb.is_some() && fa != fb,
+                "{a:?} and {b:?} fingerprints"
+            );
+        }
+    }
+
+    #[test]
+    fn fingerprint_can_match_for_unequal_values() {
+        let state = std::hash::RandomState::new();
+        let grams = Value::quantity(1.0, 0, "g".to_string(), None);
+        let milligrams_without_code = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(1000.0, 0)),
+            ("unit".to_string(), Value::String("mg".to_string())),
+        ]));
+        assert_eq!(
+            grams.compare_equal(&milligrams_without_code),
+            Comparison::Uncomparable
+        );
+        assert!(grams.fingerprint(&state).is_some());
+        assert_eq!(
+            grams.fingerprint(&state),
+            milligrams_without_code.fingerprint(&state)
+        );
+    }
+
+    #[test]
+    fn fingerprint_is_none_when_equality_is_not_hashable() {
+        let state = std::hash::RandomState::new();
+        let unhashable_with_equal_partner = [
+            (
+                Value::quantity(1.0, 0, "[lb_av]".to_string(), None),
+                Value::quantity(453.59237, 5, "g".to_string(), None),
+            ),
+            (
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(5.0, 0)),
+                    ("unit".to_string(), Value::String("milligram".to_string())),
+                    ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+                    ("code".to_string(), Value::String("mg".to_string())),
+                ])),
+                Value::quantity(5.0, 0, "mg".to_string(), None),
+            ),
+            (
+                Value::object(HashMap::from([
+                    (
+                        "value".to_string(),
+                        Value::object(HashMap::from([
+                            ("value".to_string(), Value::number(1.0, 0)),
+                            ("unit".to_string(), Value::String("1".to_string())),
+                        ])),
+                    ),
+                    ("unit".to_string(), Value::String("mg".to_string())),
+                ])),
+                Value::object(HashMap::from([
+                    ("value".to_string(), Value::number(1.0, 0)),
+                    ("unit".to_string(), Value::String("mg".to_string())),
+                ])),
+            ),
+        ];
+        for (unhashable, partner) in &unhashable_with_equal_partner {
+            assert!(
+                unhashable.compare_equal(partner).is_equal(),
+                "{unhashable:?} = {partner:?}"
+            );
+            assert_eq!(unhashable.fingerprint(&state), None, "{unhashable:?}");
+            assert!(partner.fingerprint(&state).is_some(), "{partner:?}");
+        }
+        assert_eq!(
+            Value::collection(vec![
+                Value::Boolean(true),
+                Value::quantity(1.0, 0, "[lb_av]".to_string(), None),
+            ])
+            .fingerprint(&state),
+            None
+        );
+    }
+
+    #[test]
+    fn fingerprint_separates_numbers_and_tree_nodes() {
+        let state = std::hash::RandomState::new();
+        let numbers: Option<std::collections::HashSet<u64>> = (0..1000)
+            .map(|i| Value::number(f64::from(i), 0).fingerprint(&state))
+            .collect();
+        assert_eq!(numbers.map(|fingerprints| fingerprints.len()), Some(1000));
+
+        let mut nodes = vec![Value::object(HashMap::from([(
+            "value".to_string(),
+            Value::number(50.0, 0),
+        )]))];
+        for i in (0..50).rev() {
+            nodes.push(Value::object(HashMap::from([
+                ("value".to_string(), Value::number(f64::from(i), 0)),
+                ("item".to_string(), nodes[nodes.len() - 1].clone()),
+            ])));
+        }
+        let tree: Option<std::collections::HashSet<u64>> =
+            nodes.iter().map(|node| node.fingerprint(&state)).collect();
+        assert_eq!(
+            tree.map(|fingerprints| fingerprints.len()),
+            Some(nodes.len())
+        );
+    }
+
+    #[test]
+    fn quantity_view_hash_key_matches_across_exact_units_and_declines_rounded_or_mismatched() {
+        let grams = Value::quantity(1.0, 0, "g".to_string(), None);
+        let milligrams = Value::quantity(1000.0, 0, "mg".to_string(), None);
+        assert_eq!(
+            grams.quantity_view().and_then(|v| v.hash_key()),
+            Some(QuantityKey::Canonical(
+                None,
+                UnitCategory::Mass,
+                Some(Decimal::from(1_000_000_000_000_i64))
+            ))
+        );
+        assert_eq!(
+            milligrams.quantity_view().and_then(|v| v.hash_key()),
+            grams.quantity_view().and_then(|v| v.hash_key())
+        );
+        let mmhg = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(120.0, 0)),
+            ("unit".to_string(), Value::String("mmHg".to_string())),
+        ]));
+        assert_eq!(
+            mmhg.quantity_view().and_then(|v| v.hash_key()),
+            Some(QuantityKey::Unit(None, "mmHg", Decimal::from(120)))
+        );
+        let pound = Value::quantity(1.0, 0, "[lb_av]".to_string(), None);
+        assert_eq!(pound.quantity_view().map(|v| v.hash_key()), Some(None));
+        let milligram_display_unit = Value::object(HashMap::from([
+            ("value".to_string(), Value::number(5.0, 0)),
+            ("unit".to_string(), Value::String("milligram".to_string())),
+            ("code".to_string(), Value::String("mg".to_string())),
+            ("system".to_string(), Value::String(UCUM_SYSTEM.to_string())),
+        ]));
+        assert_eq!(
+            milligram_display_unit.quantity_view().map(|v| v.hash_key()),
+            Some(None)
+        );
+    }
+
+    #[test]
     fn quantity_view_reads_fhir_quantity_objects() {
         let obj = Value::object(HashMap::from([
             ("value".to_string(), Value::number(1.5, 1)),
@@ -1355,6 +1733,7 @@ mod tests {
 
     struct CountingSource {
         loads: Rc<std::cell::Cell<usize>>,
+        unconvertible: bool,
     }
 
     impl CountingSource {
@@ -1384,12 +1763,17 @@ mod tests {
             }
             loaded
         }
+
+        fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>> {
+            (!self.unconvertible).then(|| self.fields(loaded.clone()))
+        }
     }
 
     fn counting_object() -> (Value, Rc<std::cell::Cell<usize>>) {
         let loads = Rc::new(std::cell::Cell::new(0));
         let source = CountingSource {
             loads: loads.clone(),
+            unconvertible: false,
         };
         (Value::lazy_object(Box::new(source)), loads)
     }
@@ -1399,6 +1783,39 @@ mod tests {
             Value::Object(obj) => Some(obj),
             _ => None,
         }
+    }
+
+    #[test]
+    fn lazy_object_try_load_stores_fields_for_later_access() {
+        let (value, loads) = counting_object();
+        let object = as_object(&value);
+        assert_eq!(
+            object.and_then(|o| o.try_load()).map(|fields| fields.len()),
+            Some(2)
+        );
+        assert_eq!(loads.get(), 2);
+        assert!(value.fingerprint(&std::hash::RandomState::new()).is_some());
+        assert_eq!(object.map(|o| o.len()), Some(2));
+        assert_eq!(loads.get(), 2);
+    }
+
+    #[test]
+    fn lazy_object_try_load_leaves_unconvertible_source_unloaded() {
+        let loads = Rc::new(std::cell::Cell::new(0));
+        let value = Value::lazy_object(Box::new(CountingSource {
+            loads: loads.clone(),
+            unconvertible: true,
+        }));
+        let object = as_object(&value);
+        assert_eq!(
+            object.and_then(|o| o.field("a")),
+            Some(Value::Boolean(true))
+        );
+        assert!(object.is_some_and(|o| o.try_load().is_none()));
+        assert_eq!(value.fingerprint(&std::hash::RandomState::new()), None);
+        assert_eq!(loads.get(), 1);
+        assert_eq!(object.map(|o| o.len()), Some(2));
+        assert_eq!(loads.get(), 2);
     }
 
     #[test]
