@@ -1,8 +1,9 @@
 mod convert;
 
-use convert::{Converter, value_to_py};
+use convert::{Conversion, Converter, value_to_py};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use std::cell::Cell;
 
 #[pyfunction]
 #[pyo3(signature = (expression, data=None, constants=None))]
@@ -18,7 +19,14 @@ fn evaluate(
 
     let converter = Converter::default();
     let data_value = match data {
-        Some(obj) => converter.shallow(obj)?,
+        Some(obj) => match converter.shallow(obj, &Cell::new(usize::MAX))? {
+            Conversion::Converted(value) => value,
+            Conversion::OverBudget => {
+                return Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                    "Conversion failed",
+                ));
+            }
+        },
         None => interpreter::Value::Null,
     };
     let mut context = interpreter::InterpreterContext::new(data_value);
@@ -28,7 +36,12 @@ fn evaluate(
             let key_str: String = key.extract().map_err(|_| {
                 PyErr::new::<pyo3::exceptions::PyTypeError, _>("Constant keys must be strings")
             })?;
-            let val = converter.shallow(&value)?;
+            let Conversion::Converted(val) = converter.shallow(&value, &Cell::new(usize::MAX))?
+            else {
+                return Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                    "Conversion failed",
+                ));
+            };
             context = context.with_constant(key_str, val);
         }
     }

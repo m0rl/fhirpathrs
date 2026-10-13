@@ -2,7 +2,7 @@ use interpreter::datetime::{format_date, format_datetime, format_time};
 use interpreter::{Decimal, InterpreterError, ObjectSource, Value};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -21,10 +21,19 @@ enum PyToValueWork<'py> {
     BuildList(usize, usize),
 }
 
+pub enum Conversion {
+    Converted(Value),
+    OverBudget,
+}
+
 impl Converter {
-    pub fn shallow(&self, obj: &Bound<'_, PyAny>) -> PyResult<Value> {
+    pub fn shallow(&self, obj: &Bound<'_, PyAny>, budget: &Cell<usize>) -> PyResult<Conversion> {
+        let Some(remaining) = budget.get().checked_sub(1) else {
+            return Ok(Conversion::OverBudget);
+        };
+        budget.set(remaining);
         let Ok(list) = obj.cast::<PyList>() else {
-            return self.leaf(obj);
+            return self.leaf(obj).map(Conversion::Converted);
         };
         let mut stack: Vec<PyToValueWork<'_>> = Vec::with_capacity(list.len() + 1);
         stack.push(PyToValueWork::Convert(obj.clone()));
@@ -42,6 +51,10 @@ impl Converter {
                             ));
                         }
                         let len = list.len();
+                        let Some(remaining) = budget.get().checked_sub(len) else {
+                            return Ok(Conversion::OverBudget);
+                        };
+                        budget.set(remaining);
                         stack.push(PyToValueWork::BuildList(len, address));
                         for i in (0..len).rev() {
                             let item = list.get_item(i).map_err(|e| {
@@ -63,6 +76,7 @@ impl Converter {
 
         results
             .pop()
+            .map(Conversion::Converted)
             .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Conversion failed"))
     }
 
@@ -121,10 +135,15 @@ impl Converter {
 }
 
 impl PyDictSource {
-    fn convert_fields(&self, fields: &RefCell<HashMap<String, Value>>) -> PyResult<()> {
+    fn convert_fields(
+        &self,
+        fields: &RefCell<HashMap<String, Value>>,
+        budget: &Cell<usize>,
+    ) -> PyResult<bool> {
         Python::attach(|py| {
             let dict = self.dict.bind(py);
             fields.borrow_mut().reserve(dict.len());
+            let fits = Cell::new(true);
             dict.locked_for_each(|key, value| {
                 let key = key
                     .cast::<PyString>()
@@ -134,11 +153,16 @@ impl PyDictSource {
                     .to_str()
                     .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
                 if !fields.borrow().contains_key(key) {
-                    let value = self.converter.shallow(&value)?;
-                    fields.borrow_mut().insert(key.to_owned(), value);
+                    match self.converter.shallow(&value, budget)? {
+                        Conversion::Converted(value) => {
+                            fields.borrow_mut().insert(key.to_owned(), value);
+                        }
+                        Conversion::OverBudget => fits.set(false),
+                    }
                 }
                 Ok(())
-            })
+            })?;
+            Ok(fits.get())
         })
     }
 }
@@ -149,7 +173,16 @@ impl ObjectSource for PyDictSource {
             self.dict
                 .bind(py)
                 .get_item(key)?
-                .map(|value| self.converter.shallow(&value))
+                .map(
+                    |value| match self.converter.shallow(&value, &Cell::new(usize::MAX))? {
+                        Conversion::Converted(value) => Ok(value),
+                        Conversion::OverBudget => {
+                            Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                                "Conversion failed",
+                            ))
+                        }
+                    },
+                )
                 .transpose()
         })
         .unwrap_or_else(|err| {
@@ -160,15 +193,21 @@ impl ObjectSource for PyDictSource {
 
     fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value> {
         let fields = RefCell::new(loaded);
-        self.convert_fields(&fields)
-            .unwrap_or_else(|err| self.converter.record(err));
+        if let Err(err) = self.convert_fields(&fields, &Cell::new(usize::MAX)) {
+            self.converter.record(err);
+        }
         fields.into_inner()
     }
 
-    fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>> {
+    fn try_fields(
+        &self,
+        loaded: &HashMap<String, Value>,
+        budget: &Cell<usize>,
+    ) -> Option<HashMap<String, Value>> {
         let fields = RefCell::new(loaded.clone());
-        self.convert_fields(&fields).ok()?;
-        Some(fields.into_inner())
+        self.convert_fields(&fields, budget)
+            .ok()?
+            .then(|| fields.into_inner())
     }
 }
 

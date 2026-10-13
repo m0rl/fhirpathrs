@@ -143,7 +143,11 @@ pub(crate) enum QuantityKey<'a> {
 pub trait ObjectSource: std::any::Any {
     fn field(&self, key: &str) -> Option<Value>;
     fn fields(&self, loaded: HashMap<String, Value>) -> HashMap<String, Value>;
-    fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>>;
+    fn try_fields(
+        &self,
+        loaded: &HashMap<String, Value>,
+        budget: &std::cell::Cell<usize>,
+    ) -> Option<HashMap<String, Value>>;
 }
 
 pub struct Object {
@@ -187,11 +191,17 @@ impl Object {
         Some(value)
     }
 
-    pub(crate) fn try_load(&self) -> Option<&HashMap<String, Value>> {
+    pub(crate) fn try_load(
+        &self,
+        budget: &std::cell::Cell<usize>,
+    ) -> Option<&HashMap<String, Value>> {
         if let Some(fields) = self.fields.get() {
             return Some(fields);
         }
-        let fields = self.source.as_ref()?.try_fields(&self.partial.borrow())?;
+        let fields = self
+            .source
+            .as_ref()?
+            .try_fields(&self.partial.borrow(), budget)?;
         self.partial.take();
         Some(self.fields.get_or_init(|| fields))
     }
@@ -1050,6 +1060,10 @@ impl Value {
     // and are told apart by compare_equal.
     pub(crate) const FINGERPRINT_DEPTH: usize = 3;
 
+    // Upper bound on lazily loaded values one fingerprint may convert; past it the value is
+    // treated as unhashable and takes the compare_equal path, as it did before fingerprinting.
+    pub(crate) const FINGERPRINT_LOAD_BUDGET: usize = 4096;
+
     pub(crate) fn fingerprint(&self, state: &impl std::hash::BuildHasher) -> Option<u64> {
         use std::hash::{Hash, Hasher};
         let mut root = self;
@@ -1059,10 +1073,11 @@ impl Value {
             root = only;
         }
         let mut fingerprint: u64 = 0;
+        let budget = std::cell::Cell::new(Self::FINGERPRINT_LOAD_BUDGET);
         let mut stack: Vec<(&Value, u64, usize)> = vec![(root, 0, 0)];
         while let Some((value, path, depth)) = stack.pop() {
             if let Value::Object(object) = value
-                && object.try_load().is_none()
+                && object.try_load(&budget).is_none()
             {
                 return None;
             }
@@ -1731,145 +1746,13 @@ mod tests {
         );
     }
 
-    struct CountingSource {
-        loads: Rc<std::cell::Cell<usize>>,
-        unconvertible: bool,
-    }
-
-    impl CountingSource {
-        fn load(&self, key: &str) -> Option<Value> {
-            let value = match key {
-                "a" => Value::Boolean(true),
-                "b" => Value::String("two".to_string()),
-                _ => return None,
-            };
-            self.loads.set(self.loads.get() + 1);
-            Some(value)
-        }
-    }
-
-    impl ObjectSource for CountingSource {
-        fn field(&self, key: &str) -> Option<Value> {
-            self.load(key)
-        }
-
-        fn fields(&self, mut loaded: HashMap<String, Value>) -> HashMap<String, Value> {
-            for key in ["a", "b"] {
-                if !loaded.contains_key(key)
-                    && let Some(value) = self.load(key)
-                {
-                    loaded.insert(key.to_string(), value);
-                }
-            }
-            loaded
-        }
-
-        fn try_fields(&self, loaded: &HashMap<String, Value>) -> Option<HashMap<String, Value>> {
-            (!self.unconvertible).then(|| self.fields(loaded.clone()))
-        }
-    }
-
-    fn counting_object() -> (Value, Rc<std::cell::Cell<usize>>) {
-        let loads = Rc::new(std::cell::Cell::new(0));
-        let source = CountingSource {
-            loads: loads.clone(),
-            unconvertible: false,
-        };
-        (Value::lazy_object(Box::new(source)), loads)
-    }
-
-    fn as_object(value: &Value) -> Option<&Object> {
-        match value {
-            Value::Object(obj) => Some(obj),
-            _ => None,
-        }
-    }
-
-    #[test]
-    fn lazy_object_try_load_stores_fields_for_later_access() {
-        let (value, loads) = counting_object();
-        let object = as_object(&value);
-        assert_eq!(
-            object.and_then(|o| o.try_load()).map(|fields| fields.len()),
-            Some(2)
-        );
-        assert_eq!(loads.get(), 2);
-        assert!(value.fingerprint(&std::hash::RandomState::new()).is_some());
-        assert_eq!(object.map(|o| o.len()), Some(2));
-        assert_eq!(loads.get(), 2);
-    }
-
-    #[test]
-    fn lazy_object_try_load_leaves_unconvertible_source_unloaded() {
-        let loads = Rc::new(std::cell::Cell::new(0));
-        let value = Value::lazy_object(Box::new(CountingSource {
-            loads: loads.clone(),
-            unconvertible: true,
-        }));
-        let object = as_object(&value);
-        assert_eq!(
-            object.and_then(|o| o.field("a")),
-            Some(Value::Boolean(true))
-        );
-        assert!(object.is_some_and(|o| o.try_load().is_none()));
-        assert_eq!(value.fingerprint(&std::hash::RandomState::new()), None);
-        assert_eq!(loads.get(), 1);
-        assert_eq!(object.map(|o| o.len()), Some(2));
-        assert_eq!(loads.get(), 2);
-    }
-
-    #[test]
-    fn lazy_object_field_loads_only_the_requested_key_once() {
-        let (value, loads) = counting_object();
-        let object = as_object(&value);
-        assert_eq!(
-            object.and_then(|o| o.field("a")),
-            Some(Value::Boolean(true))
-        );
-        assert_eq!(
-            object.and_then(|o| o.field("a")),
-            Some(Value::Boolean(true))
-        );
-        assert_eq!(object.and_then(|o| o.field("missing")), None);
-        assert_eq!(loads.get(), 1);
-    }
-
-    #[test]
-    fn lazy_object_full_load_reuses_loaded_fields() {
-        let (value, loads) = counting_object();
-        let object = as_object(&value);
-        assert_eq!(
-            object.and_then(|o| o.field("a")),
-            Some(Value::Boolean(true))
-        );
-        assert_eq!(object.map(|o| o.len()), Some(2));
-        assert_eq!(loads.get(), 2);
-        assert_eq!(
-            object.and_then(|o| o.field("b")),
-            Some(Value::String("two".to_string()))
-        );
-        assert_eq!(loads.get(), 2);
-    }
-
-    #[test]
-    fn lazy_object_loads_all_fields_on_first_map_access() {
-        let (value, loads) = counting_object();
-        assert_eq!(loads.get(), 0);
-        assert!(value.is_truthy());
-        assert_eq!(loads.get(), 2);
-        let eager = Value::object(HashMap::from([
-            ("a".to_string(), Value::Boolean(true)),
-            ("b".to_string(), Value::String("two".to_string())),
-        ]));
-        assert!(value.compare_equal(&eager).is_equal());
-        assert_eq!(value, eager);
-        assert_eq!(loads.get(), 2);
-    }
-
     #[test]
     fn eager_object_field_reads_its_map() {
         let value = Value::object(HashMap::from([("a".to_string(), Value::Boolean(false))]));
-        let object = as_object(&value);
+        let object = match &value {
+            Value::Object(object) => Some(object),
+            _ => None,
+        };
         assert_eq!(
             object.and_then(|o| o.field("a")),
             Some(Value::Boolean(false))

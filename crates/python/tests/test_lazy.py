@@ -1,4 +1,5 @@
 import multiprocessing
+import sys
 
 import pytest
 import fhirpathrs
@@ -54,12 +55,45 @@ def test_dict_constant_fields_are_read_lazily():
     assert fhirpathrs.evaluate("items.where($this > %config.threshold)", data, constants) == [3]
 
 
+def test_member_access_converts_only_the_visited_path():
+    data = {"item": {"item": {"value": 8, "unused": object()}, "unused": object()}, "unused": object()}
+    assert fhirpathrs.evaluate("item.item.value", data) == 8
+
+
+def test_type_check_converts_only_resource_type():
+    data = {"item": {"resourceType": "Node", "unused": object()}}
+    assert fhirpathrs.evaluate("item.is(Node)", data) is True
+
+
+def test_missing_field_converts_one_level_only():
+    data = {"a": {"x": object()}}
+    assert fhirpathrs.evaluate("absent", data) == []
+
+
+def test_comparison_converts_only_top_level_of_deep_input():
+    node = {"value": 0, "unused": object()}
+    for i in range(1, 100_000):
+        node = {"value": i, "item": node}
+    assert fhirpathrs.evaluate("$this = 5", node) is False
+
+
 def test_deeply_nested_input_is_traversed_without_recursion():
-    depth = 10_000
+    depth = 100_000
     node = {"value": depth}
     for i in range(depth - 1, -1, -1):
         node = {"value": i, "item": node}
     assert fhirpathrs.evaluate("repeatAll(item).count()", node) == depth
+
+
+def test_evaluation_releases_input_dicts():
+    leaf = {"value": 0}
+    root = leaf
+    for i in range(1, 5_000):
+        root = {"value": i, "item": root}
+    before = (sys.getrefcount(root), sys.getrefcount(leaf))
+    assert fhirpathrs.evaluate("repeatAll(item).count()", root) == 4_999
+    assert fhirpathrs.evaluate("descendants().count()", root) == 9_999
+    assert (sys.getrefcount(root), sys.getrefcount(leaf)) == before
 
 
 def test_equal_input_objects_are_deduplicated():
@@ -81,39 +115,78 @@ def test_repeat_result_field_access_still_raises_conversion_error(unused, error)
         fhirpathrs.evaluate("repeat(item).unused", data)
 
 
-def self_referencing_list():
+def repeat_ignores_unread_self_referencing_list():
     unused = []
     unused.append(unused)
-    return unused
-
-
-def mutually_referencing_lists():
-    unused = []
-    unused.append([unused])
-    return unused
-
-
-def repeat_ignores_unread_cyclic_list(make_cycle):
-    data = {"item": {"id": "one", "item": None, "unused": make_cycle()}}
+    data = {"item": {"id": "one", "item": None, "unused": unused}}
     assert fhirpathrs.evaluate("repeat(item).count()", data) == 1
 
 
-def reading_cyclic_list_raises_value_error(make_cycle):
+def repeat_ignores_unread_mutually_referencing_lists():
+    unused = []
+    other = [unused]
+    unused.append(other)
+    data = {"item": {"id": "one", "item": None, "unused": unused}}
+    assert fhirpathrs.evaluate("repeat(item).count()", data) == 1
+
+
+def reading_self_referencing_list_raises_value_error():
+    unused = []
+    unused.append(unused)
     with pytest.raises(ValueError, match="Circular reference detected"):
-        fhirpathrs.evaluate("unused", {"unused": make_cycle()})
+        fhirpathrs.evaluate("unused", {"unused": unused})
 
 
-@pytest.mark.parametrize("make_cycle", [self_referencing_list, mutually_referencing_lists])
-@pytest.mark.parametrize("check", [repeat_ignores_unread_cyclic_list, reading_cyclic_list_raises_value_error])
-def test_cyclic_list_conversion_terminates(check, make_cycle):
-    process = multiprocessing.get_context("spawn").Process(target=check, args=(make_cycle,))
+def reading_mutually_referencing_lists_raises_value_error():
+    unused = []
+    other = [unused]
+    unused.append(other)
+    with pytest.raises(ValueError, match="Circular reference detected"):
+        fhirpathrs.evaluate("unused", {"unused": unused})
+
+
+def repeat_skips_unread_shared_list_graph_of_single_result():
+    unused = [1]
+    for _ in range(59):
+        unused = [unused, unused]
+    data = {"item": {"id": "one", "item": None, "unused": unused}}
+    assert fhirpathrs.evaluate("repeat(item).count()", data) == 1
+
+
+def repeat_skips_unread_shared_list_graph_below_mismatched_shapes():
+    unused = [1]
+    for _ in range(59):
+        unused = [unused, unused]
+    data = {
+        "item": [
+            {"id": "a", "item": None, "meta": {"unused": unused}},
+            {"id": "b", "item": None},
+        ]
+    }
+    assert fhirpathrs.evaluate("repeat(item).count()", data) == 2
+
+
+@pytest.mark.parametrize(
+    "check",
+    [
+        repeat_ignores_unread_self_referencing_list,
+        repeat_ignores_unread_mutually_referencing_lists,
+        reading_self_referencing_list_raises_value_error,
+        reading_mutually_referencing_lists_raises_value_error,
+        repeat_skips_unread_shared_list_graph_of_single_result,
+        repeat_skips_unread_shared_list_graph_below_mismatched_shapes,
+    ],
+    ids=lambda check: check.__name__,
+)
+def test_conversion_terminates(check):
+    process = multiprocessing.get_context("spawn").Process(target=check)
     process.start()
     process.join(timeout=5)
     finished = not process.is_alive()
     process.kill()
     process.join()
-    assert finished, f"{check.__name__} did not finish within 5 s"
-    assert process.exitcode == 0, f"{check.__name__} failed in the child process, see captured stderr"
+    assert finished, "did not finish within 5 s"
+    assert process.exitcode == 0, "failed in the child process, see captured stderr"
 
 
 def test_shared_acyclic_list_converts_like_separate_copies():
