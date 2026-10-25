@@ -1,0 +1,1 @@
+contained.ofType(Observation).valueQuantity >= 185 '[lb_av]'

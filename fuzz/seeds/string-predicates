@@ -1,0 +1,1 @@
+name.family.startsWith('Sm') and name.family.endsWith('th') and name.family.contains('mit') and name.family.lower().upper().trim().length() > 0

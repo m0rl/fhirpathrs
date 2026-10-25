@@ -1,4 +1,8 @@
 /target
+/fuzz/target
+/fuzz/artifacts
+/fuzz/corpus
+/fuzz/coverage
 /.idea
 /.DS_Store
 __pycache__/

@@ -1,0 +1,1 @@
+(-2).abs().power(0.5).sqrt().ln().exp().log(10).ceiling().floor().truncate()

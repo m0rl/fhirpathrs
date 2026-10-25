@@ -1,0 +1,1 @@
+@2014.precision() | @2014-01.precision() | @2014-01-05T10.precision() | @2014-01-05T10:30:45.123.precision() | @T10.precision() | @T10:30:45.123.precision() | 1.58700.precision()

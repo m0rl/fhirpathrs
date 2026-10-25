@@ -265,6 +265,43 @@ crates/
 
 All three layers are fully iterative — no call-stack recursion anywhere.
 
+## Fuzzing
+
+Coverage-guided fuzzing with [cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz) (libFuzzer + AddressSanitizer) lives in `fuzz/`, a standalone crate outside the Cargo workspace.
+
+| Target | Input | Exercises |
+|---|---|---|
+| `parse` | arbitrary string | `parser::parse`, formatting parse errors |
+| `interpret` | arbitrary string | `parse` + `interpret` against a fixed Patient fixture at a fixed evaluation time; walks every result and trace value, formats errors; unparseable inputs are rejected from its corpus |
+
+Prerequisites: a nightly toolchain and `cargo install cargo-fuzz`.
+
+```bash
+cargo +nightly fuzz run parse fuzz/corpus/parse fuzz/seeds -- \
+  -dict=fuzz/dictionary.txt -create_missing_dirs=1 -max_len=65536 -timeout=10 -rss_limit_mb=2048
+
+cargo +nightly fuzz run interpret fuzz/corpus/interpret fuzz/seeds -- \
+  -dict=fuzz/dictionary.txt -create_missing_dirs=1 -timeout=10 -rss_limit_mb=2048
+```
+
+- `fuzz/seeds/` holds the committed seed expressions; the corpus directory must come first so libFuzzer writes new inputs into the gitignored `fuzz/corpus/<target>/`, never into the seeds.
+- `fuzz/dictionary.txt` lists FHIRPath keywords, functions, operators and literal shapes.
+- Add `-max_total_time=<seconds>` to stop after a fixed time.
+- Crashes, timeouts and OOMs are written to `fuzz/artifacts/<target>/`; reproduce one with `cargo +nightly fuzz run <target> <artifact>`.
+- `cargo +nightly fuzz cmin <target>` minimizes a grown corpus.
+- CI (`fuzz` job in `.github/workflows/ci.yml`) runs each target for 60 seconds from the seeds on every push to `main`; any crash, timeout or OOM fails the job and uploads `fuzz/artifacts`.
+
+Coverage of a corpus (needs `rustup component add --toolchain nightly llvm-tools-preview`):
+
+```bash
+cargo +nightly fuzz coverage interpret fuzz/corpus/interpret fuzz/seeds
+llvm-cov report target/<host>/coverage/<host>/release/interpret \
+  -instr-profile=fuzz/coverage/interpret/coverage.profdata \
+  -ignore-filename-regex='(\.cargo|rustc|fuzz_targets)'
+```
+
+`<host>` is the host triple (e.g. `aarch64-apple-darwin`); `llvm-cov` lives in `$(rustc +nightly --print sysroot)/lib/rustlib/<host>/bin/`. Use `llvm-cov show` with the same arguments for line-level detail; uncovered code usually needs a new seed in `fuzz/seeds/`.
+
 ## License
 
 MIT

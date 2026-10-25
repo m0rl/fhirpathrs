@@ -1,0 +1,1 @@
+coalesce({}, name.family, 'x') | contained.first().type().name | contained.component.valueTime.toTime().minuteOf()

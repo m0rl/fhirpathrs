@@ -59,3 +59,38 @@ jobs:
         run: uv run pytest crates/python/tests/bench_fhirpathpy.py --benchmark-save=py --benchmark-disable-gc -q
       - name: Compare results
         run: uv run pytest-benchmark compare 0001_rs 0002_py --sort=name --columns=mean,stddev
+
+  fuzz:
+    name: Fuzz smoke (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    env:
+      CARGO_FUZZ_VERSION: 0.13.2
+      FUZZ_TIME: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: parse
+            max_len: 65536
+          - target: interpret
+            max_len: 4096
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install nightly --profile minimal
+      - run: rustup default nightly
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.tool_cache }}/cargo-fuzz
+          key: cargo-fuzz-bin-${{ env.CARGO_FUZZ_VERSION }}
+      - run: echo "${{ runner.tool_cache }}/cargo-fuzz/bin" >> "$GITHUB_PATH"
+      - run: cargo install --root "${{ runner.tool_cache }}/cargo-fuzz" --version ${{ env.CARGO_FUZZ_VERSION }} cargo-fuzz --locked
+      - run: cargo fuzz build ${{ matrix.target }}
+      - run: >-
+          cargo fuzz run ${{ matrix.target }} fuzz/corpus/${{ matrix.target }} fuzz/seeds --
+          -dict=fuzz/dictionary.txt -create_missing_dirs=1 -max_len=${{ matrix.max_len }}
+          -timeout=10 -rss_limit_mb=2048 -max_total_time=${{ env.FUZZ_TIME }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}-${{ github.sha }}
+          path: fuzz/artifacts

@@ -1,0 +1,1 @@
+name.given.matches('^\\p{L}+$') and 'abc'.replaceMatches('(\\w)', '$1$1').matchesFull('a+')

@@ -1,0 +1,1 @@
+contained.repeat(children()).count() + descendants().ofType(FHIR.string).count()

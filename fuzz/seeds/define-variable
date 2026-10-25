@@ -1,0 +1,1 @@
+defineVariable('n', name).select(%n.given).single()

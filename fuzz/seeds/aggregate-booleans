@@ -1,0 +1,1 @@
+true.combine(false).anyTrue() and true.combine(true).allTrue() and false.combine(false).allFalse() and true.combine(false).anyFalse()

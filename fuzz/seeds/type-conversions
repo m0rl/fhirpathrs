@@ -1,0 +1,1 @@
+'12'.toInteger() + true.toInteger() + ' 3.5 '.toDecimal() + false.toDecimal() | 'yes'.toBoolean() | 'T'.toBoolean() | '0.0'.toBoolean() | 1.toBoolean() | @2014-01-01.toString() | @T10:30.toString() | '12'.convertsToInteger() | true.convertsToInteger() | '1.5'.convertsToDecimal() | '9223372036854775807'.toLong()
