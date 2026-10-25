@@ -32,9 +32,14 @@ pub struct InterpreterContext {
     pub total_context: Option<Value>,
     pub evaluation_timestamp: DateTime<Utc>,
     pub trace_handler: Option<SharedTraceHandler>,
+    pub repeat_item_limit: usize,
+    pub repeat_comparison_limit: usize,
 }
 
 impl InterpreterContext {
+    pub const DEFAULT_REPEAT_ITEM_LIMIT: usize = 1_000_000;
+    pub const DEFAULT_REPEAT_COMPARISON_LIMIT: usize = 100_000_000;
+
     pub fn new(data: Value) -> Self {
         let constants = HashMap::from([
             ("context".to_string(), ContextConstant::System(data.clone())),
@@ -68,6 +73,8 @@ impl InterpreterContext {
             total_context: None,
             evaluation_timestamp: Utc::now(),
             trace_handler: None,
+            repeat_item_limit: Self::DEFAULT_REPEAT_ITEM_LIMIT,
+            repeat_comparison_limit: Self::DEFAULT_REPEAT_COMPARISON_LIMIT,
         }
     }
 

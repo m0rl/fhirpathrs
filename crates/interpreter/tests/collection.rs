@@ -4,7 +4,7 @@
     clippy::panic,
     clippy::approx_constant
 )]
-use interpreter::{InterpreterContext, Value, interpret};
+use interpreter::{InterpreterContext, InterpreterError, Value, interpret};
 use parser::parse;
 use std::collections::HashMap;
 
@@ -1593,4 +1593,93 @@ fn test_repeat_all_flat_values() {
     } else {
         panic!("Expected collection");
     }
+}
+
+#[test]
+fn test_repeat_projections_that_never_run_out_hit_item_limit() {
+    let questionnaire = Value::object(HashMap::from([(
+        "resourceType".to_string(),
+        Value::String("Questionnaire".to_string()),
+    )]));
+    for expression in [
+        "1.repeatAll(2)",
+        "1.repeat($this + 1)",
+        "'abc'.repeatAll(replace('a', 'A'))",
+        "Questionnaire.repeatAll('item')",
+        "1.repeatAll($this.combine($this))",
+    ] {
+        let context = InterpreterContext {
+            repeat_item_limit: 100,
+            ..InterpreterContext::new(questionnaire.clone())
+        };
+        let expr = parse(expression).expect("parse failed");
+        assert!(
+            matches!(
+                interpret(&expr, context),
+                Err(InterpreterError::LimitExceeded(message)) if message == "repeat item limit"
+            ),
+            "{expression} should hit the repeat item limit"
+        );
+    }
+}
+
+#[test]
+fn test_repeat_all_hits_default_item_limit() {
+    let expr = parse("1.repeatAll(2)").expect("parse failed");
+    assert!(matches!(
+        interpret(&expr, InterpreterContext::new(Value::Null)),
+        Err(InterpreterError::LimitExceeded(message)) if message == "repeat item limit"
+    ));
+}
+
+#[test]
+fn test_repeat_item_limit_allows_results_up_to_the_limit() {
+    let expr = parse("1.repeatAll(iif($this < 5, $this + 1, {}))").expect("parse failed");
+    let at_limit = InterpreterContext {
+        repeat_item_limit: 4,
+        ..InterpreterContext::new(Value::Null)
+    };
+    let (result, _) = interpret(&expr, at_limit).expect("interpret failed");
+    assert_eq!(result.to_vec().len(), 4);
+
+    let below = InterpreterContext {
+        repeat_item_limit: 3,
+        ..InterpreterContext::new(Value::Null)
+    };
+    assert!(matches!(
+        interpret(&expr, below),
+        Err(InterpreterError::LimitExceeded(message)) if message == "repeat item limit"
+    ));
+}
+
+#[test]
+fn test_repeat_over_unhashable_values_hits_comparison_limit() {
+    let context = InterpreterContext {
+        repeat_comparison_limit: 100,
+        ..InterpreterContext::new(Value::Null)
+    };
+    let expr = parse("1 '[lb_av]'.repeat($this + 1 '[lb_av]')").expect("parse failed");
+    assert!(matches!(
+        interpret(&expr, context),
+        Err(InterpreterError::LimitExceeded(message)) if message == "repeat comparison limit"
+    ));
+}
+
+#[test]
+fn test_repeat_comparison_limit_applies_within_a_single_insert() {
+    let payload = (0..10_000)
+        .map(|number| Value::number(f64::from(number), 0))
+        .chain([Value::quantity(1.0, 0, "[lb_av]".to_string(), None)])
+        .collect();
+    let context = InterpreterContext {
+        repeat_item_limit: 10_001,
+        repeat_comparison_limit: 1,
+        ..InterpreterContext::new(Value::Boolean(true))
+    }
+    .with_constant("payload".to_string(), Value::collection(payload));
+    let expr = parse("true.repeat(%payload)").expect("parse failed");
+    assert!(matches!(
+        interpret(&expr, context),
+        Err(InterpreterError::LimitExceeded(message)) if message == "repeat comparison limit"
+    ));
 }

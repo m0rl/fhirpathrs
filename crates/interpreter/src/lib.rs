@@ -435,12 +435,20 @@ pub fn interpret(expression: &Expression, context: InterpreterContext) -> Interp
                 }) => {
                     let projected = val.to_vec();
                     for proj_item in projected {
-                        if seen
-                            .as_mut()
-                            .is_none_or(|seen| seen.insert(proj_item.clone()))
-                        {
+                        let inserted = match seen.as_mut() {
+                            Some(seen) => {
+                                seen.insert(proj_item.clone(), saved_ctx.repeat_comparison_limit)?
+                            }
+                            None => true,
+                        };
+                        if inserted {
                             result.push(proj_item.clone());
                             new_items.push(proj_item);
+                        }
+                        if result.len() > saved_ctx.repeat_item_limit {
+                            return Err(InterpreterError::LimitExceeded(
+                                "repeat item limit".to_string(),
+                            ));
                         }
                     }
                     let next = index + 1;

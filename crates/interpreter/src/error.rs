@@ -6,6 +6,7 @@ pub enum InterpreterError {
     UnknownConstant(String),
     DivisionByZero,
     InvalidRegex(String),
+    LimitExceeded(String),
 }
 
 impl std::fmt::Display for InterpreterError {
@@ -17,6 +18,7 @@ impl std::fmt::Display for InterpreterError {
             InterpreterError::UnknownConstant(name) => write!(f, "Unknown constant: {}", name),
             InterpreterError::DivisionByZero => write!(f, "Division by zero"),
             InterpreterError::InvalidRegex(msg) => write!(f, "Invalid regex: {}", msg),
+            InterpreterError::LimitExceeded(msg) => write!(f, "Limit exceeded: {}", msg),
         }
     }
 }
