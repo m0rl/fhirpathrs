@@ -107,3 +107,66 @@ fn test_deep_nested_mixed_functions_no_stack_overflow() {
 
     let _result = interpret(&parsed, context).expect("should evaluate without stack overflow");
 }
+
+const DEPTH: usize = 100_000;
+
+#[test]
+fn test_deep_additive_chain_no_stack_overflow() {
+    let parsed = parse(&format!("1{}", "+1".repeat(DEPTH))).expect("should parse additive chain");
+    let context = InterpreterContext::new(Value::Null);
+
+    let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
+    assert_eq!(result, Value::number(100_001.0, 0));
+}
+
+#[test]
+fn test_deep_member_chain_no_stack_overflow() {
+    let parsed = parse(&format!("a{}", ".a".repeat(DEPTH))).expect("should parse member chain");
+    let context = InterpreterContext::new(Value::object(HashMap::new()));
+
+    let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
+    assert_eq!(result, Value::collection(vec![]));
+}
+
+#[test]
+fn test_deep_parentheses_no_stack_overflow() {
+    let parsed = parse(&format!("{}1{}", "(".repeat(DEPTH), ")".repeat(DEPTH)))
+        .expect("should parse nested parentheses");
+    let context = InterpreterContext::new(Value::Null);
+
+    let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
+    assert_eq!(result, Value::number(1.0, 0));
+}
+
+#[test]
+fn test_deep_unary_minus_no_stack_overflow() {
+    let parsed = parse(&format!("{}1", "-".repeat(DEPTH))).expect("should parse unary minus chain");
+    let context = InterpreterContext::new(Value::Null);
+
+    let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
+    assert_eq!(result, Value::number(1.0, 0));
+}
+
+#[test]
+fn test_deep_chained_indexers_no_stack_overflow() {
+    let parsed =
+        parse(&format!("1{}", "[0]".repeat(DEPTH))).expect("should parse chained indexers");
+    let context = InterpreterContext::new(Value::Null);
+
+    let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
+    assert_eq!(result, Value::number(1.0, 0));
+}
+
+#[test]
+fn test_deep_nested_iif_arguments_no_stack_overflow() {
+    let parsed = parse(&format!(
+        "{}1{}",
+        "iif(true, ".repeat(DEPTH),
+        ", 0)".repeat(DEPTH)
+    ))
+    .expect("should parse nested iif arguments");
+    let context = InterpreterContext::new(Value::Null);
+
+    let (result, _) = interpret(&parsed, context).expect("should evaluate without stack overflow");
+    assert_eq!(result, Value::number(1.0, 0));
+}

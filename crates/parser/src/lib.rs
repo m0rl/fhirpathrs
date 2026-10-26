@@ -10,7 +10,7 @@ use nom::{
     sequence::{delimited, pair, preceded, terminated, tuple},
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Term(Term),
     Invocation(Box<Expression>, Invocation),
@@ -29,7 +29,72 @@ pub enum Expression {
     OrderedBy(Box<Expression>, SortDirection),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl Expression {
+    fn detach_into(&mut self, out: &mut Vec<Expression>) {
+        if matches!(self, Expression::Term(Term::Literal(Literal::Null))) {
+            return;
+        }
+        out.push(std::mem::replace(
+            self,
+            Expression::Term(Term::Literal(Literal::Null)),
+        ));
+    }
+
+    fn detach_children(&mut self, out: &mut Vec<Expression>) {
+        match self {
+            Expression::Term(Term::Invocation(Invocation::Function(_, args))) => out.append(args),
+            Expression::Term(
+                Term::Literal(_)
+                | Term::ExternalConstant(_)
+                | Term::Invocation(
+                    Invocation::Member(_)
+                    | Invocation::This
+                    | Invocation::Index
+                    | Invocation::Total,
+                ),
+            ) => {}
+            Expression::Invocation(base, invocation) => {
+                base.detach_into(out);
+                match invocation {
+                    Invocation::Function(_, args) => out.append(args),
+                    Invocation::Member(_)
+                    | Invocation::This
+                    | Invocation::Index
+                    | Invocation::Total => {}
+                }
+            }
+            Expression::Term(Term::Parenthesized(inner))
+            | Expression::Polarity(_, inner)
+            | Expression::Type(inner, _, _)
+            | Expression::OrderedBy(inner, _) => inner.detach_into(out),
+            Expression::Indexer(left, right)
+            | Expression::Multiplicative(left, _, right)
+            | Expression::Additive(left, _, right)
+            | Expression::Union(left, right)
+            | Expression::Inequality(left, _, right)
+            | Expression::Equality(left, _, right)
+            | Expression::Membership(left, _, right)
+            | Expression::And(left, right)
+            | Expression::Or(left, _, right)
+            | Expression::Implies(left, right) => {
+                left.detach_into(out);
+                right.detach_into(out);
+            }
+        }
+    }
+}
+
+impl Drop for Expression {
+    fn drop(&mut self) {
+        let mut pending = Vec::new();
+        self.detach_children(&mut pending);
+        while let Some(mut expression) = pending.pop() {
+            expression.detach_children(&mut pending);
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Term {
     Invocation(Invocation),
     Literal(Literal),
@@ -54,7 +119,7 @@ pub struct ExternalConstant {
     pub value: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Invocation {
     Member(String),
     Function(String, Vec<Expression>),
@@ -861,5 +926,154 @@ pub fn parse(input: &str) -> Result<Expression, ParserError> {
             }
         }
         Err(e) => Err(ParserError::Invalid(e.to_string())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn member(name: &str) -> Expression {
+        Expression::Term(Term::Invocation(Invocation::Member(name.to_string())))
+    }
+
+    fn number(value: &str) -> Expression {
+        Expression::Term(Term::Literal(Literal::Number(value.to_string())))
+    }
+
+    fn null() -> Expression {
+        Expression::Term(Term::Literal(Literal::Null))
+    }
+
+    fn parenthesized(inner: Expression) -> Expression {
+        Expression::Term(Term::Parenthesized(Box::new(inner)))
+    }
+
+    #[test]
+    fn detach_into_moves_expression_and_leaves_null() {
+        let mut out = Vec::new();
+        for (mut expression, expected) in [
+            (parenthesized(number("1")), parenthesized(number("1"))),
+            (member("a"), member("a")),
+            (number("1"), number("1")),
+        ] {
+            expression.detach_into(&mut out);
+            assert_eq!(expression, null());
+            assert_eq!(out.pop(), Some(expected));
+        }
+    }
+
+    #[test]
+    fn detach_into_keeps_null_placeholder_in_place() {
+        let mut out = Vec::new();
+        let mut expression = null();
+        expression.detach_into(&mut out);
+        assert_eq!(expression, null());
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn detach_children_moves_both_operands() {
+        let mut out = Vec::new();
+        let mut expression = Expression::Additive(
+            Box::new(member("a")),
+            AdditiveOp::Plus,
+            Box::new(parenthesized(number("1"))),
+        );
+        expression.detach_children(&mut out);
+        assert_eq!(
+            expression,
+            Expression::Additive(Box::new(null()), AdditiveOp::Plus, Box::new(null()))
+        );
+        assert_eq!(out, vec![member("a"), parenthesized(number("1"))]);
+    }
+
+    #[test]
+    fn detach_children_of_detached_shell_is_empty() {
+        let mut out = Vec::new();
+        for (mut shell, expected) in [
+            (
+                Expression::Additive(Box::new(null()), AdditiveOp::Plus, Box::new(null())),
+                Expression::Additive(Box::new(null()), AdditiveOp::Plus, Box::new(null())),
+            ),
+            (
+                Expression::Invocation(
+                    Box::new(null()),
+                    Invocation::Function("f".to_string(), vec![]),
+                ),
+                Expression::Invocation(
+                    Box::new(null()),
+                    Invocation::Function("f".to_string(), vec![]),
+                ),
+            ),
+        ] {
+            shell.detach_children(&mut out);
+            assert_eq!(shell, expected);
+        }
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn detach_children_moves_invocation_base_and_arguments() {
+        let mut out = Vec::new();
+        let mut expression = Expression::Invocation(
+            Box::new(Expression::Polarity(
+                PolarityOp::Minus,
+                Box::new(number("1")),
+            )),
+            Invocation::Function("f".to_string(), vec![member("b"), number("2")]),
+        );
+        expression.detach_children(&mut out);
+        assert_eq!(
+            expression,
+            Expression::Invocation(
+                Box::new(null()),
+                Invocation::Function("f".to_string(), vec![])
+            )
+        );
+        assert_eq!(
+            out,
+            vec![
+                Expression::Polarity(PolarityOp::Minus, Box::new(number("1"))),
+                member("b"),
+                number("2"),
+            ]
+        );
+    }
+
+    #[test]
+    fn detach_children_moves_function_term_arguments() {
+        let mut out = Vec::new();
+        let mut expression = Expression::Term(Term::Invocation(Invocation::Function(
+            "f".to_string(),
+            vec![parenthesized(number("1"))],
+        )));
+        expression.detach_children(&mut out);
+        assert_eq!(
+            expression,
+            Expression::Term(Term::Invocation(Invocation::Function(
+                "f".to_string(),
+                vec![]
+            )))
+        );
+        assert_eq!(out, vec![parenthesized(number("1"))]);
+    }
+
+    #[test]
+    fn detach_children_moves_parenthesized_inner() {
+        let mut out = Vec::new();
+        let mut expression = parenthesized(parenthesized(number("1")));
+        expression.detach_children(&mut out);
+        assert_eq!(expression, parenthesized(null()));
+        assert_eq!(out, vec![parenthesized(number("1"))]);
+    }
+
+    #[test]
+    fn detach_children_of_leaf_is_empty() {
+        let mut out = Vec::new();
+        let mut expression = member("a");
+        expression.detach_children(&mut out);
+        assert_eq!(expression, member("a"));
+        assert!(out.is_empty());
     }
 }

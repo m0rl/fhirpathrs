@@ -190,3 +190,11 @@ fn no_leak_deep_shared_spine() {
         }
     });
 }
+
+#[test]
+fn no_leak_deep_expression_drop() {
+    assert_no_leak(|| {
+        let input = format!("{}1{}", "-a.f(a[(".repeat(10_000), ")]).a+1".repeat(10_000));
+        drop(parse(&input).unwrap());
+    });
+}
